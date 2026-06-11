@@ -28,6 +28,20 @@ export function createInitialState(): MillGameState {
   };
 }
 
+function getNextPhase(
+  placementsRemaining: { X: number; O: number },
+  piecesOnBoard: { X: number; O: number },
+  nextTurn: PlayerPiece
+): 'placement' | 'movement' | 'flying' {
+  if (placementsRemaining.X > 0 || placementsRemaining.O > 0) {
+    return 'placement';
+  }
+  if (piecesOnBoard[nextTurn] === 3) {
+    return 'flying';
+  }
+  return 'movement';
+}
+
 /**
  * Executes a placing action.
  */
@@ -72,12 +86,6 @@ export function handlePlaceAction(
   // Check if a mill is formed
   const millCreated = didFormNewMill(state.board, newBoard, player);
 
-  let nextPhase: 'placement' | 'movement' | 'flying' = state.phase;
-  // If both players have completed all placements, transition to movement phase
-  if (newPlacements.X === 0 && newPlacements.O === 0) {
-    nextPhase = 'movement';
-  }
-
   let nextTurn: PlayerPiece = state.turn;
   let millPending: boolean = state.millFormedThisTurn;
 
@@ -86,6 +94,8 @@ export function handlePlaceAction(
   } else {
     nextTurn = player === 'X' ? 'O' : 'X';
   }
+
+  const nextPhase = getNextPhase(newPlacements, newPiecesOnBoard, nextTurn);
 
   return {
     ...state,
@@ -152,9 +162,12 @@ export function handleMoveAction(
     nextTurn = player === 'X' ? 'O' : 'X';
   }
 
+  const nextPhase = getNextPhase(state.placementsRemaining, state.piecesOnBoard, nextTurn);
+
   let nextState: MillGameState = {
     ...state,
     board: newBoard,
+    phase: nextPhase,
     turn: nextTurn,
     millFormedThisTurn: millPending,
   };
@@ -227,9 +240,12 @@ export function handleRemoveAction(
     }
   }
 
+  const nextPhase = getNextPhase(state.placementsRemaining, newPiecesOnBoard, nextTurn);
+
   return {
     ...state,
     board: newBoard,
+    phase: nextPhase,
     piecesOnBoard: newPiecesOnBoard,
     turn: nextTurn,
     millFormedThisTurn: false, // Reset removal flag
