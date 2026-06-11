@@ -1,0 +1,238 @@
+import { MillGameState, PlayerPiece } from '@vibe-games/shared';
+import {
+  isAdjacent,
+  didFormNewMill,
+  hasValidMoves,
+  isPieceInMill,
+  areAllPiecesInMills,
+} from './millRules';
+
+/**
+ * Creates the default initial state for a new Nine Men's Morris game.
+ */
+export function createInitialState(): MillGameState {
+  return {
+    board: Array(24).fill(null),
+    phase: 'placement',
+    placementsRemaining: {
+      X: 9,
+      O: 9,
+    },
+    piecesOnBoard: {
+      X: 0,
+      O: 0,
+    },
+    turn: 'X',
+    winner: null,
+    millFormedThisTurn: false,
+  };
+}
+
+/**
+ * Executes a placing action.
+ */
+export function handlePlaceAction(
+  state: MillGameState,
+  position: number,
+  player: PlayerPiece
+): MillGameState {
+  // 1. Validation
+  if (state.winner) {
+    throw new Error('Game is already finished');
+  }
+  if (state.turn !== player) {
+    throw new Error(`It is not player ${player}'s turn`);
+  }
+  if (state.millFormedThisTurn) {
+    throw new Error('Player must remove an opponent piece first');
+  }
+  if (state.phase !== 'placement') {
+    throw new Error('Placing phase is over');
+  }
+  if (state.placementsRemaining[player] <= 0) {
+    throw new Error(`Player ${player} has no placements remaining`);
+  }
+  if (position < 0 || position >= 24) {
+    throw new Error('Invalid board position');
+  }
+  if (state.board[position] !== null) {
+    throw new Error('Position is already occupied');
+  }
+
+  // 2. State Modifications
+  const newBoard = [...state.board];
+  newBoard[position] = player;
+
+  const newPlacements = { ...state.placementsRemaining };
+  newPlacements[player] -= 1;
+
+  const newPiecesOnBoard = { ...state.piecesOnBoard };
+  newPiecesOnBoard[player] += 1;
+
+  // Check if a mill is formed
+  const millCreated = didFormNewMill(state.board, newBoard, player);
+
+  let nextPhase: 'placement' | 'movement' | 'flying' = state.phase;
+  // If both players have completed all placements, transition to movement phase
+  if (newPlacements.X === 0 && newPlacements.O === 0) {
+    nextPhase = 'movement';
+  }
+
+  let nextTurn: PlayerPiece = state.turn;
+  let millPending: boolean = state.millFormedThisTurn;
+
+  if (millCreated) {
+    millPending = true;
+  } else {
+    nextTurn = player === 'X' ? 'O' : 'X';
+  }
+
+  return {
+    ...state,
+    board: newBoard,
+    phase: nextPhase,
+    placementsRemaining: newPlacements,
+    piecesOnBoard: newPiecesOnBoard,
+    turn: nextTurn,
+    millFormedThisTurn: millPending,
+  };
+}
+
+/**
+ * Executes a moving action (includes standard movement and flying).
+ */
+export function handleMoveAction(
+  state: MillGameState,
+  from: number,
+  to: number,
+  player: PlayerPiece
+): MillGameState {
+  // 1. Validation
+  if (state.winner) {
+    throw new Error('Game is already finished');
+  }
+  if (state.turn !== player) {
+    throw new Error(`It is not player ${player}'s turn`);
+  }
+  if (state.millFormedThisTurn) {
+    throw new Error('Player must remove an opponent piece first');
+  }
+  if (state.phase === 'placement') {
+    throw new Error('Placing phase is still active');
+  }
+  if (from < 0 || from >= 24 || to < 0 || to >= 24) {
+    throw new Error('Invalid board positions');
+  }
+  if (state.board[from] !== player) {
+    throw new Error(`Player ${player} does not have a piece at position ${from}`);
+  }
+  if (state.board[to] !== null) {
+    throw new Error(`Position ${to} is already occupied`);
+  }
+
+  const isFlying = state.piecesOnBoard[player] === 3;
+  if (!isFlying && !isAdjacent(from, to)) {
+    throw new Error(`Position ${to} is not adjacent to position ${from}`);
+  }
+
+  // 2. State Modifications
+  const newBoard = [...state.board];
+  newBoard[from] = null;
+  newBoard[to] = player;
+
+  // Check if a mill is formed
+  const millCreated = didFormNewMill(state.board, newBoard, player);
+
+  let nextTurn: PlayerPiece = state.turn;
+  let millPending: boolean = state.millFormedThisTurn;
+
+  if (millCreated) {
+    millPending = true;
+  } else {
+    nextTurn = player === 'X' ? 'O' : 'X';
+  }
+
+  let nextState: MillGameState = {
+    ...state,
+    board: newBoard,
+    turn: nextTurn,
+    millFormedThisTurn: millPending,
+  };
+
+  // 3. Post-move checks (e.g. check if opponent is blocked)
+  if (!millCreated) {
+    const opponent = nextTurn;
+    const opponentCanFly = nextState.piecesOnBoard[opponent] === 3;
+    // Opponent is blocked if they cannot fly and have no valid moves left
+    if (!opponentCanFly && !hasValidMoves(newBoard, opponent)) {
+      nextState.winner = player;
+      nextState.phase = 'movement'; // Keep stable
+    }
+  }
+
+  return nextState;
+}
+
+/**
+ * Executes a piece removal action after forming a mill.
+ */
+export function handleRemoveAction(
+  state: MillGameState,
+  position: number,
+  player: PlayerPiece
+): MillGameState {
+  // 1. Validation
+  if (state.winner) {
+    throw new Error('Game is already finished');
+  }
+  if (state.turn !== player) {
+    throw new Error(`It is not player ${player}'s turn`);
+  }
+  if (!state.millFormedThisTurn) {
+    throw new Error('No mill was formed this turn; cannot remove piece');
+  }
+  if (position < 0 || position >= 24) {
+    throw new Error('Invalid board position');
+  }
+
+  const opponent = player === 'X' ? 'O' : 'X';
+  if (state.board[position] !== opponent) {
+    throw new Error(`No opponent piece at position ${position}`);
+  }
+
+  // Enforce the rule: Cannot remove a piece in a mill unless all opponent's pieces are in mills
+  if (isPieceInMill(state.board, position, opponent) && !areAllPiecesInMills(state.board, opponent)) {
+    throw new Error('Cannot remove a piece that is part of a mill unless all opponent pieces are in mills');
+  }
+
+  // 2. State Modifications
+  const newBoard = [...state.board];
+  newBoard[position] = null;
+
+  const newPiecesOnBoard = { ...state.piecesOnBoard };
+  newPiecesOnBoard[opponent] -= 1;
+
+  let nextWinner: PlayerPiece | 'draw' | null = state.winner;
+  let nextTurn: PlayerPiece = player === 'X' ? 'O' : 'X'; // Pass turn after removal is complete
+
+  // 3. Check for Win/Loss Condition
+  // If opponent is reduced to 2 pieces, current player wins
+  if (newPiecesOnBoard[opponent] < 3) {
+    nextWinner = player;
+  } else {
+    // If opponent has exactly 3 pieces left and they cannot move, check immediately
+    // (though they can fly, so they are only blocked if all spots are occupied, which is impossible with 3 pieces)
+    if (newPiecesOnBoard[opponent] > 3 && !hasValidMoves(newBoard, opponent)) {
+      nextWinner = player;
+    }
+  }
+
+  return {
+    ...state,
+    board: newBoard,
+    piecesOnBoard: newPiecesOnBoard,
+    turn: nextTurn,
+    millFormedThisTurn: false, // Reset removal flag
+    winner: nextWinner,
+  };
+}
