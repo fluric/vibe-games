@@ -1,34 +1,38 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('Vibe Games Landing Page', () => {
+  test.beforeEach(async ({ page }) => {
+    // Perform Mock Login with a unique user per test to avoid state collision in parallel runs
+    const testId = Math.random().toString(36).substring(2, 11);
+    await page.goto('/');
+    await page.fill('input[placeholder="Developer Name"]', `User_${testId}`);
+    await page.fill('input[placeholder="developer@vibegames.local"]', `test-${testId}@vibegames.local`);
+    await page.click('button[type="submit"]');
+    await expect(page.locator('h3:has-text("Create a New Match")')).toBeVisible();
+  });
+
   test('should load the page and show correct elements', async ({ page }) => {
-    // Navigate to the root
+    // Navigate to the root lobby page
     await page.goto('/');
 
     // Check heading
     const heading = page.locator('h1');
     await expect(heading).toHaveText('Vibe Games');
 
-    // Check that the counter starts at 0
-    const counterButton = page.locator('button.counter');
-    await expect(counterButton).toHaveText('Count is 0');
+    // Check that the rating displays correctly
+    const ratingElement = page.locator('text=1200 ELO');
+    await expect(ratingElement).toBeVisible();
 
-    // Click the counter button
-    await counterButton.click();
-
-    // Check that the counter increments to 1
-    await expect(counterButton).toHaveText('Count is 1');
-
-    // Verify link to Status exists
-    const statusLink = page.locator('text=System Status');
+    // Verify link to Status exists (System Health)
+    const statusLink = page.locator('text=System Health');
     await expect(statusLink).toBeVisible();
   });
 
   test('should navigate to status page and verify system connectivity metrics', async ({ page }) => {
     await page.goto('/');
     
-    // Click on System Status link and check URL transition
-    await page.click('text=System Status');
+    // Click on System Health link and check URL transition
+    await page.click('text=System Health');
     await expect(page).toHaveURL('/status');
 
     // Verify Dashboard elements exist on /status

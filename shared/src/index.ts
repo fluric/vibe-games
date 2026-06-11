@@ -16,6 +16,12 @@ export interface UserDto {
   id: string;
   username: string;
   createdAt: string; // ISO 8601
+  avatarUrl?: string | null;
+  email?: string | null;
+}
+
+export interface AuthStatusResponse {
+  user: UserDto | null;
 }
 
 // ─── Game ─────────────────────────────────────────────────────────────────────

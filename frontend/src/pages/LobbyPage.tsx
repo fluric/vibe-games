@@ -15,15 +15,22 @@ export function LobbyPage() {
   const [lobbyError, setLobbyError] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
-  const userId = api.getUserId();
-  const username = `Player_${userId.substring(0, 5)}`;
+  const [currentUser, setCurrentUser] = useState<any | null>(null);
+  const [checkingAuth, setCheckingAuth] = useState(true);
+  const [devName, setDevName] = useState('');
+  const [devEmail, setDevEmail] = useState('');
+  const [loggingIn, setLoggingIn] = useState(false);
+
+  const userId = currentUser?.id || '';
+  const username = currentUser?.username || 'Guest';
 
   // Polling for open games and user's active games
   const fetchLobby = async () => {
+    if (!currentUser) return;
     try {
       const games = await api.listOpenGames();
       // Filter out matches created by this player (since they can't play against themselves)
-      setOpenGames(games.filter((g) => g.playerX?.id !== userId));
+      setOpenGames(games.filter((g) => g.playerX?.id !== currentUser.id));
       setLobbyError(null);
     } catch (err: any) {
       console.error('Failed to load lobby:', err);
@@ -41,10 +48,71 @@ export function LobbyPage() {
   };
 
   useEffect(() => {
+    const checkSession = async () => {
+      try {
+        const res = await api.getAuthMe();
+        if (res.user) {
+          setCurrentUser(res.user);
+          localStorage.setItem('vibe-games-user-id', res.user.id);
+        }
+      } catch (err) {
+        console.error('Session check failed:', err);
+      } finally {
+        setCheckingAuth(false);
+      }
+    };
+    checkSession();
+  }, []);
+
+  useEffect(() => {
+    if (!currentUser) return;
     fetchLobby();
     const interval = setInterval(fetchLobby, 3000);
     return () => clearInterval(interval);
-  }, []);
+  }, [currentUser]);
+
+  useEffect(() => {
+    if (currentUser) return;
+
+    // Load Google GSI client script dynamically
+    const script = document.createElement('script');
+    script.src = 'https://accounts.google.com/gsi/client';
+    script.async = true;
+    script.defer = true;
+    script.onload = () => {
+      const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+      if (googleClientId && (window as any).google) {
+        (window as any).google.accounts.id.initialize({
+          client_id: googleClientId,
+          callback: async (response: any) => {
+            setLoggingIn(true);
+            try {
+              audio.playPlaceSound();
+              const authRes = await api.loginWithGoogle(response.credential);
+              setCurrentUser(authRes.user);
+              if (authRes.user) {
+                localStorage.setItem('vibe-games-user-id', authRes.user.id);
+              }
+            } catch (err: any) {
+              audio.playErrorSound();
+              alert(err.message || 'Google Login failed');
+            } finally {
+              setLoggingIn(false);
+            }
+          },
+        });
+        (window as any).google.accounts.id.renderButton(
+          document.getElementById('google-signin-button'),
+          { theme: 'filled_blue', size: 'large', width: 280 }
+        );
+      }
+    };
+    document.body.appendChild(script);
+
+    return () => {
+      document.body.removeChild(script);
+    };
+  }, [currentUser]);
 
   const handleCancelGame = async (gameId: string) => {
     if (!confirm('Are you sure you want to cancel this game lobby?')) return;
@@ -64,6 +132,37 @@ export function LobbyPage() {
     setCopiedId(gameId);
     audio.playPlaceSound();
     setTimeout(() => setCopiedId(null), 2000);
+  };
+
+  const handleDevLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!devName.trim() || !devEmail.trim()) return;
+    setLoggingIn(true);
+    try {
+      audio.playPlaceSound();
+      const authRes = await api.loginMock(devName.trim(), devEmail.trim());
+      setCurrentUser(authRes.user);
+      if (authRes.user) {
+        localStorage.setItem('vibe-games-user-id', authRes.user.id);
+      }
+    } catch (err: any) {
+      audio.playErrorSound();
+      alert(err.message || 'Developer login failed');
+    } finally {
+      setLoggingIn(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    if (!confirm('Are you sure you want to log out?')) return;
+    try {
+      audio.playPlaceSound();
+      await api.logout();
+      setCurrentUser(null);
+      localStorage.removeItem('vibe-games-user-id');
+    } catch (err: any) {
+      alert(err.message || 'Log out failed');
+    }
   };
 
   const handleCreateGame = async (vsAi = false, isPublic = true) => {
@@ -117,6 +216,82 @@ export function LobbyPage() {
     }
   };
 
+  if (checkingAuth) {
+    return (
+      <div className="min-h-screen bg-neutral-950 text-neutral-100 flex items-center justify-center font-sans">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 rounded-full border-4 border-indigo-500/20 border-t-indigo-500 animate-spin" />
+          <p className="text-sm text-neutral-400 animate-pulse">Checking credentials...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!currentUser) {
+    const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+    return (
+      <div className="min-h-screen bg-neutral-950 text-neutral-100 font-sans flex items-center justify-center p-6 relative overflow-hidden">
+        {/* Glowing background circles */}
+        <div className="absolute top-[-20%] left-[-20%] w-[50%] h-[50%] rounded-full bg-blue-500/10 blur-[150px] pointer-events-none" />
+        <div className="absolute bottom-[-20%] right-[-20%] w-[50%] h-[50%] rounded-full bg-indigo-500/10 blur-[150px] pointer-events-none" />
+
+        <div className="w-full max-w-sm bg-neutral-900/60 border border-neutral-800 rounded-3xl p-8 backdrop-blur-md shadow-2xl flex flex-col gap-6 z-10">
+          <div className="text-center">
+            <h1 className="text-4xl font-extrabold bg-gradient-to-r from-blue-400 via-indigo-400 to-rose-400 bg-clip-text text-transparent tracking-tight">
+              Vibe Games
+            </h1>
+            <p className="text-neutral-400 text-xs mt-2">
+              Sign in to host lobbies, play vs AI, or challenge friends
+            </p>
+          </div>
+
+          {googleClientId ? (
+            <div className="flex flex-col items-center gap-4 py-2 border-b border-neutral-800/60 pb-6">
+              <div id="google-signin-button" className="transition-transform active:scale-[0.98]" />
+            </div>
+          ) : null}
+
+          <form onSubmit={handleDevLogin} className="flex flex-col gap-4 pt-2">
+            <div className="flex flex-col gap-1.5">
+              <span className="text-[10px] font-semibold text-neutral-400 uppercase tracking-wider">
+                {googleClientId ? 'Or Sign In with Mock Account' : 'Developer Guest Account'}
+              </span>
+              <p className="text-[11px] text-neutral-500 mb-1">
+                Enter any name and email to play instantly.
+              </p>
+              <input
+                type="text"
+                placeholder="Developer Name"
+                value={devName}
+                onChange={(e) => setDevName(e.target.value)}
+                required
+                className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2.5 text-xs text-neutral-100 placeholder-neutral-600 focus:outline-none focus:border-neutral-700 transition-all font-sans"
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <input
+                type="email"
+                placeholder="developer@vibegames.local"
+                value={devEmail}
+                onChange={(e) => setDevEmail(e.target.value)}
+                required
+                className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2.5 text-xs text-neutral-100 placeholder-neutral-600 focus:outline-none focus:border-neutral-700 transition-all font-sans"
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={loggingIn || !devName.trim() || !devEmail.trim()}
+              className="w-full py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 disabled:from-neutral-800 disabled:to-neutral-800 disabled:text-neutral-600 text-white font-bold text-xs transition-all flex items-center justify-center gap-2 shadow-lg shadow-indigo-500/10 active:scale-[0.98]"
+            >
+              {loggingIn ? 'Authenticating...' : 'Enter Vibe Games'}
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-neutral-950 text-neutral-100 font-sans flex flex-col items-center p-6 md:p-12 relative overflow-hidden">
       {/* Dynamic background accents */}
@@ -143,16 +318,37 @@ export function LobbyPage() {
             >
               System Health
             </Link>
+            {currentUser && (
+              <button
+                onClick={handleLogout}
+                className="text-xs px-3.5 py-2 rounded-lg bg-rose-950/40 border border-rose-900/30 hover:bg-rose-900/40 text-rose-400 font-medium transition-all active:scale-95"
+              >
+                Log Out
+              </button>
+            )}
           </div>
         </div>
 
         {/* User Card & Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="md:col-span-1 bg-neutral-900/60 border border-neutral-800 rounded-2xl p-6 backdrop-blur-md flex flex-col justify-between">
-            <div>
-              <span className="text-xs font-semibold text-blue-400 uppercase tracking-widest">Active Player</span>
-              <h2 className="text-xl font-bold mt-1 text-white">{username}</h2>
-              <p className="text-xs text-neutral-500 font-mono mt-1 select-all">{userId}</p>
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <span className="text-xs font-semibold text-blue-400 uppercase tracking-widest">Active Player</span>
+                <h2 className="text-xl font-bold mt-1 text-white">{username}</h2>
+                <p className="text-xs text-neutral-500 font-mono mt-1 select-all">{userId.substring(0, 8)}...</p>
+              </div>
+              {currentUser?.avatarUrl ? (
+                <img
+                  src={currentUser.avatarUrl}
+                  alt={username}
+                  className="w-12 h-12 rounded-full border border-neutral-800 object-cover shadow-lg"
+                />
+              ) : (
+                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-extrabold text-sm shadow-lg">
+                  {username.substring(0, 2).toUpperCase()}
+                </div>
+              )}
             </div>
             <div className="border-t border-neutral-800 pt-4 mt-6">
               <div className="flex justify-between items-center text-sm">

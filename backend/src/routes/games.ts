@@ -4,6 +4,15 @@ import { IsNull, In } from 'typeorm';
 import { Game } from '../entities/Game';
 import { User } from '../entities/User';
 import { GameDto, UserDto, PlayerPiece } from '@vibe-games/shared';
+import jwt from 'jsonwebtoken';
+
+declare module 'fastify' {
+  interface FastifyRequest {
+    user?: User;
+  }
+}
+
+const JWT_SECRET = process.env.JWT_SECRET || 'vibe-games-default-secret-key-do-not-use-in-prod';
 import {
   createInitialState,
   handlePlaceAction,
@@ -56,6 +65,42 @@ function toGameDto(game: Game): GameDto {
 }
 
 export async function gameRoutes(server: FastifyInstance) {
+  // Plugin-level authentication hook (guarantees auth runs inside tests as well)
+  server.addHook('preHandler', async (request) => {
+    if (request.user) return; // already populated globally
+
+    // 1. Try cookie session
+    const sessionCookie = (request as any).cookies?.session;
+    if (sessionCookie) {
+      try {
+        const decoded = jwt.verify(sessionCookie, JWT_SECRET) as { userId: string };
+        const userRepo = AppDataSource.getRepository(User);
+        const user = await userRepo.findOneBy({ id: decoded.userId });
+        if (user) {
+          request.user = user;
+          return;
+        }
+      } catch (err) {
+        // Ignore
+      }
+    }
+
+    // 2. Try x-user-id header fallback
+    const userIdHeader = request.headers['x-user-id'] as string;
+    if (userIdHeader) {
+      const userRepo = AppDataSource.getRepository(User);
+      let user = await userRepo.findOneBy({ id: userIdHeader });
+      if (!user) {
+        user = userRepo.create({
+          id: userIdHeader,
+          username: `Player_${userIdHeader.substring(0, 5)}`,
+        });
+        await userRepo.save(user);
+      }
+      request.user = user;
+    }
+  });
+
   // 1. Create a Game
   server.post<{
     Body: {
@@ -64,9 +109,9 @@ export async function gameRoutes(server: FastifyInstance) {
       vsAi?: boolean;
     };
   }>('/', async (request, reply) => {
-    const userId = request.headers['x-user-id'] as string;
-    if (!userId) {
-      return reply.code(400).send({ error: 'Missing x-user-id header' });
+    const user = request.user;
+    if (!user) {
+      return reply.code(401).send({ error: 'Unauthorized' });
     }
 
     const { gameType, isPublic = true, vsAi = false } = request.body;
@@ -75,7 +120,7 @@ export async function gameRoutes(server: FastifyInstance) {
     }
 
     const gameRepo = AppDataSource.getRepository(Game);
-    const playerX = await getOrCreateUser(userId);
+    const playerX = user;
 
     let playerOId = null;
     let playerO = null;
@@ -117,11 +162,12 @@ export async function gameRoutes(server: FastifyInstance) {
 
   // Get User's Active Games
   server.get('/my-active', async (request, reply) => {
-    const userId = request.headers['x-user-id'] as string;
-    if (!userId) {
-      return reply.code(400).send({ error: 'Missing x-user-id header' });
+    const user = request.user;
+    if (!user) {
+      return reply.code(401).send({ error: 'Unauthorized' });
     }
 
+    const userId = user.id;
     const gameRepo = AppDataSource.getRepository(Game);
     const myGames = await gameRepo.find({
       where: [
@@ -152,11 +198,12 @@ export async function gameRoutes(server: FastifyInstance) {
 
   // 4. Join a Game (Invite Link / Lobby list selection)
   server.post<{ Params: { id: string } }>('/:id/join', async (request, reply) => {
-    const userId = request.headers['x-user-id'] as string;
-    if (!userId) {
-      return reply.code(400).send({ error: 'Missing x-user-id header' });
+    const user = request.user;
+    if (!user) {
+      return reply.code(401).send({ error: 'Unauthorized' });
     }
 
+    const userId = user.id;
     const gameRepo = AppDataSource.getRepository(Game);
     const game = await gameRepo.findOne({
       where: { id: request.params.id },
@@ -173,7 +220,7 @@ export async function gameRoutes(server: FastifyInstance) {
       return reply.code(400).send({ error: 'Cannot play against yourself' });
     }
 
-    const playerO = await getOrCreateUser(userId);
+    const playerO = user;
     game.playerOId = playerO.id;
     game.playerO = playerO;
     game.status = 'in_progress';
@@ -184,11 +231,12 @@ export async function gameRoutes(server: FastifyInstance) {
 
   // 4.5 Cancel a Game (Lobby slot cancellation by creator)
   server.post<{ Params: { id: string } }>('/:id/cancel', async (request, reply) => {
-    const userId = request.headers['x-user-id'] as string;
-    if (!userId) {
-      return reply.code(400).send({ error: 'Missing x-user-id header' });
+    const user = request.user;
+    if (!user) {
+      return reply.code(401).send({ error: 'Unauthorized' });
     }
 
+    const userId = user.id;
     const gameRepo = AppDataSource.getRepository(Game);
     const game = await gameRepo.findOne({
       where: { id: request.params.id },
@@ -218,11 +266,12 @@ export async function gameRoutes(server: FastifyInstance) {
       to?: number;
     };
   }>('/:id/move', async (request, reply) => {
-    const userId = request.headers['x-user-id'] as string;
-    if (!userId) {
-      return reply.code(400).send({ error: 'Missing x-user-id header' });
+    const user = request.user;
+    if (!user) {
+      return reply.code(401).send({ error: 'Unauthorized' });
     }
 
+    const userId = user.id;
     const gameRepo = AppDataSource.getRepository(Game);
     const game = await gameRepo.findOne({
       where: { id: request.params.id },

@@ -13,15 +13,19 @@
     "migration:revert": "typeorm-ts-node-commonjs migration:revert -d src/data-source.ts"
   },
   "dependencies": {
+    "@fastify/cookie": "^9.4.0",
     "@fastify/cors": "^9.0.1",
+    "@vibe-games/shared": "*",
     "dotenv": "^16.4.5",
     "fastify": "^4.28.1",
+    "google-auth-library": "^10.7.0",
+    "jsonwebtoken": "^9.0.3",
     "pg": "^8.12.0",
     "reflect-metadata": "^0.2.2",
-    "typeorm": "^0.3.20",
-    "@vibe-games/shared": "*"
+    "typeorm": "^0.3.20"
   },
   "devDependencies": {
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^20.14.2",
     "nodemon": "^3.1.4",
     "ts-node": "^10.9.2",

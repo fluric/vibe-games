@@ -1,4 +1,4 @@
-import type { GameDto } from '@vibe-games/shared';
+import type { GameDto, AuthStatusResponse } from '@vibe-games/shared';
 
 // Helper to get or generate a persistent local user ID
 export function getUserId(): string {
@@ -28,17 +28,22 @@ function getApiUrl(): string {
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const url = `${getApiUrl()}${path}`;
+  console.log(`[API Request] ${options.method || 'GET'} ${url}`);
   const headers = new Headers(options.headers);
   headers.set('Content-Type', 'application/json');
   headers.set('x-user-id', getUserId());
 
   const response = await fetch(url, {
+    credentials: 'include',
     ...options,
     headers,
   });
 
+  console.log(`[API Response] ${response.status} for ${options.method || 'GET'} ${url}`);
+
   if (!response.ok) {
     const errorBody = await response.json().catch(() => ({}));
+    console.error(`[API Error] Status: ${response.status}, Body:`, errorBody);
     throw new Error(errorBody.error || `HTTP error! Status: ${response.status}`);
   }
 
@@ -92,6 +97,31 @@ export async function listMyActiveGames(): Promise<GameDto[]> {
 
 export async function cancelGame(id: string): Promise<{ success: boolean }> {
   return request<{ success: boolean }>(`/games/${id}/cancel`, {
+    method: 'POST',
+    body: JSON.stringify({}),
+  });
+}
+
+export async function getAuthMe(): Promise<AuthStatusResponse> {
+  return request<AuthStatusResponse>('/auth/me');
+}
+
+export async function loginWithGoogle(idToken: string): Promise<AuthStatusResponse> {
+  return request<AuthStatusResponse>('/auth/google', {
+    method: 'POST',
+    body: JSON.stringify({ idToken }),
+  });
+}
+
+export async function loginMock(name: string, email: string, avatarUrl?: string): Promise<AuthStatusResponse> {
+  return request<AuthStatusResponse>('/auth/mock', {
+    method: 'POST',
+    body: JSON.stringify({ name, email, avatarUrl }),
+  });
+}
+
+export async function logout(): Promise<{ success: boolean }> {
+  return request<{ success: boolean }>('/auth/logout', {
     method: 'POST',
     body: JSON.stringify({}),
   });

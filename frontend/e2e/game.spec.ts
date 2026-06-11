@@ -1,6 +1,16 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('Vibe Games Matchmaking & Gameplay E2E', () => {
+  test.beforeEach(async ({ page }) => {
+    // Perform Mock Login with a unique user per test to avoid state collision in parallel runs
+    const testId = Math.random().toString(36).substring(2, 11);
+    await page.goto('/');
+    await page.fill('input[placeholder="Developer Name"]', `User_${testId}`);
+    await page.fill('input[placeholder="developer@vibegames.local"]', `test-${testId}@vibegames.local`);
+    await page.click('button[type="submit"]');
+    await expect(page.locator('h3:has-text("Create a New Match")')).toBeVisible();
+  });
+
   test('should create a game vs AI, make a placement move, and verify AI responds', async ({ page }) => {
     // Navigate to the main dashboard lobby
     await page.goto('/');
@@ -45,6 +55,8 @@ test.describe('Vibe Games Matchmaking & Gameplay E2E', () => {
   });
 
   test('should host a private game, navigate away, and cancel it from active matches list', async ({ page }) => {
+    page.on('console', msg => console.log('BROWSER LOG:', msg.text()));
+    page.on('pageerror', error => console.error('BROWSER ERROR:', error.message));
     await page.goto('/');
 
     // Host Private Game
