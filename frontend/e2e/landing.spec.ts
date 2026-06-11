@@ -18,6 +18,21 @@ test.describe('Vibe Games Landing Page', () => {
 
     // Check that the counter increments to 1
     await expect(counterButton).toHaveText('Count is 1');
+
+    // Verify System Connectivity Dashboard elements
+    const apiStatus = page.locator('span:has-text("API Gateway:")');
+    await expect(apiStatus).toBeVisible();
+
+    const dbStatus = page.locator('span:has-text("PostgreSQL DB:")');
+    await expect(dbStatus).toBeVisible();
+
+    // The text content adjacent to API Gateway should say "Online"
+    const apiOnlineStatus = page.locator('span:has-text("API Gateway:") + span');
+    await expect(apiOnlineStatus).toHaveText('Online');
+
+    // The text content adjacent to PostgreSQL DB should say "Connected"
+    const dbConnectedStatus = page.locator('span:has-text("PostgreSQL DB:") + span');
+    await expect(dbConnectedStatus).toHaveText('Connected');
   });
 
   test('should verify the backend health check endpoint is reachable', async ({ request }) => {
