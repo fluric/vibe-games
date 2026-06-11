@@ -249,6 +249,8 @@ export function LobbyPage() {
 
   if (!currentUser) {
     const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+    const showMockForm = !import.meta.env.PROD || import.meta.env.VITE_ALLOW_MOCK_AUTH === 'true';
+
     return (
       <div className="min-h-screen bg-neutral-950 text-neutral-100 font-sans flex items-center justify-center p-6 relative overflow-hidden">
         {/* Glowing background circles */}
@@ -266,47 +268,53 @@ export function LobbyPage() {
           </div>
 
           {googleClientId ? (
-            <div className="flex flex-col items-center gap-4 py-2 border-b border-neutral-800/60 pb-6">
+            <div className="flex flex-col items-center gap-4 py-2 border-b border-neutral-800/60 pb-6 last:border-0 last:pb-0">
               <div id="google-signin-button" className="transition-transform active:scale-[0.98]" />
             </div>
           ) : null}
 
-          <form onSubmit={handleDevLogin} className="flex flex-col gap-4 pt-2">
-            <div className="flex flex-col gap-1.5">
-              <span className="text-[10px] font-semibold text-neutral-400 uppercase tracking-wider">
-                {googleClientId ? 'Or Sign In with Mock Account' : 'Developer Guest Account'}
-              </span>
-              <p className="text-[11px] text-neutral-500 mb-1">
-                Enter any name and email to play instantly.
-              </p>
-              <input
-                type="text"
-                placeholder="Developer Name"
-                value={devName}
-                onChange={(e) => setDevName(e.target.value)}
-                required
-                className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2.5 text-xs text-neutral-100 placeholder-neutral-600 focus:outline-none focus:border-neutral-700 transition-all font-sans"
-              />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <input
-                type="email"
-                placeholder="developer@vibegames.local"
-                value={devEmail}
-                onChange={(e) => setDevEmail(e.target.value)}
-                required
-                className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2.5 text-xs text-neutral-100 placeholder-neutral-600 focus:outline-none focus:border-neutral-700 transition-all font-sans"
-              />
-            </div>
+          {showMockForm ? (
+            <form onSubmit={handleDevLogin} className="flex flex-col gap-4 pt-2 border-t border-neutral-800/60 first:border-0 first:pt-0">
+              <div className="flex flex-col gap-1.5">
+                <span className="text-[10px] font-semibold text-neutral-400 uppercase tracking-wider">
+                  {googleClientId ? 'Or Sign In with Mock Account' : 'Developer Guest Account'}
+                </span>
+                <p className="text-[11px] text-neutral-500 mb-1">
+                  Enter any name and email to play instantly.
+                </p>
+                <input
+                  type="text"
+                  placeholder="Developer Name"
+                  value={devName}
+                  onChange={(e) => setDevName(e.target.value)}
+                  required
+                  className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2.5 text-xs text-neutral-100 placeholder-neutral-600 focus:outline-none focus:border-neutral-700 transition-all font-sans"
+                />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <input
+                  type="email"
+                  placeholder="developer@vibegames.local"
+                  value={devEmail}
+                  onChange={(e) => setDevEmail(e.target.value)}
+                  required
+                  className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2.5 text-xs text-neutral-100 placeholder-neutral-600 focus:outline-none focus:border-neutral-700 transition-all font-sans"
+                />
+              </div>
 
-            <button
-              type="submit"
-              disabled={loggingIn || !devName.trim() || !devEmail.trim()}
-              className="w-full py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 disabled:from-neutral-800 disabled:to-neutral-800 disabled:text-neutral-600 text-white font-bold text-xs transition-all flex items-center justify-center gap-2 shadow-lg shadow-indigo-500/10 active:scale-[0.98]"
-            >
-              {loggingIn ? 'Authenticating...' : 'Enter Vibe Games'}
-            </button>
-          </form>
+              <button
+                type="submit"
+                disabled={loggingIn || !devName.trim() || !devEmail.trim()}
+                className="w-full py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 disabled:from-neutral-800 disabled:to-neutral-800 disabled:text-neutral-600 text-white font-bold text-xs transition-all flex items-center justify-center gap-2 shadow-lg shadow-indigo-500/10 active:scale-[0.98]"
+              >
+                {loggingIn ? 'Authenticating...' : 'Enter Vibe Games'}
+              </button>
+            </form>
+          ) : !googleClientId ? (
+            <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs text-center leading-normal">
+              🔒 Authentication is not configured. Please configure a Google Client ID in settings to enable sign-in.
+            </div>
+          ) : null}
         </div>
       </div>
     );
