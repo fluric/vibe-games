@@ -37,6 +37,7 @@ export function LobbyPage() {
   const [devName, setDevName] = useState('');
   const [devEmail, setDevEmail] = useState('');
   const [loggingIn, setLoggingIn] = useState(false);
+  const [gsiLoaded, setGsiLoaded] = useState(false);
 
   const userId = currentUser?.id || '';
   const username = currentUser?.username || 'Guest';
@@ -90,18 +91,51 @@ export function LobbyPage() {
     return () => clearInterval(interval);
   }, [currentUser, fetchLobby]);
 
+  // Load Google GSI client script dynamically
   useEffect(() => {
     if (currentUser) return;
 
-    // Load Google GSI client script dynamically
+    let active = true;
+    const google = (window as Window & { google?: GoogleIdentity }).google;
+    if (google?.accounts?.id) {
+      setGsiLoaded(true);
+      return;
+    }
+
     const script = document.createElement('script');
     script.src = 'https://accounts.google.com/gsi/client';
     script.async = true;
     script.defer = true;
     script.onload = () => {
-      const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
-      const google = (window as Window & { google?: GoogleIdentity }).google;
-      if (googleClientId && google) {
+      if (active) {
+        setGsiLoaded(true);
+      }
+    };
+    script.onerror = () => {
+      console.error('Failed to load Google Sign-In script');
+    };
+    document.body.appendChild(script);
+
+    return () => {
+      active = false;
+      try {
+        document.body.removeChild(script);
+      } catch (e) {
+        // Ignore if already removed or missing
+      }
+    };
+  }, [currentUser]);
+
+  // Render Google Sign-In button once script is loaded and auth check is done (so container exists in DOM)
+  useEffect(() => {
+    if (currentUser || checkingAuth || !gsiLoaded) return;
+
+    const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+    const google = (window as Window & { google?: GoogleIdentity }).google;
+    const buttonEl = document.getElementById('google-signin-button');
+
+    if (googleClientId && google && buttonEl) {
+      try {
         google.accounts.id.initialize({
           client_id: googleClientId,
           callback: async (response: { credential: string }) => {
@@ -122,17 +156,14 @@ export function LobbyPage() {
           },
         });
         google.accounts.id.renderButton(
-          document.getElementById('google-signin-button'),
+          buttonEl,
           { theme: 'filled_blue', size: 'large', width: 280 }
         );
+      } catch (err) {
+        console.error('Failed to initialize/render Google Sign-In button:', err);
       }
-    };
-    document.body.appendChild(script);
-
-    return () => {
-      document.body.removeChild(script);
-    };
-  }, [currentUser]);
+    }
+  }, [currentUser, checkingAuth, gsiLoaded]);
 
   const handleCancelGame = async (gameId: string) => {
     if (!confirm('Are you sure you want to cancel this game lobby?')) return;
