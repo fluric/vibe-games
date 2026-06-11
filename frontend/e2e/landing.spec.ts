@@ -7,7 +7,7 @@ test.describe('Vibe Games Landing Page', () => {
 
     // Check heading
     const heading = page.locator('h1');
-    await expect(heading).toHaveText('Get started');
+    await expect(heading).toHaveText('Vibe Games');
 
     // Check that the counter starts at 0
     const counterButton = page.locator('button.counter');
@@ -19,7 +19,19 @@ test.describe('Vibe Games Landing Page', () => {
     // Check that the counter increments to 1
     await expect(counterButton).toHaveText('Count is 1');
 
-    // Verify System Connectivity Dashboard elements
+    // Verify link to Status exists
+    const statusLink = page.locator('text=System Status');
+    await expect(statusLink).toBeVisible();
+  });
+
+  test('should navigate to status page and verify system connectivity metrics', async ({ page }) => {
+    await page.goto('/');
+    
+    // Click on System Status link and check URL transition
+    await page.click('text=System Status');
+    await expect(page).toHaveURL('/status');
+
+    // Verify Dashboard elements exist on /status
     const apiStatus = page.locator('span:has-text("API Gateway:")');
     await expect(apiStatus).toBeVisible();
 
@@ -33,6 +45,10 @@ test.describe('Vibe Games Landing Page', () => {
     // The text content adjacent to PostgreSQL DB should say "Connected"
     const dbConnectedStatus = page.locator('span:has-text("PostgreSQL DB:") + span');
     await expect(dbConnectedStatus).toHaveText('Connected');
+
+    // Test back navigation
+    await page.click('text=Back to Dashboard');
+    await expect(page).toHaveURL('/');
   });
 
   test('should verify the backend health check endpoint is reachable', async ({ request }) => {

@@ -12,6 +12,11 @@ async function bootstrap() {
   await AppDataSource.initialize();
   console.log('✅ Database connected');
 
+  if (process.env.NODE_ENV === 'production') {
+    await AppDataSource.runMigrations();
+    console.log('✅ Database migrations applied');
+  }
+
   // ── Server ─────────────────────────────────────────────────────────────────
   const server = Fastify({
     logger: {
