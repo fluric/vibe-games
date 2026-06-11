@@ -21,7 +21,11 @@ function App() {
   });
 
   useEffect(() => {
-    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+    let rawApiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+    if (!rawApiUrl.startsWith('http://') && !rawApiUrl.startsWith('https://')) {
+      rawApiUrl = `https://${rawApiUrl}`;
+    }
+    const API_URL = rawApiUrl;
     fetch(`${API_URL}/health`)
       .then((res) => {
         if (!res.ok) throw new Error('Network response was not ok');
