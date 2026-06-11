@@ -7,6 +7,7 @@ export interface HealthResponse {
   ok: boolean;
   timestamp: string;
   version: string;
+  database: boolean;
 }
 
 // ─── User ─────────────────────────────────────────────────────────────────────

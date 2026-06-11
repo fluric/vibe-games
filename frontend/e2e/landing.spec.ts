@@ -29,5 +29,6 @@ test.describe('Vibe Games Landing Page', () => {
     expect(body.ok).toBe(true);
     expect(body.version).toBeDefined();
     expect(body.timestamp).toBeDefined();
+    expect(body.database).toBe(true);
   });
 });
