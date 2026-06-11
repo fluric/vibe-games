@@ -43,7 +43,7 @@ export default defineConfig({
   /* Run your local dev server before starting the tests */
   webServer: [
     {
-      command: 'npm run dev -w backend --prefix ..',
+      command: 'npm run dev --prefix ../backend',
       url: 'http://localhost:3001/health',
       reuseExistingServer: !process.env.CI,
       stdout: 'pipe',
