@@ -15,7 +15,8 @@
     "lint": "npm run lint -w backend && npm run lint -w frontend",
     "docker:up": "PATH=\"/Applications/Docker.app/Contents/Resources/bin:$PATH\" docker compose up -d",
     "docker:down": "PATH=\"/Applications/Docker.app/Contents/Resources/bin:$PATH\" docker compose down",
-    "docker:reset": "PATH=\"/Applications/Docker.app/Contents/Resources/bin:$PATH\" docker compose down -v && PATH=\"/Applications/Docker.app/Contents/Resources/bin:$PATH\" docker compose up -d"
+    "docker:reset": "PATH=\"/Applications/Docker.app/Contents/Resources/bin:$PATH\" docker compose down -v && PATH=\"/Applications/Docker.app/Contents/Resources/bin:$PATH\" docker compose up -d",
+    "test:e2e": "npm run test:e2e -w frontend"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"

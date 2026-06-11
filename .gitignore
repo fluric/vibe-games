@@ -38,3 +38,7 @@ Thumbs.db
 
 # Vite cache
 .vite/
+
+# Playwright reports and test results
+playwright-report/
+test-results/
