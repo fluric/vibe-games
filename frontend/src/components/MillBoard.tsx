@@ -26,7 +26,7 @@ interface MillBoardProps {
 }
 
 // Convert index 0-23 to coordinates in a 0-100 viewBox
-export function getPositionCoords(index: number): { x: number; y: number } {
+function getPositionCoords(index: number): { x: number; y: number } {
   const ring = Math.floor(index / 8);
   const pos = index % 8;
   const ringHalfWidths = [42, 28, 14]; // concentric sizes
@@ -79,7 +79,7 @@ export function MillBoard({
         setLoadingNode(index);
         await onAction('remove', { position: index });
         audio.playPlaceSound();
-      } catch (err) {
+      } catch {
         audio.playErrorSound();
       } finally {
         setLoadingNode(null);
@@ -99,7 +99,7 @@ export function MillBoard({
         setLoadingNode(index);
         await onAction('place', { position: index });
         audio.playPlaceSound();
-      } catch (err) {
+      } catch {
         audio.playErrorSound();
       } finally {
         setLoadingNode(null);
@@ -135,7 +135,7 @@ export function MillBoard({
           setSelectedNode(null);
           await onAction('move', { from: fromNode, to: index });
           audio.playPlaceSound();
-        } catch (err) {
+        } catch {
           audio.playErrorSound();
         } finally {
           setLoadingNode(null);

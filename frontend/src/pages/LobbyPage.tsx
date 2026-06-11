@@ -1,8 +1,25 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import * as api from '../api/games';
-import type { GameDto } from '@vibe-games/shared';
+import type { GameDto, UserDto } from '@vibe-games/shared';
 import * as audio from '../components/AudioEffects';
+
+interface GoogleAccountsId {
+  initialize: (config: {
+    client_id: string;
+    callback: (response: { credential: string }) => void | Promise<void>;
+  }) => void;
+  renderButton: (
+    element: HTMLElement | null,
+    options: { theme?: string; size?: string; width?: number }
+  ) => void;
+}
+
+interface GoogleIdentity {
+  accounts: {
+    id: GoogleAccountsId;
+  };
+}
 
 export function LobbyPage() {
   const navigate = useNavigate();
@@ -15,7 +32,7 @@ export function LobbyPage() {
   const [lobbyError, setLobbyError] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
-  const [currentUser, setCurrentUser] = useState<any | null>(null);
+  const [currentUser, setCurrentUser] = useState<UserDto | null>(null);
   const [checkingAuth, setCheckingAuth] = useState(true);
   const [devName, setDevName] = useState('');
   const [devEmail, setDevEmail] = useState('');
@@ -25,16 +42,17 @@ export function LobbyPage() {
   const username = currentUser?.username || 'Guest';
 
   // Polling for open games and user's active games
-  const fetchLobby = async () => {
+  const fetchLobby = useCallback(async () => {
     if (!currentUser) return;
     try {
       const games = await api.listOpenGames();
       // Filter out matches created by this player (since they can't play against themselves)
       setOpenGames(games.filter((g) => g.playerX?.id !== currentUser.id));
       setLobbyError(null);
-    } catch (err: any) {
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : 'Error updating lobby';
       console.error('Failed to load lobby:', err);
-      setLobbyError(err.message || 'Error updating lobby');
+      setLobbyError(errorMsg);
     } finally {
       setLoadingLobby(false);
     }
@@ -45,7 +63,7 @@ export function LobbyPage() {
     } catch (err) {
       console.error('Failed to load active games:', err);
     }
-  };
+  }, [currentUser]);
 
   useEffect(() => {
     const checkSession = async () => {
@@ -66,10 +84,11 @@ export function LobbyPage() {
 
   useEffect(() => {
     if (!currentUser) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchLobby();
     const interval = setInterval(fetchLobby, 3000);
     return () => clearInterval(interval);
-  }, [currentUser]);
+  }, [currentUser, fetchLobby]);
 
   useEffect(() => {
     if (currentUser) return;
@@ -81,10 +100,11 @@ export function LobbyPage() {
     script.defer = true;
     script.onload = () => {
       const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
-      if (googleClientId && (window as any).google) {
-        (window as any).google.accounts.id.initialize({
+      const google = (window as Window & { google?: GoogleIdentity }).google;
+      if (googleClientId && google) {
+        google.accounts.id.initialize({
           client_id: googleClientId,
-          callback: async (response: any) => {
+          callback: async (response: { credential: string }) => {
             setLoggingIn(true);
             try {
               audio.playPlaceSound();
@@ -93,15 +113,15 @@ export function LobbyPage() {
               if (authRes.user) {
                 localStorage.setItem('vibe-games-user-id', authRes.user.id);
               }
-            } catch (err: any) {
+            } catch (err) {
               audio.playErrorSound();
-              alert(err.message || 'Google Login failed');
+              alert(err instanceof Error ? err.message : 'Google Login failed');
             } finally {
               setLoggingIn(false);
             }
           },
         });
-        (window as any).google.accounts.id.renderButton(
+        google.accounts.id.renderButton(
           document.getElementById('google-signin-button'),
           { theme: 'filled_blue', size: 'large', width: 280 }
         );
@@ -120,9 +140,9 @@ export function LobbyPage() {
       audio.playPlaceSound();
       await api.cancelGame(gameId);
       await fetchLobby();
-    } catch (err: any) {
+    } catch (err) {
       audio.playErrorSound();
-      alert(err.message || 'Failed to cancel game');
+      alert(err instanceof Error ? err.message : 'Failed to cancel game');
     }
   };
 
@@ -145,9 +165,9 @@ export function LobbyPage() {
       if (authRes.user) {
         localStorage.setItem('vibe-games-user-id', authRes.user.id);
       }
-    } catch (err: any) {
+    } catch (err) {
       audio.playErrorSound();
-      alert(err.message || 'Developer login failed');
+      alert(err instanceof Error ? err.message : 'Developer login failed');
     } finally {
       setLoggingIn(false);
     }
@@ -160,8 +180,8 @@ export function LobbyPage() {
       await api.logout();
       setCurrentUser(null);
       localStorage.removeItem('vibe-games-user-id');
-    } catch (err: any) {
-      alert(err.message || 'Log out failed');
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Log out failed');
     }
   };
 
@@ -172,8 +192,8 @@ export function LobbyPage() {
       audio.playPlaceSound();
       const newGame = await api.createGame('mill', isPublic, vsAi);
       navigate(`/game/${newGame.id}`);
-    } catch (err: any) {
-      alert(err.message || 'Failed to create game');
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to create game');
     } finally {
       setCreatingGame(false);
     }
@@ -184,8 +204,8 @@ export function LobbyPage() {
       audio.playPlaceSound();
       const joined = await api.joinGame(gameId);
       navigate(`/game/${joined.id}`);
-    } catch (err: any) {
-      alert(err.message || 'Failed to join game');
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to join game');
     }
   };
 
@@ -208,9 +228,9 @@ export function LobbyPage() {
           throw new Error('Game is already full or finished');
         }
       }
-    } catch (err: any) {
+    } catch (err) {
       audio.playErrorSound();
-      alert(err.message || 'Invalid or unjoinable invite code');
+      alert(err instanceof Error ? err.message : 'Invalid or unjoinable invite code');
     } finally {
       setJoiningCode(false);
     }

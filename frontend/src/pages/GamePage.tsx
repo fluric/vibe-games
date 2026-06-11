@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import * as api from '../api/games';
 import type { GameDto, PlayerPiece } from '@vibe-games/shared';
@@ -16,7 +16,13 @@ export function GamePage() {
 
   const userId = api.getUserId();
 
-  const fetchGame = async () => {
+  const getMyPiece = useCallback((g: GameDto): PlayerPiece | null => {
+    if (g.playerX?.id === userId) return 'X';
+    if (g.playerO?.id === userId) return 'O';
+    return null;
+  }, [userId]);
+
+  const fetchGame = useCallback(async () => {
     if (!id) return;
     try {
       const data = await api.getGame(id);
@@ -28,7 +34,7 @@ export function GamePage() {
           setGame(joined);
           setError(null);
           return;
-        } catch (joinErr: any) {
+        } catch (joinErr) {
           console.warn('Failed to auto-join game on load:', joinErr);
         }
       }
@@ -55,16 +61,17 @@ export function GamePage() {
 
       setGame(data);
       setError(null);
-    } catch (err: any) {
+    } catch (err) {
       console.error('Error fetching game details:', err);
-      setError(err.message || 'Failed to load game');
+      setError(err instanceof Error ? err.message : 'Failed to load game');
     } finally {
       setLoading(false);
     }
-  };
+  }, [id, userId, game, getMyPiece]);
 
   // Poll game state
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchGame();
 
     if (!id) return;
@@ -77,13 +84,7 @@ export function GamePage() {
 
     const interval = setInterval(fetchGame, 2000);
     return () => clearInterval(interval);
-  }, [id, game?.status, game?.playerO?.id]);
-
-  const getMyPiece = (g: GameDto): PlayerPiece | null => {
-    if (g.playerX?.id === userId) return 'X';
-    if (g.playerO?.id === userId) return 'O';
-    return null;
-  };
+  }, [id, game?.status, game?.playerO?.id, fetchGame]);
 
   const handleBoardAction = async (
     action: 'place' | 'move' | 'remove',
