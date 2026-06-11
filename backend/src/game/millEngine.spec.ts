@@ -16,6 +16,7 @@ function runTests() {
   testMovementAndFlyingPhases();
   testWinConditionByPieceReduction();
   testWinConditionByBlocking();
+  testPieceReductionDuringPlacement();
 
   console.log('\n✅ All Nine Men\'s Morris Engine tests passed successfully!');
 }
@@ -149,6 +150,8 @@ function testWinConditionByPieceReduction() {
   state.phase = 'movement';
   state.piecesOnBoard.X = 3;
   state.piecesOnBoard.O = 3;
+  state.placementsRemaining.X = 0;
+  state.placementsRemaining.O = 0;
   state.board[0] = 'X';
   state.board[1] = 'X';
   state.board[2] = 'X'; // Mill [0, 1, 2]
@@ -174,6 +177,8 @@ function testWinConditionByBlocking() {
   state.phase = 'movement';
   state.piecesOnBoard.X = 4;
   state.piecesOnBoard.O = 4;
+  state.placementsRemaining.X = 0;
+  state.placementsRemaining.O = 0;
   state.board[0] = 'O'; // O's piece
   state.board[1] = 'X'; // Blocks O
   state.board[7] = 'X'; // Blocks O
@@ -207,6 +212,31 @@ function testWinConditionByBlocking() {
 
   // Since O is blocked and has no valid moves, X should be declared the winner
   assert.strictEqual(state.winner, 'X');
+}
+
+function testPieceReductionDuringPlacement() {
+  console.log('👉 Testing Piece Reduction during Placement Phase...');
+  let state = createInitialState();
+
+  // X places at 0, 1, 2 (forms mill)
+  state = handlePlaceAction(state, 0, 'X');
+  state = handlePlaceAction(state, 8, 'O'); // O places at 8
+  
+  state = handlePlaceAction(state, 1, 'X');
+  state = handlePlaceAction(state, 9, 'O'); // O places at 9
+  
+  state = handlePlaceAction(state, 2, 'X'); // X forms mill [0,1,2]
+  assert.strictEqual(state.millFormedThisTurn, true);
+
+  // X removes O's piece at 8, reducing O to 1 piece on board
+  state = handleRemoveAction(state, 8, 'X');
+
+  // Verify that O has 1 piece on board, 7 placements remaining, and NO winner is declared
+  assert.strictEqual(state.piecesOnBoard.O, 1);
+  assert.strictEqual(state.placementsRemaining.O, 7);
+  assert.strictEqual(state.winner, null);
+  assert.strictEqual(state.phase, 'placement');
+  assert.strictEqual(state.turn, 'O');
 }
 
 // Execute tests

@@ -229,13 +229,13 @@ export function handleRemoveAction(
   let nextTurn: PlayerPiece = player === 'X' ? 'O' : 'X'; // Pass turn after removal is complete
 
   // 3. Check for Win/Loss Condition
-  // If opponent is reduced to 2 pieces, current player wins
-  if (newPiecesOnBoard[opponent] < 3) {
+  const opponentPlacements = state.placementsRemaining[opponent];
+  // If opponent is reduced to less than 3 pieces on the board and has no placements remaining, current player wins
+  if (newPiecesOnBoard[opponent] < 3 && opponentPlacements === 0) {
     nextWinner = player;
   } else {
-    // If opponent has exactly 3 pieces left and they cannot move, check immediately
-    // (though they can fly, so they are only blocked if all spots are occupied, which is impossible with 3 pieces)
-    if (newPiecesOnBoard[opponent] > 3 && !hasValidMoves(newBoard, opponent)) {
+    // If opponent has no placements left and is blocked, current player wins
+    if (opponentPlacements === 0 && newPiecesOnBoard[opponent] > 3 && !hasValidMoves(newBoard, opponent)) {
       nextWinner = player;
     }
   }
