@@ -20,9 +20,29 @@ async function bootstrap() {
   });
 
   await server.register(cors, {
-    origin: process.env.NODE_ENV === 'production'
-      ? false
-      : ['http://localhost:5173'],
+    origin: (origin, cb) => {
+      if (!origin) {
+        cb(null, true);
+        return;
+      }
+      
+      const isLocalhost = origin.startsWith('http://localhost:') || origin.startsWith('http://127.0.0.1:');
+      const isVercel = origin.endsWith('.vercel.app') || new URL(origin).hostname.endsWith('.vercel.app');
+      
+      if (isLocalhost || isVercel) {
+        cb(null, true);
+        return;
+      }
+      
+      const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') ?? [];
+      if (allowedOrigins.includes(origin)) {
+        cb(null, true);
+        return;
+      }
+      
+      cb(new Error('Not allowed by CORS'), false);
+    },
+    credentials: true,
   });
 
   // ── Routes ─────────────────────────────────────────────────────────────────
