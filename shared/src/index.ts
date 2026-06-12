@@ -1,12 +1,16 @@
 // @vibe-games/shared — Shared TypeScript types & interfaces
-// Used by both backend and frontend — no runtime code here.
+// Used by both backend and frontend.
+
+export const API_VERSION = '0.0.1';
 
 // ─── Health ───────────────────────────────────────────────────────────────────
 
 export interface HealthResponse {
   ok: boolean;
   timestamp: string;
-  version: string;
+  version: string;     // npm package version
+  revision: string;    // Git commit hash
+  apiVersion: string;  // API Contract version
   database: boolean;
 }
 

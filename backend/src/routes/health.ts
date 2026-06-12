@@ -1,5 +1,5 @@
 import { FastifyInstance } from 'fastify';
-import { HealthResponse } from '@vibe-games/shared';
+import { HealthResponse, API_VERSION } from '@vibe-games/shared';
 import { AppDataSource } from '../data-source';
 
 export async function healthRoutes(server: FastifyInstance) {
@@ -20,6 +20,8 @@ export async function healthRoutes(server: FastifyInstance) {
       ok,
       timestamp: new Date().toISOString(),
       version: process.env.npm_package_version ?? '0.0.1',
+      revision: process.env.RAILWAY_GIT_COMMIT_SHA ?? 'development',
+      apiVersion: API_VERSION,
       database: databaseConnected,
     });
   });

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import * as api from '../api/games';
-import type { GameDto, UserDto } from '@vibe-games/shared';
+import { API_VERSION, type GameDto, type UserDto } from '@vibe-games/shared';
 import * as audio from '../components/AudioEffects';
 
 interface GoogleAccountsId {
@@ -32,6 +32,10 @@ export function LobbyPage() {
   const [lobbyError, setLobbyError] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
+  const [syncStatus, setSyncStatus] = useState<'synced' | 'warn' | 'mismatch'>('synced');
+  const [backendApiVersion, setBackendApiVersion] = useState<string | null>(null);
+  const [backendRevision, setBackendRevision] = useState<string | null>(null);
+
   const [currentUser, setCurrentUser] = useState<UserDto | null>(null);
   const [checkingAuth, setCheckingAuth] = useState(true);
   const [devName, setDevName] = useState('');
@@ -43,6 +47,46 @@ export function LobbyPage() {
 
   const userId = currentUser?.id || '';
   const username = currentUser?.username || 'Guest';
+
+  const checkVersionSync = useCallback(async () => {
+    let rawApiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+    if (!rawApiUrl.startsWith('http://') && !rawApiUrl.startsWith('https://')) {
+      rawApiUrl = `https://${rawApiUrl}`;
+    }
+    try {
+      const res = await fetch(`${rawApiUrl}/health`);
+      if (!res.ok) throw new Error('Health check request failed');
+      const data = await res.json();
+      
+      const frontendRevision = import.meta.env.VITE_VERCEL_GIT_COMMIT_SHA || 'development';
+      const frontendApiVersion = API_VERSION;
+      
+      setBackendApiVersion(data.apiVersion || null);
+      setBackendRevision(data.revision || null);
+
+      if (data.apiVersion !== frontendApiVersion) {
+        setSyncStatus('mismatch');
+      } else if (data.revision !== frontendRevision) {
+        setSyncStatus('warn');
+      } else {
+        setSyncStatus('synced');
+      }
+    } catch (err) {
+      console.error('Failed to run version sync check:', err);
+    }
+  }, []);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    checkVersionSync();
+  }, [checkVersionSync]);
+
+  useEffect(() => {
+    if (syncStatus === 'synced') return;
+    const intervalTime = syncStatus === 'mismatch' ? 15000 : 30000;
+    const interval = setInterval(checkVersionSync, intervalTime);
+    return () => clearInterval(interval);
+  }, [syncStatus, checkVersionSync]);
 
   // Polling for open games and user's active games
   const fetchLobby = useCallback(async () => {
@@ -224,6 +268,10 @@ export function LobbyPage() {
   };
 
   const handleCreateGame = async (vsAi = false, isPublic = true) => {
+    if (syncStatus === 'mismatch') {
+      alert('Cannot create match: API version mismatch. Please refresh the page.');
+      return;
+    }
     if (creatingGame) return;
     setCreatingGame(true);
     try {
@@ -238,6 +286,10 @@ export function LobbyPage() {
   };
 
   const handleJoinGame = async (gameId: string) => {
+    if (syncStatus === 'mismatch') {
+      alert('Cannot join match: API version mismatch. Please refresh the page.');
+      return;
+    }
     try {
       audio.playPlaceSound();
       const joined = await api.joinGame(gameId);
@@ -249,6 +301,10 @@ export function LobbyPage() {
 
   const handleJoinByCode = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (syncStatus === 'mismatch') {
+      alert('Cannot join match: API version mismatch. Please refresh the page.');
+      return;
+    }
     const trimmedCode = inviteCode.trim();
     if (!trimmedCode) return;
 
@@ -395,6 +451,39 @@ export function LobbyPage() {
           </div>
         </div>
 
+        {/* Version Synchronization Banners */}
+        {syncStatus === 'mismatch' && (
+          <div className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-200 text-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-lg shadow-rose-500/5">
+            <div className="flex items-center gap-3">
+              <span className="text-xl">🚨</span>
+              <div>
+                <p className="font-bold">Critical version mismatch detected</p>
+                <p className="text-xs text-rose-300/80 mt-0.5">
+                  The server has been updated with a newer API version (v{backendApiVersion || '?'}). Please refresh the page to update your client.
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => window.location.reload()}
+              className="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold rounded-xl transition-all shadow-md shadow-rose-600/20 active:scale-95 whitespace-nowrap self-start sm:self-auto"
+            >
+              Refresh Page
+            </button>
+          </div>
+        )}
+
+        {syncStatus === 'warn' && (
+          <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-200 text-sm flex items-start gap-3 shadow-lg shadow-amber-500/5">
+            <span className="text-xl">⚙️</span>
+            <div>
+              <p className="font-bold">System update in progress</p>
+              <p className="text-xs text-amber-300/80 mt-0.5">
+                The background system is being updated (running version {backendRevision?.substring(0, 7) || '?'}). Gameplay remains active.
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* User Card & Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="md:col-span-1 bg-neutral-900/60 border border-neutral-800 rounded-2xl p-6 backdrop-blur-md flex flex-col justify-between">
@@ -440,8 +529,8 @@ export function LobbyPage() {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <button
                 onClick={() => handleCreateGame(true, false)}
-                disabled={creatingGame}
-                className="flex flex-col items-center justify-center gap-2 p-4 rounded-xl bg-gradient-to-b from-neutral-800 to-neutral-900 hover:from-neutral-700 hover:to-neutral-800 border border-neutral-700/50 hover:border-neutral-600 transition-all group active:scale-[0.98]"
+                disabled={creatingGame || syncStatus === 'mismatch'}
+                className="flex flex-col items-center justify-center gap-2 p-4 rounded-xl bg-gradient-to-b from-neutral-800 to-neutral-900 hover:from-neutral-700 hover:to-neutral-800 border border-neutral-700/50 hover:border-neutral-600 transition-all group active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none"
               >
                 <div className="w-10 h-10 rounded-lg bg-indigo-500/10 flex items-center justify-center text-indigo-400 group-hover:scale-110 transition-transform">
                   🤖
@@ -452,8 +541,8 @@ export function LobbyPage() {
 
               <button
                 onClick={() => handleCreateGame(false, true)}
-                disabled={creatingGame}
-                className="flex flex-col items-center justify-center gap-2 p-4 rounded-xl bg-gradient-to-b from-neutral-800 to-neutral-900 hover:from-neutral-700 hover:to-neutral-800 border border-neutral-700/50 hover:border-neutral-600 transition-all group active:scale-[0.98]"
+                disabled={creatingGame || syncStatus === 'mismatch'}
+                className="flex flex-col items-center justify-center gap-2 p-4 rounded-xl bg-gradient-to-b from-neutral-800 to-neutral-900 hover:from-neutral-700 hover:to-neutral-800 border border-neutral-700/50 hover:border-neutral-600 transition-all group active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none"
               >
                 <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-400 group-hover:scale-110 transition-transform">
                   🌍
@@ -464,8 +553,8 @@ export function LobbyPage() {
 
               <button
                 onClick={() => handleCreateGame(false, false)}
-                disabled={creatingGame}
-                className="flex flex-col items-center justify-center gap-2 p-4 rounded-xl bg-gradient-to-b from-neutral-800 to-neutral-900 hover:from-neutral-700 hover:to-neutral-800 border border-neutral-700/50 hover:border-neutral-600 transition-all group active:scale-[0.98]"
+                disabled={creatingGame || syncStatus === 'mismatch'}
+                className="flex flex-col items-center justify-center gap-2 p-4 rounded-xl bg-gradient-to-b from-neutral-800 to-neutral-900 hover:from-neutral-700 hover:to-neutral-800 border border-neutral-700/50 hover:border-neutral-600 transition-all group active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none"
               >
                 <div className="w-10 h-10 rounded-lg bg-rose-500/10 flex items-center justify-center text-rose-400 group-hover:scale-110 transition-transform">
                   🔗
@@ -604,7 +693,8 @@ export function LobbyPage() {
                     </div>
                     <button
                       onClick={() => handleJoinGame(game.id)}
-                      className="px-4 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-xs font-bold text-white transition-colors active:scale-95"
+                      disabled={syncStatus === 'mismatch'}
+                      className="px-4 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 disabled:bg-neutral-800 disabled:text-neutral-600 disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none text-xs font-bold text-white transition-colors active:scale-95"
                     >
                       Join Match
                     </button>
@@ -628,12 +718,13 @@ export function LobbyPage() {
                 placeholder="Paste Game ID / Code"
                 value={inviteCode}
                 onChange={(e) => setInviteCode(e.target.value)}
-                className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2.5 text-xs text-neutral-100 placeholder-neutral-600 focus:outline-none focus:border-neutral-700 transition-all font-mono"
+                disabled={syncStatus === 'mismatch'}
+                className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2.5 text-xs text-neutral-100 placeholder-neutral-600 focus:outline-none focus:border-neutral-700 transition-all font-mono disabled:opacity-50 disabled:cursor-not-allowed"
               />
               <button
                 type="submit"
-                disabled={joiningCode || !inviteCode.trim()}
-                className="w-full py-2.5 rounded-xl bg-neutral-100 hover:bg-white disabled:bg-neutral-800 disabled:text-neutral-600 text-neutral-950 font-bold text-xs transition-all flex items-center justify-center gap-2"
+                disabled={joiningCode || !inviteCode.trim() || syncStatus === 'mismatch'}
+                className="w-full py-2.5 rounded-xl bg-neutral-100 hover:bg-white disabled:bg-neutral-800 disabled:text-neutral-600 disabled:opacity-50 disabled:cursor-not-allowed text-neutral-950 font-bold text-xs transition-all flex items-center justify-center gap-2"
               >
                 {joiningCode ? 'Joining...' : 'Enter Game'}
               </button>
