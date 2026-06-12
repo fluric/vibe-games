@@ -93,6 +93,17 @@ export function LobbyPage() {
     return () => clearInterval(interval);
   }, [currentUser, fetchLobby]);
 
+  // Handle redirect on successful login if redirect query parameter exists
+  useEffect(() => {
+    if (currentUser) {
+      const params = new URLSearchParams(window.location.search);
+      const redirectUrl = params.get('redirect');
+      if (redirectUrl) {
+        navigate(redirectUrl, { replace: true });
+      }
+    }
+  }, [currentUser, navigate]);
+
   // Load Google GSI client script dynamically
   useEffect(() => {
     if (currentUser || gsiLoaded) return;

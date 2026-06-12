@@ -89,4 +89,42 @@ test.describe('Vibe Games Matchmaking & Gameplay E2E', () => {
     // Wait for the match to be deleted and removed from the UI list
     await expect(activeHeader).not.toBeVisible();
   });
+
+  test('should redirect unauthenticated user from game link to lobby, and navigate back after login', async ({ browser }) => {
+    // Create isolated host and guest contexts
+    const hostContext = await browser.newContext();
+    const guestContext = await browser.newContext();
+
+    const hostPage = await hostContext.newPage();
+    const guestPage = await guestContext.newPage();
+
+    // 1. Create a game first as host
+    const testId = Math.random().toString(36).substring(2, 11);
+    await hostPage.goto('/');
+    await hostPage.fill('input[placeholder="Developer Name"]', `Host_${testId}`);
+    await hostPage.fill('input[placeholder="developer@vibegames.local"]', `host-${testId}@vibegames.local`);
+    await hostPage.click('button[type="submit"]');
+    await hostPage.click('button:has-text("Host Private")');
+    await hostPage.waitForURL(/\/game\/[a-f0-9-]+/);
+    const gameUrl = hostPage.url();
+
+    // 2. Open the game link in the clean guest page
+    await guestPage.goto(gameUrl);
+
+    // 3. Verify it redirects to the lobby with the redirect query parameter
+    await expect(guestPage).toHaveURL(new RegExp(`\\/\\?redirect=%2Fgame%2F[a-f0-9-]+`));
+
+    // 4. Perform login on the guest page
+    const guestId = Math.random().toString(36).substring(2, 11);
+    await guestPage.fill('input[placeholder="Developer Name"]', `Guest_${guestId}`);
+    await guestPage.fill('input[placeholder="developer@vibegames.local"]', `guest-${guestId}@vibegames.local`);
+    await guestPage.click('button[type="submit"]');
+
+    // 5. Verify it automatically navigates back to the game page
+    await expect(guestPage).toHaveURL(new RegExp(gameUrl));
+    
+    // Cleanup contexts
+    await hostContext.close();
+    await guestContext.close();
+  });
 });

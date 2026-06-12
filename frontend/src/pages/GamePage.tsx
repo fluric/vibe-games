@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import * as api from '../api/games';
-import type { GameDto, PlayerPiece } from '@vibe-games/shared';
+import type { GameDto, PlayerPiece, UserDto } from '@vibe-games/shared';
 import { MillBoard } from '../components/MillBoard';
 import * as audio from '../components/AudioEffects';
 
@@ -9,18 +9,50 @@ const AI_USER_ID = '00000000-0000-0000-0000-000000000000';
 
 export function GamePage() {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const [game, setGame] = useState<GameDto | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [currentUser, setCurrentUser] = useState<UserDto | null>(null);
+  const [checkingAuth, setCheckingAuth] = useState(true);
 
-  const userId = api.getUserId();
+  const userId = currentUser?.id || api.getUserId();
 
   const getMyPiece = useCallback((g: GameDto): PlayerPiece | null => {
     if (g.playerX?.id === userId) return 'X';
     if (g.playerO?.id === userId) return 'O';
     return null;
   }, [userId]);
+  // Check user session on mount with active guard to prevent unmounted double-redirect race conditions
+  useEffect(() => {
+    let active = true;
+    const checkSession = async () => {
+      try {
+        const res = await api.getAuthMe();
+        if (!active) return;
+        if (res.user) {
+          setCurrentUser(res.user);
+          localStorage.setItem('vibe-games-user-id', res.user.id);
+        } else {
+          navigate(`/?redirect=${encodeURIComponent(window.location.pathname + window.location.search)}`, { replace: true });
+        }
+      } catch (err) {
+        console.error('Session check failed:', err);
+        if (active) {
+          navigate(`/?redirect=${encodeURIComponent(window.location.pathname + window.location.search)}`, { replace: true });
+        }
+      } finally {
+        if (active) {
+          setCheckingAuth(false);
+        }
+      }
+    };
+    checkSession();
+    return () => {
+      active = false;
+    };
+  }, [navigate]);
 
   const fetchGame = useCallback(async () => {
     if (!id) return;
@@ -71,6 +103,7 @@ export function GamePage() {
 
   // Poll game state
   useEffect(() => {
+    if (checkingAuth) return;
     // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchGame();
 
@@ -84,7 +117,7 @@ export function GamePage() {
 
     const interval = setInterval(fetchGame, 2000);
     return () => clearInterval(interval);
-  }, [id, game?.status, game?.playerO?.id, fetchGame]);
+  }, [id, game?.status, game?.playerO?.id, fetchGame, checkingAuth]);
 
   const handleBoardAction = async (
     action: 'place' | 'move' | 'remove',
@@ -123,12 +156,12 @@ export function GamePage() {
     });
   };
 
-  if (loading) {
+  if (loading || checkingAuth) {
     return (
       <div className="min-h-screen bg-neutral-950 text-neutral-100 flex items-center justify-center font-sans">
         <div className="flex flex-col items-center gap-4">
           <div className="w-10 h-10 rounded-full border-2 border-t-indigo-500 border-neutral-800 animate-spin" />
-          <p className="text-sm text-neutral-400">Loading game board...</p>
+          <p className="text-sm text-neutral-400">Loading game session...</p>
         </div>
       </div>
     );
