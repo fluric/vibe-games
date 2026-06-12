@@ -3,8 +3,17 @@ import { AppDataSource } from '../data-source';
 import { IsNull, In } from 'typeorm';
 import { Game } from '../entities/Game';
 import { User } from '../entities/User';
-import { GameDto, UserDto, PlayerPiece } from '@vibe-games/shared';
-import jwt from 'jsonwebtoken';
+import { UserStats } from '../entities/UserStats';
+import { GameDto, UserDto, PlayerPiece, GameType } from '@vibe-games/shared';
+import { calculateElo } from '../game/elo';
+import { getAiAction } from '../game/millAi';
+const aiConfig: Record<string, { id: string; username: string; elo: number; type: string; depth?: number }> = require('../game/aiConfig.json');
+import {
+  createInitialState,
+  handlePlaceAction,
+  handleMoveAction,
+  handleRemoveAction,
+} from '../game/millEngine';
 
 declare module 'fastify' {
   interface FastifyRequest {
@@ -12,50 +21,110 @@ declare module 'fastify' {
   }
 }
 
-const JWT_SECRET = process.env.JWT_SECRET || 'vibe-games-default-secret-key-do-not-use-in-prod';
-import {
-  createInitialState,
-  handlePlaceAction,
-  handleMoveAction,
-  handleRemoveAction,
-} from '../game/millEngine';
-import {
-  getBestPlaceMove,
-  getBestMove,
-  getBestRemoval,
-} from '../game/millAi';
-
-const AI_USER_ID = '00000000-0000-0000-0000-000000000000';
+// BOTS configuration lookup map
+const BOTS_MAP = new Map<string, { username: string; elo: number; type: string; depth?: number }>();
+for (const [key, val] of Object.entries(aiConfig)) {
+  BOTS_MAP.set(val.id, { username: val.username, elo: val.elo, type: val.type, depth: (val as any).depth });
+}
 
 async function getOrCreateUser(userId: string): Promise<User> {
   const userRepo = AppDataSource.getRepository(User);
   let user = await userRepo.findOneBy({ id: userId });
   if (!user) {
+    const botInfo = BOTS_MAP.get(userId);
     user = userRepo.create({
       id: userId,
-      username: userId === AI_USER_ID ? 'AI Opponent' : `Player_${userId.substring(0, 5)}`,
+      username: botInfo ? botInfo.username : `Player_${userId.substring(0, 5)}`,
+      googleId: botInfo ? `bot-${botInfo.type}` : undefined,
+      email: botInfo ? `bot-${botInfo.type}@vibegames.local` : undefined,
     });
-    await userRepo.save(user);
+    try {
+      await userRepo.save(user);
+    } catch (err) {
+      const existing = await userRepo.findOneBy({ id: userId });
+      if (existing) {
+        user = existing;
+      } else {
+        throw err;
+      }
+    }
   }
   return user;
 }
 
-function toUserDto(user: User | null): UserDto | null {
+async function seedBots() {
+  const userRepo = AppDataSource.getRepository(User);
+  const userStatsRepo = AppDataSource.getRepository(UserStats);
+
+  for (const bot of Object.values(aiConfig)) {
+    let existing = await userRepo.findOneBy({ id: bot.id });
+    if (!existing) {
+      existing = userRepo.create({
+        id: bot.id,
+        username: bot.username,
+        googleId: `bot-${bot.type}`,
+        email: `bot-${bot.type}@vibegames.local`,
+      });
+      try {
+        await userRepo.save(existing);
+      } catch (err) {
+        // Safe to ignore if concurrent seed process inserted first
+      }
+    }
+
+    let stats = await userStatsRepo.findOneBy({ userId: bot.id, gameType: 'mill' });
+    if (!stats) {
+      stats = userStatsRepo.create({
+        userId: bot.id,
+        gameType: 'mill',
+        elo: bot.elo,
+      });
+      try {
+        await userStatsRepo.save(stats);
+      } catch (err) {
+        // Safe to ignore if concurrent seed process inserted first
+      }
+    }
+  }
+}
+
+async function toUserDto(user: User | null, gameType: GameType): Promise<UserDto | null> {
   if (!user) return null;
+
+  const botInfo = BOTS_MAP.get(user.id);
+  if (botInfo) {
+    return {
+      id: user.id,
+      username: botInfo.username,
+      createdAt: user.createdAt.toISOString(),
+      avatarUrl: user.avatarUrl,
+      elo: botInfo.elo,
+    };
+  }
+
+  const statsRepo = AppDataSource.getRepository(UserStats);
+  const stats = await statsRepo.findOneBy({ userId: user.id, gameType });
+
   return {
     id: user.id,
     username: user.username,
     createdAt: user.createdAt.toISOString(),
+    avatarUrl: user.avatarUrl,
+    email: user.email,
+    elo: stats ? stats.elo : 1200,
+    wins: stats ? stats.wins : 0,
+    losses: stats ? stats.losses : 0,
+    draws: stats ? stats.draws : 0,
   };
 }
 
-function toGameDto(game: Game): GameDto {
+async function toGameDto(game: Game): Promise<GameDto> {
   return {
     id: game.id,
     gameType: game.gameType,
     status: game.status,
-    playerX: toUserDto(game.playerX),
-    playerO: toUserDto(game.playerO),
+    playerX: await toUserDto(game.playerX, game.gameType),
+    playerO: await toUserDto(game.playerO, game.gameType),
     winnerId: game.winnerId,
     state: game.state,
     isPublic: game.isPublic,
@@ -64,49 +133,133 @@ function toGameDto(game: Game): GameDto {
   };
 }
 
+async function handleGameFinished(game: Game) {
+  if (game.status !== 'finished') return;
+
+  const playerXId = game.playerXId;
+  const playerOId = game.playerOId;
+  const winner = game.state.winner; // 'X' | 'O' | 'draw'
+
+  if (!playerXId || !playerOId) return;
+
+  const userStatsRepo = AppDataSource.getRepository(UserStats);
+
+  let xStats = await userStatsRepo.findOneBy({ userId: playerXId, gameType: game.gameType });
+  if (!xStats) {
+    xStats = userStatsRepo.create({
+      userId: playerXId,
+      gameType: game.gameType,
+      elo: 1200,
+      wins: 0,
+      losses: 0,
+      draws: 0,
+    });
+  }
+
+  let oStats = await userStatsRepo.findOneBy({ userId: playerOId, gameType: game.gameType });
+  if (!oStats) {
+    const botInfo = BOTS_MAP.get(playerOId);
+    oStats = userStatsRepo.create({
+      userId: playerOId,
+      gameType: game.gameType,
+      elo: botInfo ? botInfo.elo : 1200,
+      wins: 0,
+      losses: 0,
+      draws: 0,
+    });
+  }
+
+  const oldXElo = xStats.elo;
+  const oldOElo = oStats.elo;
+
+  let xOutcome: 1 | 0.5 | 0 = 0.5;
+  let oOutcome: 1 | 0.5 | 0 = 0.5;
+
+  if (winner === 'X') {
+    xOutcome = 1;
+    oOutcome = 0;
+    xStats.wins += 1;
+    oStats.losses += 1;
+  } else if (winner === 'O') {
+    xOutcome = 0;
+    oOutcome = 1;
+    xStats.losses += 1;
+    oStats.wins += 1;
+  } else {
+    xStats.draws += 1;
+    oStats.draws += 1;
+  }
+
+  const newXElo = calculateElo(oldXElo, oldOElo, xOutcome);
+  const newOElo = calculateElo(oldOElo, oldXElo, oOutcome);
+
+  const isXBot = BOTS_MAP.has(playerXId);
+  const isOBot = BOTS_MAP.has(playerOId);
+
+  if (!isXBot) {
+    xStats.elo = newXElo;
+    try {
+      await userStatsRepo.save(xStats);
+    } catch (err) {
+      const existing = await userStatsRepo.findOneBy({ userId: playerXId, gameType: game.gameType });
+      if (existing) {
+        existing.wins += winner === 'X' ? 1 : 0;
+        existing.losses += winner === 'O' ? 1 : 0;
+        existing.draws += winner === 'draw' ? 1 : 0;
+        existing.elo = calculateElo(existing.elo, oldOElo, xOutcome);
+        await userStatsRepo.save(existing);
+      } else {
+        throw err;
+      }
+    }
+  }
+
+  if (!isOBot) {
+    oStats.elo = newOElo;
+    try {
+      await userStatsRepo.save(oStats);
+    } catch (err) {
+      const existing = await userStatsRepo.findOneBy({ userId: playerOId, gameType: game.gameType });
+      if (existing) {
+        existing.wins += winner === 'O' ? 1 : 0;
+        existing.losses += winner === 'X' ? 1 : 0;
+        existing.draws += winner === 'draw' ? 1 : 0;
+        existing.elo = calculateElo(existing.elo, oldXElo, oOutcome);
+        await userStatsRepo.save(existing);
+      } else {
+        throw err;
+      }
+    }
+  }
+}
+
 export async function gameRoutes(server: FastifyInstance) {
+  // Automatically seed bots when routes load
+  await seedBots();
+
   // Plugin-level authentication hook (guarantees auth runs inside tests as well)
   server.addHook('preHandler', async (request) => {
     if (request.user) return; // already populated globally
 
-    // 1. Try cookie session
-    const sessionCookie = (request as any).cookies?.session;
-    if (sessionCookie) {
-      try {
-        const decoded = jwt.verify(sessionCookie, JWT_SECRET) as { userId: string };
-        const userRepo = AppDataSource.getRepository(User);
-        const user = await userRepo.findOneBy({ id: decoded.userId });
-        if (user) {
-          request.user = user;
-          return;
-        }
-      } catch (err) {
-        // Ignore
-      }
-    }
-
-    // 2. Try x-user-id header fallback
-    const userIdHeader = request.headers['x-user-id'] as string;
-    if (userIdHeader) {
+    // Fallback: Check custom user header (backward compatibility for dev/tests)
+    const headerUserId = request.headers['x-user-id'] as string;
+    if (headerUserId) {
       const userRepo = AppDataSource.getRepository(User);
-      let user = await userRepo.findOneBy({ id: userIdHeader });
-      if (!user) {
-        user = userRepo.create({
-          id: userIdHeader,
-          username: `Player_${userIdHeader.substring(0, 5)}`,
-        });
-        await userRepo.save(user);
+      const user = await userRepo.findOneBy({ id: headerUserId });
+      if (user) {
+        request.user = user;
+        return;
       }
-      request.user = user;
     }
   });
 
   // 1. Create a Game
   server.post<{
     Body: {
-      gameType: 'mill';
+      gameType: GameType;
       isPublic?: boolean;
       vsAi?: boolean;
+      aiLevel?: 'easy' | 'medium' | 'hard';
     };
   }>('/', async (request, reply) => {
     const user = request.user;
@@ -114,7 +267,7 @@ export async function gameRoutes(server: FastifyInstance) {
       return reply.code(401).send({ error: 'Unauthorized' });
     }
 
-    const { gameType, isPublic = true, vsAi = false } = request.body;
+    const { gameType, isPublic = true, vsAi = false, aiLevel = 'medium' } = request.body;
     if (gameType !== 'mill') {
       return reply.code(400).send({ error: 'Unsupported game type' });
     }
@@ -125,8 +278,10 @@ export async function gameRoutes(server: FastifyInstance) {
     let playerOId = null;
     let playerO = null;
     if (vsAi) {
-      playerO = await getOrCreateUser(AI_USER_ID);
-      playerOId = AI_USER_ID;
+      const botKey = (aiLevel === 'easy' || aiLevel === 'medium' || aiLevel === 'hard') ? aiLevel : 'medium';
+      const botConfig = aiConfig[botKey];
+      playerO = await getOrCreateUser(botConfig.id);
+      playerOId = botConfig.id;
     }
 
     const game = gameRepo.create({
@@ -141,10 +296,10 @@ export async function gameRoutes(server: FastifyInstance) {
     });
 
     await gameRepo.save(game);
-    return reply.send(toGameDto(game));
+    return reply.send(await toGameDto(game));
   });
 
-  // 2. Get Open Games (Lobby list)
+  // 2. Get Open Public Games
   server.get('/', async (request, reply) => {
     const gameRepo = AppDataSource.getRepository(Game);
     const openGames = await gameRepo.find({
@@ -157,7 +312,7 @@ export async function gameRoutes(server: FastifyInstance) {
       order: { createdAt: 'DESC' },
     });
 
-    return reply.send(openGames.map(toGameDto));
+    return reply.send(await Promise.all(openGames.map(toGameDto)));
   });
 
   // Get User's Active Games
@@ -178,7 +333,7 @@ export async function gameRoutes(server: FastifyInstance) {
       order: { updatedAt: 'DESC' },
     });
 
-    return reply.send(myGames.map(toGameDto));
+    return reply.send(await Promise.all(myGames.map(toGameDto)));
   });
 
   // 3. Get Game Details
@@ -193,7 +348,7 @@ export async function gameRoutes(server: FastifyInstance) {
       return reply.code(404).send({ error: 'Game not found' });
     }
 
-    return reply.send(toGameDto(game));
+    return reply.send(await toGameDto(game));
   });
 
   // 4. Join a Game (Invite Link / Lobby list selection)
@@ -226,7 +381,7 @@ export async function gameRoutes(server: FastifyInstance) {
     game.status = 'in_progress';
 
     await gameRepo.save(game);
-    return reply.send(toGameDto(game));
+    return reply.send(await toGameDto(game));
   });
 
   // 4.5 Cancel a Game (Lobby slot cancellation by creator)
@@ -289,8 +444,9 @@ export async function gameRoutes(server: FastifyInstance) {
       winner: winnerPiece,
     };
 
+    await handleGameFinished(game);
     await gameRepo.save(game);
-    return reply.send(toGameDto(game));
+    return reply.send(await toGameDto(game));
   });
 
   // 5. Submit a Move (Perform place, move, or remove and trigger AI response)
@@ -322,7 +478,6 @@ export async function gameRoutes(server: FastifyInstance) {
       return reply.code(400).send({ error: 'Game is not in progress' });
     }
 
-    // Determine X vs O
     const playerPiece: PlayerPiece =
       game.playerXId === userId ? 'X' : game.playerOId === userId ? 'O' : (null as any);
     if (!playerPiece) {
@@ -354,36 +509,32 @@ export async function gameRoutes(server: FastifyInstance) {
       return reply.code(400).send({ error: err.message });
     }
 
-    // Check if player ended the game
     if (game.state.winner) {
       game.status = 'finished';
       game.winnerId = game.state.winner === 'X' ? game.playerXId : game.playerOId;
     }
 
     // ── AI Opponent Logic Loop ───────────────────────────────────────────────
-    let aiActive = !game.state.winner && game.playerOId === AI_USER_ID;
+    let aiActive = !game.state.winner && BOTS_MAP.has(game.playerOId!);
     while (aiActive && game.state.turn === 'O') {
       try {
-        if (game.state.millFormedThisTurn) {
-          const removePos = getBestRemoval(game.state.board);
-          game.state = handleRemoveAction(game.state, removePos, 'O');
-        } else if (game.state.phase === 'placement') {
-          const placePos = getBestPlaceMove(game.state.board);
-          game.state = handlePlaceAction(game.state, placePos, 'O');
-        } else {
-          const canFly = game.state.piecesOnBoard.O === 3;
-          const aiMove = getBestMove(game.state.board, canFly);
-          game.state = handleMoveAction(game.state, aiMove.from, aiMove.to, 'O');
+        const botInfo = BOTS_MAP.get(game.playerOId!)!;
+        const aiAction = getAiAction(game.state, botInfo.type as any, botInfo.depth);
+
+        if (aiAction.type === 'place') {
+          game.state = handlePlaceAction(game.state, aiAction.position!, 'O');
+        } else if (aiAction.type === 'move') {
+          game.state = handleMoveAction(game.state, aiAction.from!, aiAction.to!, 'O');
+        } else if (aiAction.type === 'remove') {
+          game.state = handleRemoveAction(game.state, aiAction.position!, 'O');
         }
 
-        // Check for AI victory
         if (game.state.winner) {
           game.status = 'finished';
           game.winnerId = game.state.winner === 'X' ? game.playerXId : game.playerOId;
           aiActive = false;
         }
       } catch (err) {
-        // Fallback: declare player 'X' the winner if the AI encounters an error/blocking state
         game.status = 'finished';
         game.winnerId = game.playerXId;
         game.state.winner = 'X';
@@ -391,7 +542,11 @@ export async function gameRoutes(server: FastifyInstance) {
       }
     }
 
+    if (game.status === 'finished') {
+      await handleGameFinished(game);
+    }
+
     await gameRepo.save(game);
-    return reply.send(toGameDto(game));
+    return reply.send(await toGameDto(game));
   });
 }

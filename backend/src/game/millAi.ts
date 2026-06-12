@@ -1,11 +1,56 @@
-import { PlayerPiece } from '@vibe-games/shared';
+import { PlayerPiece, MillGameState } from '@vibe-games/shared';
 import {
   ADJACENCY_LIST,
   didFormNewMill,
-  isAdjacent,
   isPieceInMill,
   areAllPiecesInMills,
 } from './millRules';
+import { getBestMinimaxMove, getValidActions, AiAction } from './minimaxAi';
+
+/**
+ * Dispatcher function that returns the AI action based on requested level type
+ */
+export function getAiAction(
+  state: MillGameState,
+  type: 'random' | 'heuristic' | 'minimax',
+  depth: number = 3
+): AiAction {
+  if (type === 'random') {
+    const valid = getValidActions(state);
+    if (valid.length === 0) {
+      throw new Error('AI opponent has no valid actions');
+    }
+    const randomIndex = Math.floor(Math.random() * valid.length);
+    return valid[randomIndex];
+  }
+
+  if (type === 'minimax') {
+    return getBestMinimaxMove(state, depth);
+  }
+
+  // Fallback to Heuristics (Medium)
+  if (state.millFormedThisTurn) {
+    return {
+      type: 'remove',
+      position: getBestRemoval(state.board),
+    };
+  }
+
+  if (state.phase === 'placement') {
+    return {
+      type: 'place',
+      position: getBestPlaceMove(state.board),
+    };
+  }
+
+  const canFly = state.piecesOnBoard.O === 3;
+  const move = getBestMove(state.board, canFly);
+  return {
+    type: 'move',
+    from: move.from,
+    to: move.to,
+  };
+}
 
 /**
  * Returns the best position to place a piece for the AI.
@@ -112,7 +157,6 @@ export function getBestMove(
   }
 
   // Heuristic 2: Can we block the opponent from forming a mill?
-  // First, find all empty spots where the opponent can move and form a mill
   const opponentPieces: number[] = [];
   for (let i = 0; i < board.length; i++) {
     if (board[i] === opponent) {

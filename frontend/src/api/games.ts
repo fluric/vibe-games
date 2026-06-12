@@ -53,11 +53,12 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 export async function createGame(
   gameType: 'mill',
   isPublic = true,
-  vsAi = false
+  vsAi = false,
+  aiLevel?: 'easy' | 'medium' | 'hard'
 ): Promise<GameDto> {
   return request<GameDto>('/games', {
     method: 'POST',
-    body: JSON.stringify({ gameType, isPublic, vsAi }),
+    body: JSON.stringify({ gameType, isPublic, vsAi, aiLevel }),
   });
 }
 

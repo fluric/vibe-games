@@ -31,6 +31,7 @@ export function LobbyPage() {
   const [joiningCode, setJoiningCode] = useState(false);
   const [lobbyError, setLobbyError] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [aiLevel, setAiLevel] = useState<'easy' | 'medium' | 'hard'>('medium');
 
   const [syncStatus, setSyncStatus] = useState<'synced' | 'warn' | 'mismatch'>('synced');
   const [backendApiVersion, setBackendApiVersion] = useState<string | null>(null);
@@ -279,7 +280,7 @@ export function LobbyPage() {
     }
   };
 
-  const handleCreateGame = async (vsAi = false, isPublic = true) => {
+  const handleCreateGame = async (vsAi = false, isPublic = true, selectedAiLevel?: 'easy' | 'medium' | 'hard') => {
     if (syncStatus === 'mismatch') {
       alert('Cannot create match: API version mismatch. Please refresh the page.');
       return;
@@ -288,7 +289,7 @@ export function LobbyPage() {
     setCreatingGame(true);
     try {
       audio.playPlaceSound();
-      const newGame = await api.createGame('mill', isPublic, vsAi);
+      const newGame = await api.createGame('mill', isPublic, vsAi, selectedAiLevel);
       navigate(`/game/${newGame.id}`);
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Failed to create game');
@@ -520,12 +521,12 @@ export function LobbyPage() {
             <div className="border-t border-neutral-800 pt-4 mt-6">
               <div className="flex justify-between items-center text-sm">
                 <span className="text-neutral-400">Nine Men's Morris Rating:</span>
-                <span className="font-bold text-indigo-400">1200 ELO</span>
+                <span className="font-bold text-indigo-400">{currentUser?.elo ?? 1200} ELO</span>
               </div>
               <div className="flex gap-4 text-xs text-neutral-500 mt-2">
-                <span>Wins: <strong className="text-emerald-400">0</strong></span>
-                <span>Losses: <strong className="text-rose-500">0</strong></span>
-                <span>Draws: <strong className="text-neutral-400">0</strong></span>
+                <span>Wins: <strong className="text-emerald-400">{currentUser?.wins ?? 0}</strong></span>
+                <span>Losses: <strong className="text-rose-500">{currentUser?.losses ?? 0}</strong></span>
+                <span>Draws: <strong className="text-neutral-400">{currentUser?.draws ?? 0}</strong></span>
               </div>
             </div>
           </div>
@@ -538,18 +539,43 @@ export function LobbyPage() {
                 Launch a match of Nine Men's Morris ("Mill") immediately.
               </p>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <button
-                onClick={() => handleCreateGame(true, false)}
-                disabled={creatingGame || syncStatus === 'mismatch'}
-                className="flex flex-col items-center justify-center gap-2 p-4 rounded-xl bg-gradient-to-b from-neutral-800 to-neutral-900 hover:from-neutral-700 hover:to-neutral-800 border border-neutral-700/50 hover:border-neutral-600 transition-all group active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none"
-              >
-                <div className="w-10 h-10 rounded-lg bg-indigo-500/10 flex items-center justify-center text-indigo-400 group-hover:scale-110 transition-transform">
-                  🤖
+            <div className="flex flex-col gap-4">
+              <div className="flex items-center gap-3 bg-neutral-950/40 border border-neutral-800/80 rounded-xl p-3">
+                <span className="text-xs text-neutral-400 font-semibold shrink-0">Bot Difficulty:</span>
+                <div className="flex gap-1.5 w-full">
+                  {(['easy', 'medium', 'hard'] as const).map((level) => (
+                    <button
+                      key={level}
+                      type="button"
+                      onClick={() => setAiLevel(level)}
+                      className={`flex-1 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider border transition-all ${
+                        aiLevel === level
+                          ? level === 'easy'
+                            ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
+                            : level === 'medium'
+                            ? 'bg-amber-500/10 text-amber-400 border-amber-500/30'
+                            : 'bg-rose-500/10 text-rose-400 border-rose-500/30'
+                          : 'bg-neutral-900 border-transparent text-neutral-500 hover:text-neutral-300'
+                      }`}
+                    >
+                      {level === 'easy' ? '🟢 Easy' : level === 'medium' ? '🟡 Medium' : '🔴 Hard'}
+                    </button>
+                  ))}
                 </div>
-                <span className="font-bold text-xs text-white">Play vs AI</span>
-                <span className="text-[10px] text-neutral-500 text-center">Practice offline</span>
-              </button>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <button
+                  onClick={() => handleCreateGame(true, false, aiLevel)}
+                  disabled={creatingGame || syncStatus === 'mismatch'}
+                  className="flex flex-col items-center justify-center gap-2 p-4 rounded-xl bg-gradient-to-b from-neutral-800 to-neutral-900 hover:from-neutral-700 hover:to-neutral-800 border border-neutral-700/50 hover:border-neutral-600 transition-all group active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none"
+                >
+                  <div className="w-10 h-10 rounded-lg bg-indigo-500/10 flex items-center justify-center text-indigo-400 group-hover:scale-110 transition-transform">
+                    🤖
+                  </div>
+                  <span className="font-bold text-xs text-white">Play vs AI</span>
+                  <span className="text-[10px] text-neutral-500 text-center">Practice offline</span>
+                </button>
 
               <button
                 onClick={() => handleCreateGame(false, true)}
@@ -577,6 +603,7 @@ export function LobbyPage() {
             </div>
           </div>
         </div>
+      </div>
 
         {/* Active Matches Section */}
         {activeGames.length > 0 && (

@@ -22,6 +22,10 @@ export interface UserDto {
   createdAt: string; // ISO 8601
   avatarUrl?: string | null;
   email?: string | null;
+  elo?: number;
+  wins?: number;
+  losses?: number;
+  draws?: number;
 }
 
 export interface AuthStatusResponse {

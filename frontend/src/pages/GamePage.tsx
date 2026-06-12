@@ -5,7 +5,17 @@ import type { GameDto, PlayerPiece, UserDto } from '@vibe-games/shared';
 import { MillBoard } from '../components/MillBoard';
 import * as audio from '../components/AudioEffects';
 
-const AI_USER_ID = '00000000-0000-0000-0000-000000000000';
+const AI_BOT_IDS = [
+  '00000000-0000-0000-0000-000000000000', // legacy
+  '00000000-0000-0000-0000-000000000001', // easy
+  '00000000-0000-0000-0000-000000000002', // medium
+  '00000000-0000-0000-0000-000000000003', // hard
+];
+
+function isBotId(id?: string): boolean {
+  if (!id) return false;
+  return AI_BOT_IDS.includes(id);
+}
 
 export function GamePage() {
   const { id } = useParams<{ id: string }>();
@@ -110,14 +120,14 @@ export function GamePage() {
     if (!id) return;
     
     // Set up polling interval only if game is not finished and not an AI game
-    const isAiGame = game?.playerO?.id === AI_USER_ID;
+    const isAiGame = game?.playerO ? isBotId(game.playerO.id) : false;
     const isFinished = game?.status === 'finished';
 
     if (isFinished || isAiGame) return;
 
     const interval = setInterval(fetchGame, 2000);
     return () => clearInterval(interval);
-  }, [id, game?.status, game?.playerO?.id, fetchGame, checkingAuth]);
+  }, [id, game?.status, game?.playerO, fetchGame, checkingAuth]);
 
   const handleBoardAction = async (
     action: 'place' | 'move' | 'remove',
@@ -214,7 +224,7 @@ export function GamePage() {
   const isSpectator = myPiece === null;
   const opponent = myPiece === 'X' ? game.playerO : game.playerX;
   const isMyTurn = game.status === 'in_progress' && game.state.turn === myPiece && !isSpectator;
-  const isAiOpponent = game.playerO?.id === AI_USER_ID;
+  const isAiOpponent = game.playerO ? isBotId(game.playerO.id) : false;
 
   // Inventory numbers: total starting pieces is 9
   // Placed pieces = piecesOnBoard.X
@@ -359,7 +369,7 @@ export function GamePage() {
                   <h3 className="text-sm font-bold text-white truncate">
                     {game.playerX?.username || 'Waiting...'}
                   </h3>
-                  <span className="text-[9px] text-neutral-500">Morris Rating: 1200</span>
+                  <span className="text-[9px] text-neutral-500">Morris Rating: {game.playerX?.elo ?? 1200}</span>
                 </div>
               </div>
               <div className="border-t border-neutral-800/80 pt-3 mt-3 flex flex-col gap-1.5 text-xs text-neutral-400">
@@ -421,10 +431,10 @@ export function GamePage() {
                 )}
                 <div className="flex flex-col min-w-0">
                   <h3 className="text-sm font-bold text-white truncate">
-                    {isAiOpponent ? 'AI Opponent' : game.playerO?.username || 'Waiting...'}
+                    {game.playerO?.username || 'Waiting...'}
                   </h3>
                   <span className="text-[9px] text-neutral-500">
-                    {isAiOpponent ? 'Local Bot' : 'Morris Rating: 1200'}
+                    {game.playerO ? `Morris Rating: ${game.playerO.elo ?? 1200}` : 'Waiting...'}
                   </span>
                 </div>
               </div>

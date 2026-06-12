@@ -90,11 +90,21 @@ async function bootstrap() {
       const userRepo = AppDataSource.getRepository(User);
       let user = await userRepo.findOneBy({ id: userIdHeader });
       if (!user) {
-        user = userRepo.create({
-          id: userIdHeader,
-          username: `Player_${userIdHeader.substring(0, 5)}`,
-        });
-        await userRepo.save(user);
+        try {
+          user = userRepo.create({
+            id: userIdHeader,
+            username: `Player_${userIdHeader.substring(0, 5)}`,
+          });
+          await userRepo.save(user);
+        } catch (err) {
+          // If a concurrent request inserted this user first, fetch it
+          const existing = await userRepo.findOneBy({ id: userIdHeader });
+          if (existing) {
+            user = existing;
+          } else {
+            throw err;
+          }
+        }
       }
       request.user = user;
     }

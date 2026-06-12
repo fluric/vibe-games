@@ -1,0 +1,21 @@
+{
+  "easy": {
+    "id": "00000000-0000-0000-0000-000000000001",
+    "username": "Bot (Easy)",
+    "elo": 0,
+    "type": "random"
+  },
+  "medium": {
+    "id": "00000000-0000-0000-0000-000000000002",
+    "username": "Bot (Medium)",
+    "elo": 971,
+    "type": "heuristic"
+  },
+  "hard": {
+    "id": "00000000-0000-0000-0000-000000000003",
+    "username": "Bot (Hard)",
+    "elo": 1229,
+    "type": "minimax",
+    "depth": 3
+  }
+}

@@ -3,6 +3,7 @@ import { OAuth2Client } from 'google-auth-library';
 import jwt from 'jsonwebtoken';
 import { AppDataSource } from '../data-source';
 import { User } from '../entities/User';
+import { UserStats } from '../entities/UserStats';
 import { UserDto, AuthStatusResponse } from '@vibe-games/shared';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'vibe-games-default-secret-key-do-not-use-in-prod';
@@ -10,13 +11,20 @@ const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || process.env.VITE_GOOGLE
 
 const googleClient = GOOGLE_CLIENT_ID ? new OAuth2Client(GOOGLE_CLIENT_ID) : null;
 
-function toUserDto(user: User): UserDto {
+async function toUserDto(user: User): Promise<UserDto> {
+  const statsRepo = AppDataSource.getRepository(UserStats);
+  const stats = await statsRepo.findOneBy({ userId: user.id, gameType: 'mill' });
+
   return {
     id: user.id,
     username: user.username,
     createdAt: user.createdAt.toISOString(),
     avatarUrl: user.avatarUrl,
     email: user.email,
+    elo: stats ? stats.elo : 1200,
+    wins: stats ? stats.wins : 0,
+    losses: stats ? stats.losses : 0,
+    draws: stats ? stats.draws : 0,
   };
 }
 
@@ -124,7 +132,7 @@ export async function authRoutes(server: FastifyInstance) {
       const user = await getOrCreateGoogleUser(googleId, email, name, picture);
       setSessionCookie(reply, user.id);
 
-      return reply.send({ user: toUserDto(user) });
+      return reply.send({ user: await toUserDto(user) });
     } catch (err: any) {
       request.log.error(err);
       return reply.code(401).send({ error: 'Failed to verify Google token' });
@@ -152,7 +160,7 @@ export async function authRoutes(server: FastifyInstance) {
       const user = await getOrCreateGoogleUser(googleId, email, name, avatarUrl);
       setSessionCookie(reply, user.id);
 
-      return reply.send({ user: toUserDto(user) });
+      return reply.send({ user: await toUserDto(user) });
     } catch (err: any) {
       request.log.error(err);
       return reply.code(500).send({ error: 'Failed to perform mock login' });
@@ -185,7 +193,7 @@ export async function authRoutes(server: FastifyInstance) {
         return reply.send({ user: null });
       }
 
-      return reply.send({ user: toUserDto(user) });
+      return reply.send({ user: await toUserDto(user) });
     } catch (err) {
       // Clear invalid session cookie
       reply.clearCookie('session', {
