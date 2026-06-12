@@ -190,10 +190,10 @@ For Google Cloud (when you want more control):
 ## Current Phase Status
 
 - [x] Phase 0 — Monorepo scaffold, Docker Compose, AGENTS.md
-- [ ] Phase 1 — Tic-Tac-Toe: Game entity, REST API, React board UI
-- [ ] Phase 2 — Auth: JWT, user sessions
+- [x] Phase 1 — Nine Men's Morris (Mill): Game entity, REST API, React board UI
+- [x] Phase 2 — Auth: JWT, user sessions, Google OAuth & mock login
 - [ ] Phase 3 — Real-time: WebSockets via @fastify/websocket
-- [ ] Phase 4 — Multiplayer: Matchmaking, lobbies, turn management
+- [x] Phase 4 — Multiplayer: REST-based Matchmaking, active lobby management, turn polling
 - [ ] Phase 5 — Supremacy: Hex grid, territory, strategy mechanics
 
 ---
