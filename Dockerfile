@@ -35,7 +35,7 @@ COPY --from=builder /usr/src/app/backend/package.json ./backend/
 COPY --from=builder /usr/src/app/backend/dist ./backend/dist
 
 # Install production-only dependencies
-RUN npm ci --omit=dev
+RUN npm ci --omit=dev --ignore-scripts
 
 # Fastify listens on PORT (injected by Railway, typically 3001)
 EXPOSE 3001
