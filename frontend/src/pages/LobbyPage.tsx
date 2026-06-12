@@ -37,7 +37,9 @@ export function LobbyPage() {
   const [devName, setDevName] = useState('');
   const [devEmail, setDevEmail] = useState('');
   const [loggingIn, setLoggingIn] = useState(false);
-  const [gsiLoaded, setGsiLoaded] = useState(false);
+  const [gsiLoaded, setGsiLoaded] = useState(() => {
+    return !!(window as Window & { google?: GoogleIdentity }).google?.accounts?.id;
+  });
 
   const userId = currentUser?.id || '';
   const username = currentUser?.username || 'Guest';
@@ -93,15 +95,9 @@ export function LobbyPage() {
 
   // Load Google GSI client script dynamically
   useEffect(() => {
-    if (currentUser) return;
+    if (currentUser || gsiLoaded) return;
 
     let active = true;
-    const google = (window as Window & { google?: GoogleIdentity }).google;
-    if (google?.accounts?.id) {
-      setGsiLoaded(true);
-      return;
-    }
-
     const script = document.createElement('script');
     script.src = 'https://accounts.google.com/gsi/client';
     script.async = true;
@@ -120,11 +116,11 @@ export function LobbyPage() {
       active = false;
       try {
         document.body.removeChild(script);
-      } catch (e) {
+      } catch {
         // Ignore if already removed or missing
       }
     };
-  }, [currentUser]);
+  }, [currentUser, gsiLoaded]);
 
   // Render Google Sign-In button once script is loaded and auth check is done (so container exists in DOM)
   useEffect(() => {
