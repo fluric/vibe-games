@@ -228,6 +228,18 @@ export function LobbyPage() {
     }
   };
 
+  const handleForfeitGame = async (gameId: string) => {
+    if (!confirm('Are you sure you want to forfeit this match? This will count as a loss.')) return;
+    try {
+      audio.playPlaceSound();
+      await api.forfeitGame(gameId);
+      await fetchLobby();
+    } catch (err) {
+      audio.playErrorSound();
+      alert(err instanceof Error ? err.message : 'Failed to forfeit game');
+    }
+  };
+
   const handleCopyLink = (gameId: string) => {
     const url = `${window.location.origin}/game/${gameId}`;
     navigator.clipboard.writeText(url);
@@ -630,12 +642,20 @@ export function LobbyPage() {
                           </button>
                         </>
                       ) : (
-                        <button
-                          onClick={() => navigate(`/game/${game.id}`)}
-                          className="px-4 py-1.5 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-xs font-bold text-white transition-all shadow-lg shadow-indigo-600/10 active:scale-95"
-                        >
-                          Resume Match
-                        </button>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => navigate(`/game/${game.id}`)}
+                            className="px-4 py-1.5 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-xs font-bold text-white transition-all shadow-lg shadow-indigo-600/10 active:scale-95"
+                          >
+                            Resume Match
+                          </button>
+                          <button
+                            onClick={() => handleForfeitGame(game.id)}
+                            className="px-3 py-1.5 rounded-lg bg-rose-950/40 hover:bg-rose-900/40 text-xs font-semibold text-rose-400 transition-all border border-rose-900/30 hover:border-rose-800/50 active:scale-95"
+                          >
+                            Forfeit
+                          </button>
+                        </div>
                       )}
                     </div>
                   </div>

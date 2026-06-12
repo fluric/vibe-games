@@ -127,4 +127,59 @@ test.describe('Vibe Games Matchmaking & Gameplay E2E', () => {
     await hostContext.close();
     await guestContext.close();
   });
+
+  test('should host a private game, and cancel it directly from the game page', async ({ page }) => {
+    await page.goto('/');
+
+    // Host Private Game
+    const hostPrivateButton = page.locator('button:has-text("Host Private")');
+    await expect(hostPrivateButton).toBeVisible();
+    await hostPrivateButton.click();
+
+    // Verify navigation to GamePage
+    await expect(page).toHaveURL(/\/game\/[a-f0-9-]+/);
+
+    // Cancel Button should be visible
+    const cancelButton = page.locator('button:has-text("Cancel Game")');
+    await expect(cancelButton).toBeVisible();
+
+    // Handle dialog
+    page.once('dialog', async (dialog) => {
+      expect(dialog.message()).toContain('Are you sure you want to cancel this game lobby?');
+      await dialog.accept();
+    });
+
+    await cancelButton.click();
+
+    // Verify we are redirected back to the lobby
+    await expect(page).toHaveURL(/\/$/);
+  });
+
+  test('should start a game vs AI, and forfeit it from the game page', async ({ page }) => {
+    await page.goto('/');
+
+    // Host AI Game
+    const playAiButton = page.locator('button:has-text("Play vs AI")');
+    await expect(playAiButton).toBeVisible();
+    await playAiButton.click();
+
+    // Verify navigation to GamePage
+    await expect(page).toHaveURL(/\/game\/[a-f0-9-]+/);
+
+    // Forfeit Button should be visible since status is in_progress
+    const forfeitButton = page.locator('button:has-text("Forfeit Match")');
+    await expect(forfeitButton).toBeVisible();
+
+    // Handle dialog
+    page.once('dialog', async (dialog) => {
+      expect(dialog.message()).toContain('Are you sure you want to forfeit this match?');
+      await dialog.accept();
+    });
+
+    await forfeitButton.click();
+
+    // Verify status banner changes to Winner
+    const statusBanner = page.locator('h2');
+    await expect(statusBanner).toContainText('AI Opponent Wins!');
+  });
 });

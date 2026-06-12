@@ -257,6 +257,41 @@ async function runTests() {
   const postCancelActiveGames = JSON.parse(postCancelActiveRes.body) as GameDto[];
   assert.ok(!postCancelActiveGames.some((g) => g.id === cancelGameId));
 
+  // ── Test 8: Forfeiting/Resigning a Game ─────────────────────────────────────
+  console.log('👉 Testing: Forfeiting/Resigning a Game...');
+  
+  // Try to forfeit a game we are not a participant in (using a random user ID)
+  const randomUserId = '99999999-9999-9999-9999-999999999999';
+  const wrongForfeitRes = await app.inject({
+    method: 'POST',
+    url: `/games/${testGameId}/forfeit`,
+    headers: { 'x-user-id': randomUserId },
+    payload: {},
+  });
+  assert.strictEqual(wrongForfeitRes.statusCode, 403);
+
+  // Forfeit as participant Player X (user 1)
+  const rightForfeitRes = await app.inject({
+    method: 'POST',
+    url: `/games/${testGameId}/forfeit`,
+    headers: { 'x-user-id': user1Id },
+    payload: {},
+  });
+  assert.strictEqual(rightForfeitRes.statusCode, 200);
+  const forfeitedGame = JSON.parse(rightForfeitRes.body) as GameDto;
+  assert.strictEqual(forfeitedGame.status, 'finished');
+  assert.strictEqual(forfeitedGame.state.winner, 'O'); // Since X resigned, O wins
+  assert.strictEqual(forfeitedGame.winnerId, user2Id);
+
+  // Trying to forfeit a game that is already finished should fail
+  const finishedForfeitRes = await app.inject({
+    method: 'POST',
+    url: `/games/${testGameId}/forfeit`,
+    headers: { 'x-user-id': user1Id },
+    payload: {},
+  });
+  assert.strictEqual(finishedForfeitRes.statusCode, 400);
+
   console.log('\n✅ All Games API Integration Tests passed successfully!');
 }
 

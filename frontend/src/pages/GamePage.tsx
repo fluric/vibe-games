@@ -156,6 +156,32 @@ export function GamePage() {
     });
   };
 
+  const handleCancelGame = async () => {
+    if (!id) return;
+    if (!confirm('Are you sure you want to cancel this game lobby?')) return;
+    try {
+      audio.playPlaceSound();
+      await api.cancelGame(id);
+      navigate('/');
+    } catch (err) {
+      audio.playErrorSound();
+      alert(err instanceof Error ? err.message : 'Failed to cancel game');
+    }
+  };
+
+  const handleForfeitGame = async () => {
+    if (!id) return;
+    if (!confirm('Are you sure you want to forfeit this match? This will count as a loss.')) return;
+    try {
+      audio.playPlaceSound();
+      const updated = await api.forfeitGame(id);
+      setGame(updated);
+    } catch (err) {
+      audio.playErrorSound();
+      alert(err instanceof Error ? err.message : 'Failed to forfeit game');
+    }
+  };
+
   if (loading || checkingAuth) {
     return (
       <div className="min-h-screen bg-neutral-950 text-neutral-100 flex items-center justify-center font-sans">
@@ -254,13 +280,33 @@ export function GamePage() {
         
         {/* Navigation Bar */}
         <div className="flex justify-between items-center border-b border-neutral-800 pb-4">
-          <Link
-            to="/"
-            onClick={() => audio.playPlaceSound()}
-            className="flex items-center gap-2 text-sm text-neutral-400 hover:text-white transition-colors"
-          >
-            ⬅️ Leave Match
-          </Link>
+          <div className="flex items-center gap-4">
+            <Link
+              to="/"
+              onClick={() => audio.playPlaceSound()}
+              className="flex items-center gap-2 text-sm text-neutral-400 hover:text-white transition-colors"
+            >
+              ⬅️ Leave Match
+            </Link>
+
+            {game.status === 'waiting' && game.playerX?.id === userId && (
+              <button
+                onClick={handleCancelGame}
+                className="px-3 py-1.5 rounded-lg bg-rose-950/40 hover:bg-rose-900/40 text-xs font-semibold text-rose-400 transition-all border border-rose-900/30 hover:border-rose-800/50 active:scale-95"
+              >
+                Cancel Game
+              </button>
+            )}
+
+            {game.status === 'in_progress' && !isSpectator && (
+              <button
+                onClick={handleForfeitGame}
+                className="px-3 py-1.5 rounded-lg bg-rose-950/40 hover:bg-rose-900/40 text-xs font-semibold text-rose-400 transition-all border border-rose-900/30 hover:border-rose-800/50 active:scale-95"
+              >
+                Forfeit Match
+              </button>
+            )}
+          </div>
           <div className="flex flex-col items-end gap-1">
             <div className="text-xs text-neutral-500 font-mono">
               Game ID: {id?.substring(0, 8)}...

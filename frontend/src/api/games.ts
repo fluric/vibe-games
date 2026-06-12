@@ -102,6 +102,13 @@ export async function cancelGame(id: string): Promise<{ success: boolean }> {
   });
 }
 
+export async function forfeitGame(id: string): Promise<GameDto> {
+  return request<GameDto>(`/games/${id}/forfeit`, {
+    method: 'POST',
+    body: JSON.stringify({}),
+  });
+}
+
 export async function getAuthMe(): Promise<AuthStatusResponse> {
   return request<AuthStatusResponse>('/auth/me');
 }

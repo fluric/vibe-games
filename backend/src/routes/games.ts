@@ -256,6 +256,43 @@ export async function gameRoutes(server: FastifyInstance) {
     return reply.send({ success: true });
   });
 
+  // 4.6 Forfeit/Resign a Game (Active game resignation by a participant)
+  server.post<{ Params: { id: string } }>('/:id/forfeit', async (request, reply) => {
+    const user = request.user;
+    if (!user) {
+      return reply.code(401).send({ error: 'Unauthorized' });
+    }
+
+    const userId = user.id;
+    const gameRepo = AppDataSource.getRepository(Game);
+    const game = await gameRepo.findOne({
+      where: { id: request.params.id },
+      relations: ['playerX', 'playerO'],
+    });
+
+    if (!game) {
+      return reply.code(404).send({ error: 'Game not found' });
+    }
+    if (game.status !== 'in_progress') {
+      return reply.code(400).send({ error: 'Only games in progress can be forfeited' });
+    }
+    if (game.playerXId !== userId && game.playerOId !== userId) {
+      return reply.code(403).send({ error: 'Only participants can forfeit this game' });
+    }
+
+    game.status = 'finished';
+    const winnerPiece = game.playerXId === userId ? 'O' : 'X';
+    game.winnerId = game.playerXId === userId ? game.playerOId : game.playerXId;
+
+    game.state = {
+      ...game.state,
+      winner: winnerPiece,
+    };
+
+    await gameRepo.save(game);
+    return reply.send(toGameDto(game));
+  });
+
   // 5. Submit a Move (Perform place, move, or remove and trigger AI response)
   server.post<{
     Params: { id: string };
