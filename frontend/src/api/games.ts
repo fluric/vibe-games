@@ -54,11 +54,12 @@ export async function createGame(
   gameType: 'mill',
   isPublic = true,
   vsAi = false,
-  aiLevel?: 'easy' | 'medium' | 'hard' | 'easy_random' | 'medium_aggressive' | 'medium_defensive' | 'medium_mobile' | 'hard_tactical' | 'expert_garry' | 'legendary_magnus'
+  aiLevel?: 'easy' | 'medium' | 'hard' | 'easy_random' | 'medium_aggressive' | 'medium_defensive' | 'medium_mobile' | 'hard_tactical' | 'expert_garry' | 'legendary_magnus' | 'perfect_oracle',
+  aiStarts = false
 ): Promise<GameDto> {
   return request<GameDto>('/games', {
     method: 'POST',
-    body: JSON.stringify({ gameType, isPublic, vsAi, aiLevel }),
+    body: JSON.stringify({ gameType, isPublic, vsAi, aiLevel, aiStarts }),
   });
 }
 

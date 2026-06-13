@@ -14,13 +14,15 @@ export interface StrategyWeights {
   mill: number;
   blocked: number;
   threat: number;
+  positional?: number;
 }
 
 const DEFAULT_WEIGHTS: StrategyWeights = {
   material: 200,
   mill: 150,
   blocked: -20,
-  threat: 60
+  threat: 60,
+  positional: 15
 };
 
 /**
@@ -131,7 +133,23 @@ export function evaluateBoard(state: MillGameState, weights: StrategyWeights = D
   const xThreats = countMillThreats(board, 'X');
   const threatScore = (oThreats - xThreats) * weights.threat;
 
-  const score = materialScore + millScore + blockedScore + threatScore;
+  // 5. Positional control (only during placement phase)
+  let positionalScore = 0;
+  if (state.phase === 'placement') {
+    let oPosVal = 0;
+    let xPosVal = 0;
+    const positionalWeight = weights.positional ?? 15;
+    for (let i = 0; i < board.length; i++) {
+      if (board[i] === 'O') {
+        oPosVal += (ADJACENCY_LIST[i] || []).length;
+      } else if (board[i] === 'X') {
+        xPosVal += (ADJACENCY_LIST[i] || []).length;
+      }
+    }
+    positionalScore = (oPosVal - xPosVal) * positionalWeight;
+  }
+
+  const score = materialScore + millScore + blockedScore + threatScore + positionalScore;
   evalCache.set(cacheKey, score);
   return score;
 }
@@ -403,6 +421,24 @@ export function getBestMinimaxMove(
   depth: number = 3,
   weights: StrategyWeights = DEFAULT_WEIGHTS
 ): AiAction {
+  // Opening Book override for first placements of the game:
+  if (state.phase === 'placement') {
+    const piecesCount = state.board.filter(c => c !== null).length;
+    if (piecesCount === 0) {
+      // First move of the game: place on a midpoint of the middle ring (index 9)
+      return { type: 'place', position: 9 };
+    }
+    if (piecesCount === 1) {
+      // Second move of the game: place on a free midpoint of the middle ring (index 11, 13, or 15)
+      const midpoints = [9, 11, 13, 15];
+      for (const m of midpoints) {
+        if (state.board[m] === null) {
+          return { type: 'place', position: m };
+        }
+      }
+    }
+  }
+
   evalCache.clear();
   tt.clear();
   const actions = orderActions(state, getValidActions(state));

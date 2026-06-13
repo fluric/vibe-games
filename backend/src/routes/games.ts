@@ -4,7 +4,7 @@ import { IsNull, In } from 'typeorm';
 import { Game } from '../entities/Game';
 import { User } from '../entities/User';
 import { UserStats } from '../entities/UserStats';
-import { GameDto, UserDto, PlayerPiece, GameType } from '@vibe-games/shared';
+import { GameDto, UserDto, PlayerPiece, GameType, MillGameState } from '@vibe-games/shared';
 import { calculateElo } from '../game/elo';
 import { getAiAction } from '../game/millAi';
 import { StrategyWeights } from '../game/minimaxAi';
@@ -26,6 +26,65 @@ declare module 'fastify' {
 const BOTS_MAP = new Map<string, { username: string; elo: number; type: string; depth?: number; weights?: StrategyWeights }>();
 for (const [key, val] of Object.entries(aiConfig)) {
   BOTS_MAP.set(val.id, { username: val.username, elo: val.elo, type: val.type, depth: val.depth, weights: val.weights });
+}
+
+function invertState(state: MillGameState): MillGameState {
+  const invertedBoard = state.board.map((cell: PlayerPiece | null) => {
+    if (cell === 'X') return 'O';
+    if (cell === 'O') return 'X';
+    return null;
+  });
+
+  return {
+    ...state,
+    board: invertedBoard,
+    turn: state.turn === 'X' ? 'O' : 'X',
+    placementsRemaining: {
+      X: state.placementsRemaining.O,
+      O: state.placementsRemaining.X,
+    },
+    piecesOnBoard: {
+      X: state.piecesOnBoard.O,
+      O: state.piecesOnBoard.X,
+    }
+  };
+}
+
+function runAiLoopIfNeeded(game: Game) {
+  const botId = [game.playerXId, game.playerOId].find(id => id && BOTS_MAP.has(id));
+  if (!botId) return;
+
+  const botInfo = BOTS_MAP.get(botId)!;
+  const aiPiece: PlayerPiece = botId === game.playerXId ? 'X' : 'O';
+
+  let aiActive = !game.state.winner;
+  while (aiActive && game.state.turn === aiPiece) {
+    try {
+      // Invert the state if the AI is Player X (since minimax assumes maximizing O)
+      const stateToPass = aiPiece === 'X' ? invertState(game.state) : game.state;
+      const rawAction = getAiAction(stateToPass, botInfo.type as any, botInfo.depth, botInfo.weights);
+
+      if (rawAction.type === 'place') {
+        game.state = handlePlaceAction(game.state, rawAction.position!, aiPiece);
+      } else if (rawAction.type === 'move') {
+        game.state = handleMoveAction(game.state, rawAction.from!, rawAction.to!, aiPiece);
+      } else if (rawAction.type === 'remove') {
+        game.state = handleRemoveAction(game.state, rawAction.position!, aiPiece);
+      }
+
+      if (game.state.winner) {
+        game.status = 'finished';
+        game.winnerId = game.state.winner === 'draw' ? null : (game.state.winner === 'X' ? game.playerXId : game.playerOId);
+        aiActive = false;
+      }
+    } catch (err) {
+      game.status = 'finished';
+      const humanPiece = aiPiece === 'X' ? 'O' : 'X';
+      game.winnerId = humanPiece === 'X' ? game.playerXId : game.playerOId;
+      game.state.winner = humanPiece;
+      aiActive = false;
+    }
+  }
 }
 
 async function getOrCreateUser(userId: string): Promise<User> {
@@ -147,10 +206,11 @@ async function handleGameFinished(game: Game) {
 
   let xStats = await userStatsRepo.findOneBy({ userId: playerXId, gameType: game.gameType });
   if (!xStats) {
+    const botInfo = BOTS_MAP.get(playerXId);
     xStats = userStatsRepo.create({
       userId: playerXId,
       gameType: game.gameType,
-      elo: 1200,
+      elo: botInfo ? botInfo.elo : 1200,
       wins: 0,
       losses: 0,
       draws: 0,
@@ -260,7 +320,8 @@ export async function gameRoutes(server: FastifyInstance) {
       gameType: GameType;
       isPublic?: boolean;
       vsAi?: boolean;
-      aiLevel?: 'easy' | 'medium' | 'hard' | 'easy_random' | 'medium_aggressive' | 'medium_defensive' | 'medium_mobile' | 'hard_tactical' | 'expert_garry' | 'legendary_magnus';
+      aiLevel?: 'easy' | 'medium' | 'hard' | 'easy_random' | 'medium_aggressive' | 'medium_defensive' | 'medium_mobile' | 'hard_tactical' | 'expert_garry' | 'legendary_magnus' | 'perfect_oracle';
+      aiStarts?: boolean;
     };
   }>('/', async (request, reply) => {
     const user = request.user;
@@ -268,16 +329,18 @@ export async function gameRoutes(server: FastifyInstance) {
       return reply.code(401).send({ error: 'Unauthorized' });
     }
 
-    const { gameType, isPublic = true, vsAi = false, aiLevel = 'medium_aggressive' } = request.body;
+    const { gameType, isPublic = true, vsAi = false, aiLevel = 'medium_aggressive', aiStarts = false } = request.body;
     if (gameType !== 'mill') {
       return reply.code(400).send({ error: 'Unsupported game type' });
     }
 
     const gameRepo = AppDataSource.getRepository(Game);
-    const playerX = user;
 
+    let playerXId = user.id;
     let playerOId = null;
-    let playerO = null;
+    let playerXEntity = user;
+    let playerOEntity = null;
+
     if (vsAi) {
       let botKey: string = aiLevel || 'medium_aggressive';
       if (botKey === 'easy') botKey = 'easy_random';
@@ -285,20 +348,38 @@ export async function gameRoutes(server: FastifyInstance) {
       else if (botKey === 'hard') botKey = 'hard_tactical';
 
       const botConfig = aiConfig[botKey] || aiConfig['medium_aggressive'];
-      playerO = await getOrCreateUser(botConfig.id);
-      playerOId = botConfig.id;
+      const botUser = await getOrCreateUser(botConfig.id);
+
+      if (aiStarts) {
+        playerXId = botConfig.id;
+        playerOId = user.id;
+        playerXEntity = botUser;
+        playerOEntity = user;
+      } else {
+        playerXId = user.id;
+        playerOId = botConfig.id;
+        playerXEntity = user;
+        playerOEntity = botUser;
+      }
     }
 
     const game = gameRepo.create({
       gameType,
       status: vsAi ? 'in_progress' : 'waiting',
-      playerXId: playerX.id,
+      playerXId,
       playerOId,
       state: createInitialState(),
       isPublic,
-      playerX,
-      playerO,
+      playerX: playerXEntity,
+      playerO: playerOEntity,
     });
+
+    if (vsAi && aiStarts) {
+      runAiLoopIfNeeded(game);
+      if (game.status === 'finished') {
+        await handleGameFinished(game);
+      }
+    }
 
     await gameRepo.save(game);
     return reply.send(await toGameDto(game));
@@ -520,32 +601,7 @@ export async function gameRoutes(server: FastifyInstance) {
     }
 
     // ── AI Opponent Logic Loop ───────────────────────────────────────────────
-    let aiActive = !game.state.winner && BOTS_MAP.has(game.playerOId!);
-    while (aiActive && game.state.turn === 'O') {
-      try {
-        const botInfo = BOTS_MAP.get(game.playerOId!)!;
-        const aiAction = getAiAction(game.state, botInfo.type as any, botInfo.depth, botInfo.weights);
-
-        if (aiAction.type === 'place') {
-          game.state = handlePlaceAction(game.state, aiAction.position!, 'O');
-        } else if (aiAction.type === 'move') {
-          game.state = handleMoveAction(game.state, aiAction.from!, aiAction.to!, 'O');
-        } else if (aiAction.type === 'remove') {
-          game.state = handleRemoveAction(game.state, aiAction.position!, 'O');
-        }
-
-        if (game.state.winner) {
-          game.status = 'finished';
-          game.winnerId = game.state.winner === 'draw' ? null : (game.state.winner === 'X' ? game.playerXId : game.playerOId);
-          aiActive = false;
-        }
-      } catch (err) {
-        game.status = 'finished';
-        game.winnerId = game.playerXId;
-        game.state.winner = 'X';
-        aiActive = false;
-      }
-    }
+    runAiLoopIfNeeded(game);
 
     if (game.status === 'finished') {
       await handleGameFinished(game);

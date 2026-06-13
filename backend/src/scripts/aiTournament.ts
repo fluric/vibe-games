@@ -79,7 +79,8 @@ function runGame(botX: string, botO: string): { winner: PlayerPiece | 'draw' } {
           state = handleRemoveAction(state, action.position!, 'O');
         }
       }
-    } catch (err) {
+    } catch (err: any) {
+      console.error(`  ❌ Error during ${state.turn} (${currentBot}) turn:`, err.message);
       // In case of any engine action validation failure, the other player wins
       return { winner: state.turn === 'X' ? 'O' : 'X' };
     }
@@ -114,9 +115,7 @@ function simulateMatchup(botX: string, botO: string) {
   }
 
   // Compute new ELO ratings
-  if ((botX === 'expert_garry' && botO === 'legendary_magnus') || (botX === 'legendary_magnus' && botO === 'expert_garry')) {
-    console.log(`  ⚔️ Matchup: ${config[botX].username} (X) vs ${config[botO].username} (O) => Winner: ${result.winner}`);
-  }
+  console.log(`  ⚔️ Matchup: ${config[botX].username} (X) vs ${config[botO].username} (O) => Winner: ${result.winner}`);
 
   const newXRating = calculateElo(ratings[botX], ratings[botO], xScore);
   const newORating = calculateElo(ratings[botO], ratings[botX], oScore);

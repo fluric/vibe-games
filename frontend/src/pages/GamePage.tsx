@@ -14,6 +14,7 @@ const AI_BOT_IDS = [
   '00000000-0000-0000-0000-000000000005', // Tactical Toby (Hard)
   '00000000-0000-0000-0000-000000000006', // Grandmaster Garry (Expert)
   '00000000-0000-0000-0000-000000000007', // Champion Magnus (Legendary)
+  '00000000-0000-0000-0000-000000000008', // Perfect Oracle (Grandmaster)
 ];
 
 function isBotId(id?: string): boolean {

@@ -32,7 +32,8 @@ export function LobbyPage() {
   const [joiningCode, setJoiningCode] = useState(false);
   const [lobbyError, setLobbyError] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
-  const [aiLevel, setAiLevel] = useState<'easy_random' | 'medium_aggressive' | 'medium_defensive' | 'medium_mobile' | 'hard_tactical' | 'expert_garry' | 'legendary_magnus'>('medium_aggressive');
+  const [aiLevel, setAiLevel] = useState<'easy_random' | 'medium_aggressive' | 'medium_defensive' | 'medium_mobile' | 'hard_tactical' | 'expert_garry' | 'legendary_magnus' | 'perfect_oracle'>('medium_aggressive');
+  const [aiStarts, setAiStarts] = useState<boolean>(false);
 
   const [syncStatus, setSyncStatus] = useState<'synced' | 'warn' | 'mismatch'>('synced');
   const [backendApiVersion, setBackendApiVersion] = useState<string | null>(null);
@@ -284,7 +285,7 @@ export function LobbyPage() {
   const handleCreateGame = async (
     vsAi = false,
     isPublic = true,
-    selectedAiLevel?: 'easy' | 'medium' | 'hard' | 'easy_random' | 'medium_aggressive' | 'medium_defensive' | 'medium_mobile' | 'hard_tactical' | 'expert_garry' | 'legendary_magnus'
+    selectedAiLevel?: 'easy' | 'medium' | 'hard' | 'easy_random' | 'medium_aggressive' | 'medium_defensive' | 'medium_mobile' | 'hard_tactical' | 'expert_garry' | 'legendary_magnus' | 'perfect_oracle'
   ) => {
     if (syncStatus === 'mismatch') {
       alert('Cannot create match: API version mismatch. Please refresh the page.');
@@ -294,7 +295,7 @@ export function LobbyPage() {
     setCreatingGame(true);
     try {
       audio.playPlaceSound();
-      const newGame = await api.createGame('mill', isPublic, vsAi, selectedAiLevel);
+      const newGame = await api.createGame('mill', isPublic, vsAi, selectedAiLevel, vsAi ? aiStarts : false);
       navigate(`/game/${newGame.id}`);
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Failed to create game');
@@ -562,6 +563,7 @@ export function LobbyPage() {
                   <option value="hard_tactical">🔴 Tactical Toby (Hard) — ELO {aiConfig.hard_tactical.elo} [Minimax Depth 4]</option>
                   <option value="expert_garry">🔥 Grandmaster Garry (Expert) — ELO {aiConfig.expert_garry.elo} [Minimax Depth 5]</option>
                   <option value="legendary_magnus">👑 Champion Magnus (Legendary) — ELO {aiConfig.legendary_magnus.elo} [Minimax Depth 6]</option>
+                  <option value="perfect_oracle">🌌 Perfect Oracle (Grandmaster) — ELO {aiConfig.perfect_oracle.elo} [Solved Openings & Positional Search]</option>
                 </select>
                 <p className="text-[10px] text-neutral-500 mt-1">
                   {aiLevel === 'easy_random' && " Randy makes completely random moves. Great for learning the rules!"}
@@ -571,7 +573,38 @@ export function LobbyPage() {
                   {aiLevel === 'hard_tactical' && " Toby calculates 4 plies ahead. He will punish tactical mistakes."}
                   {aiLevel === 'expert_garry' && " Garry evaluates 5 plies deep with optimized positional heuristics. A true challenge!"}
                   {aiLevel === 'legendary_magnus' && " Magnus calculates 6 plies deep with extremely optimized block/mobility weights. Legendary level!"}
+                  {aiLevel === 'perfect_oracle' && " The Oracle uses a solved opening midpoint strategy and degree-based positional evaluation for maximum control. Unbeatable!"}
                 </p>
+
+                <div className="border-t border-neutral-800/80 my-2"></div>
+
+                <label className="text-xs text-neutral-400 font-semibold">
+                  Who Starts the Game?
+                </label>
+                <div className="flex gap-2 mt-0.5">
+                  <button
+                    type="button"
+                    onClick={() => setAiStarts(false)}
+                    className={`flex-1 py-2 text-xs rounded-xl font-semibold border transition-all ${
+                      !aiStarts
+                        ? 'bg-indigo-600/10 border-indigo-500 text-indigo-400 font-bold'
+                        : 'bg-neutral-950 border-neutral-800 text-neutral-400 hover:border-neutral-700'
+                    }`}
+                  >
+                    👤 You Start (First)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAiStarts(true)}
+                    className={`flex-1 py-2 text-xs rounded-xl font-semibold border transition-all ${
+                      aiStarts
+                        ? 'bg-indigo-600/10 border-indigo-500 text-indigo-400 font-bold'
+                        : 'bg-neutral-950 border-neutral-800 text-neutral-400 hover:border-neutral-700'
+                    }`}
+                  >
+                    🤖 AI Starts (First)
+                  </button>
+                </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
