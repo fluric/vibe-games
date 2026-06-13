@@ -10,7 +10,8 @@
     "typeorm": "typeorm-ts-node-commonjs",
     "migration:generate": "typeorm-ts-node-commonjs migration:generate src/migrations/$npm_config_name -d src/data-source.ts",
     "migration:run": "typeorm-ts-node-commonjs migration:run -d src/data-source.ts",
-    "migration:revert": "typeorm-ts-node-commonjs migration:revert -d src/data-source.ts"
+    "migration:revert": "typeorm-ts-node-commonjs migration:revert -d src/data-source.ts",
+    "tournament": "ts-node -r tsconfig-paths/register src/scripts/aiTournament.ts"
   },
   "dependencies": {
     "@fastify/cookie": "^9.4.0",

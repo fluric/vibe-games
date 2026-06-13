@@ -1,6 +1,6 @@
 import { MillGameState, PlayerPiece } from '@vibe-games/shared';
 import { handlePlaceAction, handleMoveAction, handleRemoveAction } from './millEngine';
-import { ADJACENCY_LIST, isPieceInMill, areAllPiecesInMills } from './millRules';
+import { ADJACENCY_LIST, isPieceInMill, areAllPiecesInMills, MILLS } from './millRules';
 
 export interface AiAction {
   type: 'place' | 'move' | 'remove';
@@ -11,26 +11,16 @@ export interface AiAction {
 
 // Evaluation weights
 const MATERIAL_WEIGHT = 200;
-const MILL_WEIGHT = 80;
-const BLOCKED_WEIGHT = -15;
-const MILL_THREAT_WEIGHT = 30;
-
-// List of the 16 mill combinations (lines of 3)
-const MILL_LINES = [
-  [0, 1, 2], [3, 4, 5], [6, 7, 8],
-  [9, 10, 11], [12, 13, 14], [15, 16, 17],
-  [18, 19, 20], [21, 22, 23],
-  [0, 9, 21], [3, 10, 18], [6, 11, 15],
-  [1, 4, 7], [16, 19, 22],
-  [8, 12, 17], [5, 13, 20], [2, 14, 23]
-];
+const MILL_WEIGHT = 150; // Increased to prioritize active mills
+const BLOCKED_WEIGHT = -20;
+const MILL_THREAT_WEIGHT = 60; // Increased to prioritize block/setup of threats
 
 /**
  * Counts active mills for a player
  */
 function countMills(board: (PlayerPiece | null)[], player: PlayerPiece): number {
   let count = 0;
-  for (const line of MILL_LINES) {
+  for (const line of MILLS) {
     if (board[line[0]] === player && board[line[1]] === player && board[line[2]] === player) {
       count++;
     }
@@ -43,7 +33,7 @@ function countMills(board: (PlayerPiece | null)[], player: PlayerPiece): number 
  */
 function countMillThreats(board: (PlayerPiece | null)[], player: PlayerPiece): number {
   let count = 0;
-  for (const line of MILL_LINES) {
+  for (const line of MILLS) {
     const p1 = board[line[0]];
     const p2 = board[line[1]];
     const p3 = board[line[2]];
@@ -53,6 +43,23 @@ function countMillThreats(board: (PlayerPiece | null)[], player: PlayerPiece): n
     else if (p2 === player && p3 === player && p1 === null) count++;
   }
   return count;
+}
+
+/**
+ * Gets positions where the opponent has an active mill threat (2 pieces, 1 empty)
+ */
+function getOpponentThreats(board: (PlayerPiece | null)[], opponent: PlayerPiece): number[] {
+  const threats: number[] = [];
+  for (const line of MILLS) {
+    const p1 = board[line[0]];
+    const p2 = board[line[1]];
+    const p3 = board[line[2]];
+    
+    if (p1 === opponent && p2 === opponent && p3 === null) threats.push(line[2]);
+    else if (p1 === opponent && p3 === opponent && p2 === null) threats.push(line[1]);
+    else if (p2 === opponent && p3 === opponent && p1 === null) threats.push(line[0]);
+  }
+  return threats;
 }
 
 /**
@@ -186,6 +193,65 @@ function simulateAction(state: MillGameState, action: AiAction, player: PlayerPi
 }
 
 /**
+ * Heuristically orders actions to optimize Alpha-Beta Pruning cutoffs
+ */
+function orderActions(state: MillGameState, actions: AiAction[]): AiAction[] {
+  const player = state.turn;
+  const opponent = player === 'X' ? 'O' : 'X';
+  const board = state.board;
+
+  // Get opponent threats to prioritize blocking them
+  const threats = getOpponentThreats(board, opponent);
+
+  const getActionScore = (action: AiAction): number => {
+    let score = 0;
+
+    // 1. Simulate to check if it forms a mill (highest priority)
+    try {
+      const nextState = simulateAction(state, action, player);
+      if (nextState.millFormedThisTurn) {
+        score += 1000;
+      }
+    } catch (err) {
+      // Ignore invalid simulation
+    }
+
+    if (action.type === 'place') {
+      const pos = action.position!;
+      // 2. Blocking an opponent threat
+      if (threats.includes(pos)) {
+        score += 500;
+      }
+      // 3. Connection degree weight (prefer center-middle and midpoints)
+      const degree = (ADJACENCY_LIST[pos] || []).length;
+      score += degree * 10;
+    } else if (action.type === 'move') {
+      const to = action.to!;
+      // 2. Blocking an opponent threat
+      if (threats.includes(to)) {
+        score += 500;
+      }
+      // 3. Prefer moving to high connection degree points
+      const degree = (ADJACENCY_LIST[to] || []).length;
+      score += degree * 10;
+    } else if (action.type === 'remove') {
+      const pos = action.position!;
+      // Removing opponent's threat components
+      if (threats.includes(pos)) {
+        score += 300;
+      }
+    }
+
+    return score;
+  };
+
+  return actions
+    .map(action => ({ action, score: getActionScore(action) }))
+    .sort((a, b) => b.score - a.score)
+    .map(item => item.action);
+}
+
+/**
  * Minimax with Alpha-Beta Pruning
  */
 function minimax(
@@ -199,7 +265,7 @@ function minimax(
     return evaluateBoard(state);
   }
 
-  const actions = getValidActions(state);
+  const actions = orderActions(state, getValidActions(state));
   if (actions.length === 0) {
     // No moves means the other player wins
     return isMaximizing ? -9000 : 9000;
@@ -242,7 +308,7 @@ function minimax(
  * Returns the best action for player O using Minimax Search
  */
 export function getBestMinimaxMove(state: MillGameState, depth: number = 3): AiAction {
-  const actions = getValidActions(state);
+  const actions = orderActions(state, getValidActions(state));
   if (actions.length === 0) {
     throw new Error('AI opponent has no valid actions');
   }

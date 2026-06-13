@@ -8,14 +8,14 @@
   "medium": {
     "id": "00000000-0000-0000-0000-000000000002",
     "username": "Bot (Medium)",
-    "elo": 971,
+    "elo": 746,
     "type": "heuristic"
   },
   "hard": {
     "id": "00000000-0000-0000-0000-000000000003",
     "username": "Bot (Hard)",
-    "elo": 1229,
+    "elo": 1310,
     "type": "minimax",
-    "depth": 3
+    "depth": 5
   }
 }
