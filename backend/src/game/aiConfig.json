@@ -8,7 +8,7 @@
   "medium_aggressive": {
     "id": "00000000-0000-0000-0000-000000000002",
     "username": "Aggressive Archie (Medium)",
-    "elo": 563,
+    "elo": 633,
     "type": "minimax",
     "depth": 3,
     "weights": {
@@ -21,7 +21,7 @@
   "medium_defensive": {
     "id": "00000000-0000-0000-0000-000000000003",
     "username": "Defensive Debbie (Medium)",
-    "elo": 906,
+    "elo": 871,
     "type": "minimax",
     "depth": 3,
     "weights": {
@@ -34,7 +34,7 @@
   "medium_mobile": {
     "id": "00000000-0000-0000-0000-000000000004",
     "username": "Mobile Monty (Medium)",
-    "elo": 870,
+    "elo": 817,
     "type": "minimax",
     "depth": 3,
     "weights": {
@@ -47,27 +47,27 @@
   "hard_tactical": {
     "id": "00000000-0000-0000-0000-000000000005",
     "username": "Tactical Toby (Hard)",
-    "elo": 760,
+    "elo": 925,
     "type": "minimax",
     "depth": 4,
     "weights": {
-      "material": 200,
-      "mill": 120,
-      "blocked": -20,
-      "threat": 50
+      "material": 150,
+      "mill": 150,
+      "blocked": -80,
+      "threat": 80
     }
   },
   "expert_garry": {
     "id": "00000000-0000-0000-0000-000000000006",
     "username": "Grandmaster Garry (Expert)",
-    "elo": 989,
+    "elo": 962,
     "type": "minimax",
     "depth": 5,
     "weights": {
-      "material": 200,
-      "mill": 150,
-      "blocked": -20,
-      "threat": 60
+      "material": 150,
+      "mill": 160,
+      "blocked": -90,
+      "threat": 90
     }
   }
 }

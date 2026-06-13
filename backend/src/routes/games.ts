@@ -36,8 +36,8 @@ async function getOrCreateUser(userId: string): Promise<User> {
     user = userRepo.create({
       id: userId,
       username: botInfo ? botInfo.username : `Player_${userId.substring(0, 5)}`,
-      googleId: botInfo ? `bot-${botInfo.type}` : undefined,
-      email: botInfo ? `bot-${botInfo.type}@vibegames.local` : undefined,
+      googleId: botInfo ? `bot-${userId}` : undefined,
+      email: botInfo ? `bot-${userId}@vibegames.local` : undefined,
     });
     try {
       await userRepo.save(user);
@@ -63,8 +63,8 @@ async function seedBots() {
       existing = userRepo.create({
         id: bot.id,
         username: bot.username,
-        googleId: `bot-${bot.type}`,
-        email: `bot-${bot.type}@vibegames.local`,
+        googleId: `bot-${bot.id}`,
+        email: `bot-${bot.id}@vibegames.local`,
       });
       try {
         await userRepo.save(existing);
