@@ -31,7 +31,7 @@ export function LobbyPage() {
   const [joiningCode, setJoiningCode] = useState(false);
   const [lobbyError, setLobbyError] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
-  const [aiLevel, setAiLevel] = useState<'easy' | 'medium' | 'hard'>('medium');
+  const [aiLevel, setAiLevel] = useState<'easy_random' | 'medium_aggressive' | 'medium_defensive' | 'medium_mobile' | 'hard_tactical' | 'expert_garry'>('medium_aggressive');
 
   const [syncStatus, setSyncStatus] = useState<'synced' | 'warn' | 'mismatch'>('synced');
   const [backendApiVersion, setBackendApiVersion] = useState<string | null>(null);
@@ -280,7 +280,11 @@ export function LobbyPage() {
     }
   };
 
-  const handleCreateGame = async (vsAi = false, isPublic = true, selectedAiLevel?: 'easy' | 'medium' | 'hard') => {
+  const handleCreateGame = async (
+    vsAi = false,
+    isPublic = true,
+    selectedAiLevel?: 'easy' | 'medium' | 'hard' | 'easy_random' | 'medium_aggressive' | 'medium_defensive' | 'medium_mobile' | 'hard_tactical' | 'expert_garry'
+  ) => {
     if (syncStatus === 'mismatch') {
       alert('Cannot create match: API version mismatch. Please refresh the page.');
       return;
@@ -540,28 +544,31 @@ export function LobbyPage() {
               </p>
             </div>
             <div className="flex flex-col gap-4">
-              <div className="flex items-center gap-3 bg-neutral-950/40 border border-neutral-800/80 rounded-xl p-3">
-                <span className="text-xs text-neutral-400 font-semibold shrink-0">Bot Difficulty:</span>
-                <div className="flex gap-1.5 w-full">
-                  {(['easy', 'medium', 'hard'] as const).map((level) => (
-                    <button
-                      key={level}
-                      type="button"
-                      onClick={() => setAiLevel(level)}
-                      className={`flex-1 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider border transition-all ${
-                        aiLevel === level
-                          ? level === 'easy'
-                            ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
-                            : level === 'medium'
-                            ? 'bg-amber-500/10 text-amber-400 border-amber-500/30'
-                            : 'bg-rose-500/10 text-rose-400 border-rose-500/30'
-                          : 'bg-neutral-900 border-transparent text-neutral-500 hover:text-neutral-300'
-                      }`}
-                    >
-                      {level === 'easy' ? '🟢 Easy' : level === 'medium' ? '🟡 Medium' : '🔴 Hard'}
-                    </button>
-                  ))}
-                </div>
+              <div className="flex flex-col gap-2 bg-neutral-950/40 border border-neutral-800/80 rounded-2xl p-4 w-full">
+                <label htmlFor="ai-bot-select" className="text-xs text-neutral-400 font-semibold">
+                  Select AI Opponent:
+                </label>
+                <select
+                  id="ai-bot-select"
+                  value={aiLevel}
+                  onChange={(e) => setAiLevel(e.target.value as typeof aiLevel)}
+                  className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2.5 text-xs text-neutral-100 focus:outline-none focus:border-indigo-500 transition-all font-sans"
+                >
+                  <option value="easy_random">🟢 Random Randy (Easy) — ELO 0 [Random Play]</option>
+                  <option value="medium_aggressive">🟡 Aggressive Archie (Medium) — ELO 500 [Material & Mills]</option>
+                  <option value="medium_defensive">🟡 Defensive Debbie (Medium) — ELO 550 [Threat Blocking]</option>
+                  <option value="medium_mobile">🟡 Mobile Monty (Medium) — ELO 600 [Piece Mobility]</option>
+                  <option value="hard_tactical">🔴 Tactical Toby (Hard) — ELO 1000 [Minimax Depth 4]</option>
+                  <option value="expert_garry">🔥 Grandmaster Garry (Expert) — ELO 1300 [Minimax Depth 5]</option>
+                </select>
+                <p className="text-[10px] text-neutral-500 mt-1">
+                  {aiLevel === 'easy_random' && " Randy makes completely random moves. Great for learning the rules!"}
+                  {aiLevel === 'medium_aggressive' && " Archie values pieces highly and actively seeks to form mills to capture yours."}
+                  {aiLevel === 'medium_defensive' && " Debbie prioritizes blocking your threats and maintaining a strong defensive structure."}
+                  {aiLevel === 'medium_mobile' && " Monty works to restrict your moves and maximize his own piece mobility."}
+                  {aiLevel === 'hard_tactical' && " Toby calculates 4 plies ahead. He will punish tactical mistakes."}
+                  {aiLevel === 'expert_garry' && " Garry evaluates 5 plies deep with optimized positional heuristics. A true challenge!"}
+                </p>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">

@@ -9,18 +9,15 @@ import * as path from 'path';
 const configPath = path.join(__dirname, '../game/aiConfig.json');
 const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
 
-// Initialize tournament ratings
-const ratings: Record<string, number> = {
-  easy: config.easy.elo,
-  medium: config.medium.elo,
-  hard: config.hard.elo,
-};
+const botKeys = Object.keys(config);
 
-const winCounts: Record<string, Record<string, number>> = {
-  easy: { wins: 0, losses: 0, draws: 0 },
-  medium: { wins: 0, losses: 0, draws: 0 },
-  hard: { wins: 0, losses: 0, draws: 0 },
-};
+// Initialize tournament ratings
+const ratings: Record<string, number> = {};
+const winCounts: Record<string, Record<string, number>> = {};
+for (const key of botKeys) {
+  ratings[key] = config[key].elo;
+  winCounts[key] = { wins: 0, losses: 0, draws: 0 };
+}
 
 /**
  * Inverts the game state colors so we can reuse O-maximizing bots for Player X
@@ -50,7 +47,7 @@ function invertState(state: MillGameState): MillGameState {
 /**
  * Simulates a single game between two bots
  */
-function runGame(botX: 'easy' | 'medium' | 'hard', botO: 'easy' | 'medium' | 'hard'): { winner: PlayerPiece | 'draw' } {
+function runGame(botX: string, botO: string): { winner: PlayerPiece | 'draw' } {
   let state = createInitialState();
   let moveCount = 0;
   const maxMoves = 150; // Avoid infinite loops in draw situations
@@ -59,11 +56,12 @@ function runGame(botX: 'easy' | 'medium' | 'hard', botO: 'easy' | 'medium' | 'ha
     const currentBot = state.turn === 'X' ? botX : botO;
     const botType = config[currentBot].type;
     const botDepth = config[currentBot].depth ?? 3;
+    const botWeights = config[currentBot].weights;
 
     try {
       if (state.turn === 'X') {
         const invState = invertState(state);
-        const action = getAiAction(invState, botType, botDepth);
+        const action = getAiAction(invState, botType, botDepth, botWeights);
         if (action.type === 'place') {
           state = handlePlaceAction(state, action.position!, 'X');
         } else if (action.type === 'move') {
@@ -72,7 +70,7 @@ function runGame(botX: 'easy' | 'medium' | 'hard', botO: 'easy' | 'medium' | 'ha
           state = handleRemoveAction(state, action.position!, 'X');
         }
       } else {
-        const action = getAiAction(state, botType, botDepth);
+        const action = getAiAction(state, botType, botDepth, botWeights);
         if (action.type === 'place') {
           state = handlePlaceAction(state, action.position!, 'O');
         } else if (action.type === 'move') {
@@ -94,7 +92,7 @@ function runGame(botX: 'easy' | 'medium' | 'hard', botO: 'easy' | 'medium' | 'ha
 /**
  * Simulates a matchup, updates stats and ratings
  */
-function simulateMatchup(botX: 'easy' | 'medium' | 'hard', botO: 'easy' | 'medium' | 'hard') {
+function simulateMatchup(botX: string, botO: string) {
   const result = runGame(botX, botO);
 
   let xScore: 1 | 0.5 | 0 = 0.5;
@@ -122,46 +120,49 @@ function simulateMatchup(botX: 'easy' | 'medium' | 'hard', botO: 'easy' | 'mediu
   ratings[botX] = newXRating;
   ratings[botO] = newORating;
 
-  // Anchoring normalization: offset all ratings by the easy rating
-  const easyOffset = ratings.easy;
-  ratings.easy -= easyOffset; // Anchored at 0
-  ratings.medium -= easyOffset;
-  ratings.hard -= easyOffset;
+  // Anchoring normalization: offset all ratings by the easy_random rating
+  const baselineKey = 'easy_random';
+  if (ratings[baselineKey] !== undefined) {
+    const easyOffset = ratings[baselineKey];
+    for (const key of botKeys) {
+      ratings[key] -= easyOffset;
+    }
+  }
 }
 
 console.log('🤖 Starting Offline AI Tournament Calibration...');
-console.log(`Initial Ratings: Easy = ${ratings.easy}, Medium = ${ratings.medium}, Hard = ${ratings.hard}\n`);
+console.log('Initial Ratings: ' + botKeys.map(k => `${config[k].username} = ${ratings[k]}`).join(', ') + '\n');
 
 // Run tournament rounds
-const totalRounds = 40; // 40 rounds * 6 games = 240 matches
+const totalRounds = 5; // 5 rounds of round-robin
 for (let round = 1; round <= totalRounds; round++) {
-  simulateMatchup('easy', 'medium');
-  simulateMatchup('medium', 'easy');
-  
-  simulateMatchup('easy', 'hard');
-  simulateMatchup('hard', 'easy');
-
-  simulateMatchup('medium', 'hard');
-  simulateMatchup('hard', 'medium');
+  console.log(`Round ${round}/${totalRounds}...`);
+  for (let i = 0; i < botKeys.length; i++) {
+    for (let j = 0; j < botKeys.length; j++) {
+      if (i !== j) {
+        simulateMatchup(botKeys[i], botKeys[j]);
+      }
+    }
+  }
 }
 
 console.log('🏁 Tournament Completed.');
 console.log('\n📊 Win/Loss Stats:');
-for (const bot of ['easy', 'medium', 'hard']) {
+for (const bot of botKeys) {
   const stats = winCounts[bot];
   const total = stats.wins + stats.losses + stats.draws;
   console.log(`- ${config[bot].username}: ${stats.wins} Wins, ${stats.losses} Losses, ${stats.draws} Draws (Total: ${total})`);
 }
 
 console.log('\n📈 Calibrated ELO Ratings (relative to Easy baseline = 0):');
-console.log(`- Easy:   ${ratings.easy}`);
-console.log(`- Medium: ${ratings.medium}`);
-console.log(`- Hard:   ${ratings.hard}`);
+for (const bot of botKeys) {
+  console.log(`- ${config[bot].username}:   ${ratings[bot]}`);
+}
 
 // Write updated ELOs back to aiConfig.json
-config.easy.elo = ratings.easy;
-config.medium.elo = ratings.medium;
-config.hard.elo = ratings.hard;
+for (const bot of botKeys) {
+  config[bot].elo = ratings[bot];
+}
 
 fs.writeFileSync(configPath, JSON.stringify(config, null, 2) + '\n');
 console.log(`\n💾 Successfully saved updated ratings to ${path.basename(configPath)}!`);

@@ -5,7 +5,7 @@ import {
   isPieceInMill,
   areAllPiecesInMills,
 } from './millRules';
-import { getBestMinimaxMove, getValidActions, AiAction } from './minimaxAi';
+import { getBestMinimaxMove, getValidActions, AiAction, StrategyWeights } from './minimaxAi';
 
 /**
  * Dispatcher function that returns the AI action based on requested level type
@@ -13,7 +13,8 @@ import { getBestMinimaxMove, getValidActions, AiAction } from './minimaxAi';
 export function getAiAction(
   state: MillGameState,
   type: 'random' | 'heuristic' | 'minimax',
-  depth: number = 3
+  depth: number = 3,
+  weights?: StrategyWeights
 ): AiAction {
   if (type === 'random') {
     const valid = getValidActions(state);
@@ -25,7 +26,7 @@ export function getAiAction(
   }
 
   if (type === 'minimax') {
-    return getBestMinimaxMove(state, depth);
+    return getBestMinimaxMove(state, depth, weights);
   }
 
   // Fallback to Heuristics (Medium)

@@ -25,6 +25,7 @@ export function createInitialState(): MillGameState {
     turn: 'X',
     winner: null,
     millFormedThisTurn: false,
+    movesSinceLastCapture: 0,
   };
 }
 
@@ -88,14 +89,22 @@ export function handlePlaceAction(
 
   let nextTurn: PlayerPiece = state.turn;
   let millPending: boolean = state.millFormedThisTurn;
+  const currentCount = state.movesSinceLastCapture ?? 0;
+  let nextMovesSinceLastCapture = currentCount;
 
   if (millCreated) {
     millPending = true;
   } else {
     nextTurn = player === 'X' ? 'O' : 'X';
+    nextMovesSinceLastCapture = currentCount + 1;
   }
 
   const nextPhase = getNextPhase(newPlacements, newPiecesOnBoard, nextTurn);
+
+  let nextWinner: PlayerPiece | 'draw' | null = state.winner;
+  if (nextWinner === null && nextMovesSinceLastCapture >= 50) {
+    nextWinner = 'draw';
+  }
 
   return {
     ...state,
@@ -105,6 +114,8 @@ export function handlePlaceAction(
     piecesOnBoard: newPiecesOnBoard,
     turn: nextTurn,
     millFormedThisTurn: millPending,
+    movesSinceLastCapture: nextMovesSinceLastCapture,
+    winner: nextWinner,
   };
 }
 
@@ -155,11 +166,14 @@ export function handleMoveAction(
 
   let nextTurn: PlayerPiece = state.turn;
   let millPending: boolean = state.millFormedThisTurn;
+  const currentCount = state.movesSinceLastCapture ?? 0;
+  let nextMovesSinceLastCapture = currentCount;
 
   if (millCreated) {
     millPending = true;
   } else {
     nextTurn = player === 'X' ? 'O' : 'X';
+    nextMovesSinceLastCapture = currentCount + 1;
   }
 
   const nextPhase = getNextPhase(state.placementsRemaining, state.piecesOnBoard, nextTurn);
@@ -170,6 +184,7 @@ export function handleMoveAction(
     phase: nextPhase,
     turn: nextTurn,
     millFormedThisTurn: millPending,
+    movesSinceLastCapture: nextMovesSinceLastCapture,
   };
 
   // 3. Post-move checks (e.g. check if opponent is blocked)
@@ -181,6 +196,10 @@ export function handleMoveAction(
       nextState.winner = player;
       nextState.phase = 'movement'; // Keep stable
     }
+  }
+
+  if (nextState.winner === null && nextMovesSinceLastCapture >= 50) {
+    nextState.winner = 'draw';
   }
 
   return nextState;
@@ -250,5 +269,6 @@ export function handleRemoveAction(
     turn: nextTurn,
     millFormedThisTurn: false, // Reset removal flag
     winner: nextWinner,
+    movesSinceLastCapture: 0, // Reset draw counter on capture
   };
 }

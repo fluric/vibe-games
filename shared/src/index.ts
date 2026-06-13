@@ -55,6 +55,7 @@ export interface MillGameState {
   turn: PlayerPiece;
   winner: PlayerPiece | 'draw' | null;
   millFormedThisTurn: boolean; // True if player needs to remove an opponent piece
+  movesSinceLastCapture?: number; // ply count since last capture
 }
 
 export interface GameDto {

@@ -9,11 +9,19 @@ export interface AiAction {
   to?: number;
 }
 
-// Evaluation weights
-const MATERIAL_WEIGHT = 200;
-const MILL_WEIGHT = 150; // Increased to prioritize active mills
-const BLOCKED_WEIGHT = -20;
-const MILL_THREAT_WEIGHT = 60; // Increased to prioritize block/setup of threats
+export interface StrategyWeights {
+  material: number;
+  mill: number;
+  blocked: number;
+  threat: number;
+}
+
+const DEFAULT_WEIGHTS: StrategyWeights = {
+  material: 200,
+  mill: 150,
+  blocked: -20,
+  threat: 60
+};
 
 /**
  * Counts active mills for a player
@@ -65,7 +73,7 @@ function getOpponentThreats(board: (PlayerPiece | null)[], opponent: PlayerPiece
 /**
  * Evaluates the board state from maximizing player O's perspective
  */
-export function evaluateBoard(state: MillGameState): number {
+export function evaluateBoard(state: MillGameState, weights: StrategyWeights = DEFAULT_WEIGHTS): number {
   if (state.winner === 'O') return 10000;
   if (state.winner === 'X') return -10000;
   if (state.winner === 'draw') return 0;
@@ -75,12 +83,12 @@ export function evaluateBoard(state: MillGameState): number {
   // 1. Material score
   const oMaterial = state.piecesOnBoard.O + state.placementsRemaining.O;
   const xMaterial = state.piecesOnBoard.X + state.placementsRemaining.X;
-  const materialScore = (oMaterial - xMaterial) * MATERIAL_WEIGHT;
+  const materialScore = (oMaterial - xMaterial) * weights.material;
 
   // 2. Active mills
   const oMills = countMills(board, 'O');
   const xMills = countMills(board, 'X');
-  const millScore = (oMills - xMills) * MILL_WEIGHT;
+  const millScore = (oMills - xMills) * weights.mill;
 
   // 3. Blocked pieces
   let oBlocked = 0;
@@ -100,12 +108,12 @@ export function evaluateBoard(state: MillGameState): number {
       }
     }
   }
-  const blockedScore = (oBlocked - xBlocked) * BLOCKED_WEIGHT;
+  const blockedScore = (oBlocked - xBlocked) * weights.blocked;
 
   // 4. Mill threats (placing setups)
   const oThreats = countMillThreats(board, 'O');
   const xThreats = countMillThreats(board, 'X');
-  const threatScore = (oThreats - xThreats) * MILL_THREAT_WEIGHT;
+  const threatScore = (oThreats - xThreats) * weights.threat;
 
   return materialScore + millScore + blockedScore + threatScore;
 }
@@ -259,10 +267,11 @@ function minimax(
   depth: number,
   alpha: number,
   beta: number,
-  isMaximizing: boolean
+  isMaximizing: boolean,
+  weights: StrategyWeights = DEFAULT_WEIGHTS
 ): number {
   if (depth === 0 || state.winner) {
-    return evaluateBoard(state);
+    return evaluateBoard(state, weights);
   }
 
   const actions = orderActions(state, getValidActions(state));
@@ -276,7 +285,7 @@ function minimax(
     for (const action of actions) {
       try {
         const nextState = simulateAction(state, action, state.turn);
-        const evaluation = minimax(nextState, depth - 1, alpha, beta, nextState.turn === 'O');
+        const evaluation = minimax(nextState, depth - 1, alpha, beta, nextState.turn === 'O', weights);
         maxEval = Math.max(maxEval, evaluation);
         alpha = Math.max(alpha, evaluation);
         if (beta <= alpha) break; // Beta cut-off
@@ -291,7 +300,7 @@ function minimax(
     for (const action of actions) {
       try {
         const nextState = simulateAction(state, action, state.turn);
-        const evaluation = minimax(nextState, depth - 1, alpha, beta, nextState.turn === 'O');
+        const evaluation = minimax(nextState, depth - 1, alpha, beta, nextState.turn === 'O', weights);
         minEval = Math.min(minEval, evaluation);
         beta = Math.min(beta, evaluation);
         if (beta <= alpha) break; // Alpha cut-off
@@ -307,7 +316,11 @@ function minimax(
 /**
  * Returns the best action for player O using Minimax Search
  */
-export function getBestMinimaxMove(state: MillGameState, depth: number = 3): AiAction {
+export function getBestMinimaxMove(
+  state: MillGameState,
+  depth: number = 3,
+  weights: StrategyWeights = DEFAULT_WEIGHTS
+): AiAction {
   const actions = orderActions(state, getValidActions(state));
   if (actions.length === 0) {
     throw new Error('AI opponent has no valid actions');
@@ -319,7 +332,7 @@ export function getBestMinimaxMove(state: MillGameState, depth: number = 3): AiA
   for (const action of actions) {
     try {
       const nextState = simulateAction(state, action, 'O');
-      const value = minimax(nextState, depth - 1, -Infinity, Infinity, nextState.turn === 'O');
+      const value = minimax(nextState, depth - 1, -Infinity, Infinity, nextState.turn === 'O', weights);
       
       if (value > bestValue) {
         bestValue = value;

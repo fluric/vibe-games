@@ -1,21 +1,73 @@
 {
-  "easy": {
+  "easy_random": {
     "id": "00000000-0000-0000-0000-000000000001",
-    "username": "Bot (Easy)",
+    "username": "Random Randy (Easy)",
     "elo": 0,
     "type": "random"
   },
-  "medium": {
+  "medium_aggressive": {
     "id": "00000000-0000-0000-0000-000000000002",
-    "username": "Bot (Medium)",
-    "elo": 746,
-    "type": "heuristic"
-  },
-  "hard": {
-    "id": "00000000-0000-0000-0000-000000000003",
-    "username": "Bot (Hard)",
-    "elo": 1310,
+    "username": "Aggressive Archie (Medium)",
+    "elo": 563,
     "type": "minimax",
-    "depth": 5
+    "depth": 3,
+    "weights": {
+      "material": 300,
+      "mill": 200,
+      "blocked": -5,
+      "threat": 20
+    }
+  },
+  "medium_defensive": {
+    "id": "00000000-0000-0000-0000-000000000003",
+    "username": "Defensive Debbie (Medium)",
+    "elo": 906,
+    "type": "minimax",
+    "depth": 3,
+    "weights": {
+      "material": 150,
+      "mill": 80,
+      "blocked": -25,
+      "threat": 120
+    }
+  },
+  "medium_mobile": {
+    "id": "00000000-0000-0000-0000-000000000004",
+    "username": "Mobile Monty (Medium)",
+    "elo": 870,
+    "type": "minimax",
+    "depth": 3,
+    "weights": {
+      "material": 100,
+      "mill": 50,
+      "blocked": -100,
+      "threat": 30
+    }
+  },
+  "hard_tactical": {
+    "id": "00000000-0000-0000-0000-000000000005",
+    "username": "Tactical Toby (Hard)",
+    "elo": 760,
+    "type": "minimax",
+    "depth": 4,
+    "weights": {
+      "material": 200,
+      "mill": 120,
+      "blocked": -20,
+      "threat": 50
+    }
+  },
+  "expert_garry": {
+    "id": "00000000-0000-0000-0000-000000000006",
+    "username": "Grandmaster Garry (Expert)",
+    "elo": 989,
+    "type": "minimax",
+    "depth": 5,
+    "weights": {
+      "material": 200,
+      "mill": 150,
+      "blocked": -20,
+      "threat": 60
+    }
   }
 }

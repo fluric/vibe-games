@@ -180,6 +180,6 @@ test.describe('Vibe Games Matchmaking & Gameplay E2E', () => {
 
     // Verify status banner changes to Winner
     const statusBanner = page.locator('h2');
-    await expect(statusBanner).toContainText('Bot (Medium) Wins!');
+    await expect(statusBanner).toContainText('Aggressive Archie (Medium) Wins!');
   });
 });

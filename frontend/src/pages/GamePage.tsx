@@ -7,9 +7,12 @@ import * as audio from '../components/AudioEffects';
 
 const AI_BOT_IDS = [
   '00000000-0000-0000-0000-000000000000', // legacy
-  '00000000-0000-0000-0000-000000000001', // easy
-  '00000000-0000-0000-0000-000000000002', // medium
-  '00000000-0000-0000-0000-000000000003', // hard
+  '00000000-0000-0000-0000-000000000001', // Random Randy (Easy)
+  '00000000-0000-0000-0000-000000000002', // Aggressive Archie (Medium)
+  '00000000-0000-0000-0000-000000000003', // Defensive Debbie (Medium)
+  '00000000-0000-0000-0000-000000000004', // Mobile Monty (Medium)
+  '00000000-0000-0000-0000-000000000005', // Tactical Toby (Hard)
+  '00000000-0000-0000-0000-000000000006', // Grandmaster Garry (Expert)
 ];
 
 function isBotId(id?: string): boolean {
@@ -330,7 +333,9 @@ export function GamePage() {
         {/* Status Indicator Banner */}
         <div className={`p-6 rounded-2xl border backdrop-blur-md text-center flex flex-col gap-1.5 shadow-xl transition-all duration-300 ${
           game.status === 'finished'
-            ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
+            ? game.state.winner === 'draw'
+              ? 'bg-amber-500/10 border-amber-500/20 text-amber-400'
+              : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
             : isMyTurn
             ? 'bg-blue-500/10 border-blue-500/20 text-blue-400'
             : 'bg-neutral-900/60 border-neutral-800 text-neutral-300'

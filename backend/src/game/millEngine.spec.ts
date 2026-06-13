@@ -17,6 +17,7 @@ function runTests() {
   testWinConditionByPieceReduction();
   testWinConditionByBlocking();
   testPieceReductionDuringPlacement();
+  testDrawCondition();
 
   console.log('\n✅ All Nine Men\'s Morris Engine tests passed successfully!');
 }
@@ -237,6 +238,53 @@ function testPieceReductionDuringPlacement() {
   assert.strictEqual(state.winner, null);
   assert.strictEqual(state.phase, 'placement');
   assert.strictEqual(state.turn, 'O');
+}
+
+function testDrawCondition() {
+  console.log('👉 Testing 50-Ply Draw Condition...');
+  let state = createInitialState();
+  assert.strictEqual(state.movesSinceLastCapture, 0);
+
+  // Alternating places that don't form mills
+  state = handlePlaceAction(state, 0, 'X');
+  assert.strictEqual(state.movesSinceLastCapture, 1);
+  state = handlePlaceAction(state, 8, 'O');
+  assert.strictEqual(state.movesSinceLastCapture, 2);
+
+  // Let's set it to 49 plies manually to simulate almost reaching the draw
+  state.movesSinceLastCapture = 49;
+  
+  // Make a non-capturing place action to trigger the draw
+  state = handlePlaceAction(state, 1, 'X');
+  assert.strictEqual(state.movesSinceLastCapture, 50);
+  assert.strictEqual(state.winner, 'draw');
+  
+  // Let's also test capture resetting the counter
+  let state2 = createInitialState();
+  state2.movesSinceLastCapture = 30;
+  
+  // Setup a mill formation for X
+  state2.board[0] = 'X';
+  state2.board[1] = 'X';
+  state2.board[8] = 'O';
+  state2.placementsRemaining.X = 7;
+  state2.placementsRemaining.O = 8;
+  state2.piecesOnBoard.X = 2;
+  state2.piecesOnBoard.O = 1;
+  state2.turn = 'X';
+  
+  // X places at 2 to form a mill
+  state2 = handlePlaceAction(state2, 2, 'X');
+  // It shouldn't increment or trigger a draw yet since mill is formed
+  assert.strictEqual(state2.movesSinceLastCapture, 30);
+  assert.strictEqual(state2.winner, null);
+  assert.strictEqual(state2.millFormedThisTurn, true);
+  
+  // X removes O's piece at 8
+  state2 = handleRemoveAction(state2, 8, 'X');
+  // movesSinceLastCapture should reset to 0
+  assert.strictEqual(state2.movesSinceLastCapture, 0);
+  assert.strictEqual(state2.winner, null);
 }
 
 // Execute tests

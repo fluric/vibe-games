@@ -18,6 +18,7 @@
     "docker:reset": "PATH=\"/Applications/Docker.app/Contents/Resources/bin:$PATH\" docker compose down -v && PATH=\"/Applications/Docker.app/Contents/Resources/bin:$PATH\" docker compose up -d",
     "test:e2e": "npm run test:e2e -w frontend",
     "ai:tournament": "npm run tournament -w backend",
+    "ai:tune": "npm run tune -w backend",
     "prepare": "node -e \"if (process.env.NODE_ENV !== 'production') { try { require('child_process').execSync('husky', { stdio: 'inherit' }) } catch (e) {} }\""
   },
   "devDependencies": {

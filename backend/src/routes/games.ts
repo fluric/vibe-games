@@ -7,7 +7,8 @@ import { UserStats } from '../entities/UserStats';
 import { GameDto, UserDto, PlayerPiece, GameType } from '@vibe-games/shared';
 import { calculateElo } from '../game/elo';
 import { getAiAction } from '../game/millAi';
-const aiConfig: Record<string, { id: string; username: string; elo: number; type: string; depth?: number }> = require('../game/aiConfig.json');
+import { StrategyWeights } from '../game/minimaxAi';
+const aiConfig: Record<string, { id: string; username: string; elo: number; type: string; depth?: number; weights?: StrategyWeights }> = require('../game/aiConfig.json');
 import {
   createInitialState,
   handlePlaceAction,
@@ -22,9 +23,9 @@ declare module 'fastify' {
 }
 
 // BOTS configuration lookup map
-const BOTS_MAP = new Map<string, { username: string; elo: number; type: string; depth?: number }>();
+const BOTS_MAP = new Map<string, { username: string; elo: number; type: string; depth?: number; weights?: StrategyWeights }>();
 for (const [key, val] of Object.entries(aiConfig)) {
-  BOTS_MAP.set(val.id, { username: val.username, elo: val.elo, type: val.type, depth: (val as any).depth });
+  BOTS_MAP.set(val.id, { username: val.username, elo: val.elo, type: val.type, depth: val.depth, weights: val.weights });
 }
 
 async function getOrCreateUser(userId: string): Promise<User> {
@@ -259,7 +260,7 @@ export async function gameRoutes(server: FastifyInstance) {
       gameType: GameType;
       isPublic?: boolean;
       vsAi?: boolean;
-      aiLevel?: 'easy' | 'medium' | 'hard';
+      aiLevel?: 'easy' | 'medium' | 'hard' | 'easy_random' | 'medium_aggressive' | 'medium_defensive' | 'medium_mobile' | 'hard_tactical' | 'expert_garry';
     };
   }>('/', async (request, reply) => {
     const user = request.user;
@@ -267,7 +268,7 @@ export async function gameRoutes(server: FastifyInstance) {
       return reply.code(401).send({ error: 'Unauthorized' });
     }
 
-    const { gameType, isPublic = true, vsAi = false, aiLevel = 'medium' } = request.body;
+    const { gameType, isPublic = true, vsAi = false, aiLevel = 'medium_aggressive' } = request.body;
     if (gameType !== 'mill') {
       return reply.code(400).send({ error: 'Unsupported game type' });
     }
@@ -278,8 +279,12 @@ export async function gameRoutes(server: FastifyInstance) {
     let playerOId = null;
     let playerO = null;
     if (vsAi) {
-      const botKey = (aiLevel === 'easy' || aiLevel === 'medium' || aiLevel === 'hard') ? aiLevel : 'medium';
-      const botConfig = aiConfig[botKey];
+      let botKey: string = aiLevel || 'medium_aggressive';
+      if (botKey === 'easy') botKey = 'easy_random';
+      else if (botKey === 'medium') botKey = 'medium_aggressive';
+      else if (botKey === 'hard') botKey = 'hard_tactical';
+
+      const botConfig = aiConfig[botKey] || aiConfig['medium_aggressive'];
       playerO = await getOrCreateUser(botConfig.id);
       playerOId = botConfig.id;
     }
@@ -511,7 +516,7 @@ export async function gameRoutes(server: FastifyInstance) {
 
     if (game.state.winner) {
       game.status = 'finished';
-      game.winnerId = game.state.winner === 'X' ? game.playerXId : game.playerOId;
+      game.winnerId = game.state.winner === 'draw' ? null : (game.state.winner === 'X' ? game.playerXId : game.playerOId);
     }
 
     // ── AI Opponent Logic Loop ───────────────────────────────────────────────
@@ -519,7 +524,7 @@ export async function gameRoutes(server: FastifyInstance) {
     while (aiActive && game.state.turn === 'O') {
       try {
         const botInfo = BOTS_MAP.get(game.playerOId!)!;
-        const aiAction = getAiAction(game.state, botInfo.type as any, botInfo.depth);
+        const aiAction = getAiAction(game.state, botInfo.type as any, botInfo.depth, botInfo.weights);
 
         if (aiAction.type === 'place') {
           game.state = handlePlaceAction(game.state, aiAction.position!, 'O');
@@ -531,7 +536,7 @@ export async function gameRoutes(server: FastifyInstance) {
 
         if (game.state.winner) {
           game.status = 'finished';
-          game.winnerId = game.state.winner === 'X' ? game.playerXId : game.playerOId;
+          game.winnerId = game.state.winner === 'draw' ? null : (game.state.winner === 'X' ? game.playerXId : game.playerOId);
           aiActive = false;
         }
       } catch (err) {
