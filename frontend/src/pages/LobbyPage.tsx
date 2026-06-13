@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import * as api from '../api/games';
 import { API_VERSION, type GameDto, type UserDto } from '@vibe-games/shared';
 import * as audio from '../components/AudioEffects';
+import aiConfig from '../../../backend/src/game/aiConfig.json';
 
 interface GoogleAccountsId {
   initialize: (config: {
@@ -554,12 +555,12 @@ export function LobbyPage() {
                   onChange={(e) => setAiLevel(e.target.value as typeof aiLevel)}
                   className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2.5 text-xs text-neutral-100 focus:outline-none focus:border-indigo-500 transition-all font-sans"
                 >
-                  <option value="easy_random">🟢 Random Randy (Easy) — ELO 0 [Random Play]</option>
-                  <option value="medium_aggressive">🟡 Aggressive Archie (Medium) — ELO 500 [Material & Mills]</option>
-                  <option value="medium_defensive">🟡 Defensive Debbie (Medium) — ELO 550 [Threat Blocking]</option>
-                  <option value="medium_mobile">🟡 Mobile Monty (Medium) — ELO 600 [Piece Mobility]</option>
-                  <option value="hard_tactical">🔴 Tactical Toby (Hard) — ELO 1000 [Minimax Depth 4]</option>
-                  <option value="expert_garry">🔥 Grandmaster Garry (Expert) — ELO 1300 [Minimax Depth 5]</option>
+                  <option value="easy_random">🟢 Random Randy (Easy) — ELO {aiConfig.easy_random.elo} [Random Play]</option>
+                  <option value="medium_aggressive">🟡 Aggressive Archie (Medium) — ELO {aiConfig.medium_aggressive.elo} [Material & Mills]</option>
+                  <option value="medium_defensive">🟡 Defensive Debbie (Medium) — ELO {aiConfig.medium_defensive.elo} [Threat Blocking]</option>
+                  <option value="medium_mobile">🟡 Mobile Monty (Medium) — ELO {aiConfig.medium_mobile.elo} [Piece Mobility]</option>
+                  <option value="hard_tactical">🔴 Tactical Toby (Hard) — ELO {aiConfig.hard_tactical.elo} [Minimax Depth 4]</option>
+                  <option value="expert_garry">🔥 Grandmaster Garry (Expert) — ELO {aiConfig.expert_garry.elo} [Minimax Depth 5]</option>
                 </select>
                 <p className="text-[10px] text-neutral-500 mt-1">
                   {aiLevel === 'easy_random' && " Randy makes completely random moves. Great for learning the rules!"}
