@@ -91,7 +91,7 @@ export function evaluateBoard(state: MillGameState, weights: StrategyWeights = D
   if (state.winner === 'X') return -10000;
   if (state.winner === 'draw') return 0;
 
-  const cacheKey = `${state.board.join(',')}|${state.phase}|${state.piecesOnBoard.O}|${state.piecesOnBoard.X}|${state.placementsRemaining.O}|${state.placementsRemaining.X}`;
+  const cacheKey = `${state.board.join(',')}|${state.phase}|${state.piecesOnBoard.O}|${state.piecesOnBoard.X}|${state.placementsRemaining.O}|${state.placementsRemaining.X}|${state.movesSinceLastCapture}`;
   if (evalCache.has(cacheKey)) {
     return evalCache.get(cacheKey)!;
   }
@@ -318,7 +318,10 @@ function minimax(
     return evaluateBoard(state, weights);
   }
 
-  const cacheKey = `${state.board.join(',')}|${state.phase}|${state.turn}|${state.piecesOnBoard.O}|${state.piecesOnBoard.X}|${state.placementsRemaining.O}|${state.placementsRemaining.X}|${state.millFormedThisTurn}`;
+  const alphaOrig = alpha;
+  const betaOrig = beta;
+
+  const cacheKey = `${state.board.join(',')}|${state.phase}|${state.turn}|${state.piecesOnBoard.O}|${state.piecesOnBoard.X}|${state.placementsRemaining.O}|${state.placementsRemaining.X}|${state.millFormedThisTurn}|${state.movesSinceLastCapture}`;
   
   const ttEntry = tt.get(cacheKey);
   if (ttEntry && ttEntry.depth >= depth) {
@@ -354,9 +357,9 @@ function minimax(
     }
   }
 
-  // Branching factor control: evaluate top 12 moves
-  if (actions.length > 12) {
-    actions = actions.slice(0, 12);
+  // Branching factor control: evaluate top 36 moves
+  if (actions.length > 36) {
+    actions = actions.slice(0, 36);
   }
 
   let bestValue = isMaximizing ? -Infinity : Infinity;
@@ -397,9 +400,9 @@ function minimax(
   }
 
   let flag: 'exact' | 'lower' | 'upper' = 'exact';
-  if (bestValue <= alpha) {
+  if (bestValue <= alphaOrig) {
     flag = 'upper';
-  } else if (bestValue >= beta) {
+  } else if (bestValue >= betaOrig) {
     flag = 'lower';
   }
 

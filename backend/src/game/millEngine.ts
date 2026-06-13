@@ -102,8 +102,12 @@ export function handlePlaceAction(
   const nextPhase = getNextPhase(newPlacements, newPiecesOnBoard, nextTurn);
 
   let nextWinner: PlayerPiece | 'draw' | null = state.winner;
-  if (nextWinner === null && nextMovesSinceLastCapture >= 50) {
-    nextWinner = 'draw';
+  if (nextWinner === null) {
+    if (nextPhase === 'movement' && !millCreated && !hasValidMoves(newBoard, nextTurn)) {
+      nextWinner = player;
+    } else if (nextMovesSinceLastCapture >= 50) {
+      nextWinner = 'draw';
+    }
   }
 
   return {

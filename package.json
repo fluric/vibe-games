@@ -19,6 +19,7 @@
     "test:e2e": "npm run test:e2e -w frontend",
     "ai:tournament": "npm run tournament -w backend",
     "ai:tune": "npm run tune -w backend",
+    "ai:test": "npm run test-oracle -w backend",
     "prepare": "node -e \"if (process.env.NODE_ENV !== 'production') { try { require('child_process').execSync('husky', { stdio: 'inherit' }) } catch (e) {} }\""
   },
   "devDependencies": {

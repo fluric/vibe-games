@@ -12,7 +12,8 @@
     "migration:run": "typeorm-ts-node-commonjs migration:run -d src/data-source.ts",
     "migration:revert": "typeorm-ts-node-commonjs migration:revert -d src/data-source.ts",
     "tournament": "ts-node -r tsconfig-paths/register src/scripts/aiTournament.ts",
-    "tune": "ts-node -r tsconfig-paths/register src/scripts/tuneAi.ts"
+    "tune": "ts-node -r tsconfig-paths/register src/scripts/tuneAi.ts",
+    "test-oracle": "ts-node -r tsconfig-paths/register src/scripts/testOracle.ts"
   },
   "dependencies": {
     "@fastify/cookie": "^9.4.0",
