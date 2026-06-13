@@ -15,6 +15,8 @@ export interface StrategyWeights {
   blocked: number;
   threat: number;
   positional?: number;
+  fork?: number;
+  mobility?: number;
 }
 
 const DEFAULT_WEIGHTS: StrategyWeights = {
@@ -22,7 +24,9 @@ const DEFAULT_WEIGHTS: StrategyWeights = {
   mill: 150,
   blocked: -20,
   threat: 60,
-  positional: 15
+  positional: 15,
+  fork: 100,
+  mobility: 5
 };
 
 /**
@@ -70,6 +74,55 @@ function getOpponentThreats(board: (PlayerPiece | null)[], opponent: PlayerPiece
     else if (p2 === opponent && p3 === opponent && p1 === null) threats.push(line[0]);
   }
   return threats;
+}
+/**
+ * Counts double-mill threats (forks) for a player.
+ * A fork is an empty position where a player has two pieces in two different lines of MILLS.
+ */
+function countForks(board: (PlayerPiece | null)[], player: PlayerPiece): number {
+  let forks = 0;
+  for (let i = 0; i < board.length; i++) {
+    if (board[i] === null) {
+      let threatsAtPos = 0;
+      for (const line of MILLS) {
+        if (line.includes(i)) {
+          const otherPos = line.filter(p => p !== i);
+          if (board[otherPos[0]] === player && board[otherPos[1]] === player) {
+            threatsAtPos++;
+          }
+        }
+      }
+      if (threatsAtPos >= 2) {
+        forks++;
+      }
+    }
+  }
+  return forks;
+}
+
+/**
+ * Counts the total legal moves (mobility) for a player.
+ */
+function getMobilityCount(board: (PlayerPiece | null)[], player: PlayerPiece, phase: string): number {
+  if (phase === 'placement') return 0;
+  const pieces = board.filter(c => c === player).length;
+  if (pieces === 3) {
+    // Flying phase: can fly to any empty position
+    const emptyCount = board.filter(c => c === null).length;
+    return 3 * emptyCount;
+  }
+  let moves = 0;
+  for (let i = 0; i < board.length; i++) {
+    if (board[i] === player) {
+      const neighbors = ADJACENCY_LIST[i] || [];
+      for (const n of neighbors) {
+        if (board[n] === null) {
+          moves++;
+        }
+      }
+    }
+  }
+  return moves;
 }
 
 /**
@@ -149,7 +202,25 @@ export function evaluateBoard(state: MillGameState, weights: StrategyWeights = D
     positionalScore = (oPosVal - xPosVal) * positionalWeight;
   }
 
-  const score = materialScore + millScore + blockedScore + threatScore + positionalScore;
+  // 6. Forks (double threats)
+  let forkScore = 0;
+  const forkWeight = weights.fork ?? 100;
+  if (forkWeight > 0) {
+    const oForks = countForks(board, 'O');
+    const xForks = countForks(board, 'X');
+    forkScore = (oForks - xForks) * forkWeight;
+  }
+
+  // 7. Mobility (valid moves count)
+  let mobilityScore = 0;
+  const mobilityWeight = weights.mobility ?? 5;
+  if (mobilityWeight > 0) {
+    const oMob = getMobilityCount(board, 'O', state.phase);
+    const xMob = getMobilityCount(board, 'X', state.phase);
+    mobilityScore = (oMob - xMob) * mobilityWeight;
+  }
+
+  const score = materialScore + millScore + blockedScore + threatScore + positionalScore + forkScore + mobilityScore;
   evalCache.set(cacheKey, score);
   return score;
 }
