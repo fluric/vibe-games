@@ -73,10 +73,26 @@ function getOpponentThreats(board: (PlayerPiece | null)[], opponent: PlayerPiece
 /**
  * Evaluates the board state from maximizing player O's perspective
  */
+const evalCache = new Map<string, number>();
+
+interface TranspositionEntry {
+  depth: number;
+  value: number;
+  flag: 'exact' | 'lower' | 'upper';
+  bestAction?: AiAction;
+}
+
+const tt = new Map<string, TranspositionEntry>();
+
 export function evaluateBoard(state: MillGameState, weights: StrategyWeights = DEFAULT_WEIGHTS): number {
   if (state.winner === 'O') return 10000;
   if (state.winner === 'X') return -10000;
   if (state.winner === 'draw') return 0;
+
+  const cacheKey = `${state.board.join(',')}|${state.phase}|${state.piecesOnBoard.O}|${state.piecesOnBoard.X}|${state.placementsRemaining.O}|${state.placementsRemaining.X}`;
+  if (evalCache.has(cacheKey)) {
+    return evalCache.get(cacheKey)!;
+  }
 
   const board = state.board;
 
@@ -115,7 +131,9 @@ export function evaluateBoard(state: MillGameState, weights: StrategyWeights = D
   const xThreats = countMillThreats(board, 'X');
   const threatScore = (oThreats - xThreats) * weights.threat;
 
-  return materialScore + millScore + blockedScore + threatScore;
+  const score = materialScore + millScore + blockedScore + threatScore;
+  evalCache.set(cacheKey, score);
+  return score;
 }
 
 /**
@@ -211,14 +229,22 @@ function orderActions(state: MillGameState, actions: AiAction[]): AiAction[] {
   // Get opponent threats to prioritize blocking them
   const threats = getOpponentThreats(board, opponent);
 
+  // Compute player's threats once to avoid repeating in the loop
+  const oldThreats = countMillThreats(board, player);
+
   const getActionScore = (action: AiAction): number => {
     let score = 0;
 
-    // 1. Simulate to check if it forms a mill (highest priority)
+    // 1. Simulate to check if it forms a mill or creates a threat
     try {
       const nextState = simulateAction(state, action, player);
       if (nextState.millFormedThisTurn) {
         score += 1000;
+      } else {
+        const newThreats = countMillThreats(nextState.board, player);
+        if (newThreats > oldThreats) {
+          score += 400;
+        }
       }
     } catch (err) {
       // Ignore invalid simulation
@@ -260,7 +286,7 @@ function orderActions(state: MillGameState, actions: AiAction[]): AiAction[] {
 }
 
 /**
- * Minimax with Alpha-Beta Pruning
+ * Minimax with Alpha-Beta Pruning and Transposition Table
  */
 function minimax(
   state: MillGameState,
@@ -274,19 +300,59 @@ function minimax(
     return evaluateBoard(state, weights);
   }
 
-  const actions = orderActions(state, getValidActions(state));
+  const cacheKey = `${state.board.join(',')}|${state.phase}|${state.turn}|${state.piecesOnBoard.O}|${state.piecesOnBoard.X}|${state.placementsRemaining.O}|${state.placementsRemaining.X}|${state.millFormedThisTurn}`;
+  
+  const ttEntry = tt.get(cacheKey);
+  if (ttEntry && ttEntry.depth >= depth) {
+    if (ttEntry.flag === 'exact') {
+      return ttEntry.value;
+    } else if (ttEntry.flag === 'lower') {
+      alpha = Math.max(alpha, ttEntry.value);
+    } else if (ttEntry.flag === 'upper') {
+      beta = Math.min(beta, ttEntry.value);
+    }
+    if (alpha >= beta) {
+      return ttEntry.value;
+    }
+  }
+
+  let actions = orderActions(state, getValidActions(state));
   if (actions.length === 0) {
     // No moves means the other player wins
     return isMaximizing ? -9000 : 9000;
   }
 
+  // Put the best action from Transposition Table first if available
+  if (ttEntry && ttEntry.bestAction) {
+    const bestIdx = actions.findIndex(a =>
+      a.type === ttEntry.bestAction!.type &&
+      a.position === ttEntry.bestAction!.position &&
+      a.from === ttEntry.bestAction!.from &&
+      a.to === ttEntry.bestAction!.to
+    );
+    if (bestIdx > 0) {
+      const [best] = actions.splice(bestIdx, 1);
+      actions.unshift(best);
+    }
+  }
+
+  // Branching factor control: evaluate top 12 moves
+  if (actions.length > 12) {
+    actions = actions.slice(0, 12);
+  }
+
+  let bestValue = isMaximizing ? -Infinity : Infinity;
+  let bestAction: AiAction | undefined;
+
   if (isMaximizing) {
-    let maxEval = -Infinity;
     for (const action of actions) {
       try {
         const nextState = simulateAction(state, action, state.turn);
         const evaluation = minimax(nextState, depth - 1, alpha, beta, nextState.turn === 'O', weights);
-        maxEval = Math.max(maxEval, evaluation);
+        if (evaluation > bestValue) {
+          bestValue = evaluation;
+          bestAction = action;
+        }
         alpha = Math.max(alpha, evaluation);
         if (beta <= alpha) break; // Beta cut-off
       } catch (err) {
@@ -294,14 +360,15 @@ function minimax(
         continue;
       }
     }
-    return maxEval;
   } else {
-    let minEval = Infinity;
     for (const action of actions) {
       try {
         const nextState = simulateAction(state, action, state.turn);
         const evaluation = minimax(nextState, depth - 1, alpha, beta, nextState.turn === 'O', weights);
-        minEval = Math.min(minEval, evaluation);
+        if (evaluation < bestValue) {
+          bestValue = evaluation;
+          bestAction = action;
+        }
         beta = Math.min(beta, evaluation);
         if (beta <= alpha) break; // Alpha cut-off
       } catch (err) {
@@ -309,8 +376,23 @@ function minimax(
         continue;
       }
     }
-    return minEval;
   }
+
+  let flag: 'exact' | 'lower' | 'upper' = 'exact';
+  if (bestValue <= alpha) {
+    flag = 'upper';
+  } else if (bestValue >= beta) {
+    flag = 'lower';
+  }
+
+  tt.set(cacheKey, {
+    depth,
+    value: bestValue,
+    flag,
+    bestAction
+  });
+
+  return bestValue;
 }
 
 /**
@@ -321,6 +403,8 @@ export function getBestMinimaxMove(
   depth: number = 3,
   weights: StrategyWeights = DEFAULT_WEIGHTS
 ): AiAction {
+  evalCache.clear();
+  tt.clear();
   const actions = orderActions(state, getValidActions(state));
   if (actions.length === 0) {
     throw new Error('AI opponent has no valid actions');

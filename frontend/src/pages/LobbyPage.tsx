@@ -32,7 +32,7 @@ export function LobbyPage() {
   const [joiningCode, setJoiningCode] = useState(false);
   const [lobbyError, setLobbyError] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
-  const [aiLevel, setAiLevel] = useState<'easy_random' | 'medium_aggressive' | 'medium_defensive' | 'medium_mobile' | 'hard_tactical' | 'expert_garry'>('medium_aggressive');
+  const [aiLevel, setAiLevel] = useState<'easy_random' | 'medium_aggressive' | 'medium_defensive' | 'medium_mobile' | 'hard_tactical' | 'expert_garry' | 'legendary_magnus'>('medium_aggressive');
 
   const [syncStatus, setSyncStatus] = useState<'synced' | 'warn' | 'mismatch'>('synced');
   const [backendApiVersion, setBackendApiVersion] = useState<string | null>(null);
@@ -284,7 +284,7 @@ export function LobbyPage() {
   const handleCreateGame = async (
     vsAi = false,
     isPublic = true,
-    selectedAiLevel?: 'easy' | 'medium' | 'hard' | 'easy_random' | 'medium_aggressive' | 'medium_defensive' | 'medium_mobile' | 'hard_tactical' | 'expert_garry'
+    selectedAiLevel?: 'easy' | 'medium' | 'hard' | 'easy_random' | 'medium_aggressive' | 'medium_defensive' | 'medium_mobile' | 'hard_tactical' | 'expert_garry' | 'legendary_magnus'
   ) => {
     if (syncStatus === 'mismatch') {
       alert('Cannot create match: API version mismatch. Please refresh the page.');
@@ -561,6 +561,7 @@ export function LobbyPage() {
                   <option value="medium_mobile">🟡 Mobile Monty (Medium) — ELO {aiConfig.medium_mobile.elo} [Piece Mobility]</option>
                   <option value="hard_tactical">🔴 Tactical Toby (Hard) — ELO {aiConfig.hard_tactical.elo} [Minimax Depth 4]</option>
                   <option value="expert_garry">🔥 Grandmaster Garry (Expert) — ELO {aiConfig.expert_garry.elo} [Minimax Depth 5]</option>
+                  <option value="legendary_magnus">👑 Champion Magnus (Legendary) — ELO {aiConfig.legendary_magnus.elo} [Minimax Depth 6]</option>
                 </select>
                 <p className="text-[10px] text-neutral-500 mt-1">
                   {aiLevel === 'easy_random' && " Randy makes completely random moves. Great for learning the rules!"}
@@ -569,6 +570,7 @@ export function LobbyPage() {
                   {aiLevel === 'medium_mobile' && " Monty works to restrict your moves and maximize his own piece mobility."}
                   {aiLevel === 'hard_tactical' && " Toby calculates 4 plies ahead. He will punish tactical mistakes."}
                   {aiLevel === 'expert_garry' && " Garry evaluates 5 plies deep with optimized positional heuristics. A true challenge!"}
+                  {aiLevel === 'legendary_magnus' && " Magnus calculates 6 plies deep with extremely optimized block/mobility weights. Legendary level!"}
                 </p>
               </div>
 

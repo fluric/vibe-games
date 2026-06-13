@@ -114,6 +114,10 @@ function simulateMatchup(botX: string, botO: string) {
   }
 
   // Compute new ELO ratings
+  if ((botX === 'expert_garry' && botO === 'legendary_magnus') || (botX === 'legendary_magnus' && botO === 'expert_garry')) {
+    console.log(`  ⚔️ Matchup: ${config[botX].username} (X) vs ${config[botO].username} (O) => Winner: ${result.winner}`);
+  }
+
   const newXRating = calculateElo(ratings[botX], ratings[botO], xScore);
   const newORating = calculateElo(ratings[botO], ratings[botX], oScore);
 
@@ -134,7 +138,7 @@ console.log('🤖 Starting Offline AI Tournament Calibration...');
 console.log('Initial Ratings: ' + botKeys.map(k => `${config[k].username} = ${ratings[k]}`).join(', ') + '\n');
 
 // Run tournament rounds
-const totalRounds = 5; // 5 rounds of round-robin
+const totalRounds = 3; // 3 rounds of round-robin
 for (let round = 1; round <= totalRounds; round++) {
   console.log(`Round ${round}/${totalRounds}...`);
   for (let i = 0; i < botKeys.length; i++) {

@@ -8,7 +8,7 @@
   "medium_aggressive": {
     "id": "00000000-0000-0000-0000-000000000002",
     "username": "Aggressive Archie (Medium)",
-    "elo": 633,
+    "elo": 812,
     "type": "minimax",
     "depth": 3,
     "weights": {
@@ -21,7 +21,7 @@
   "medium_defensive": {
     "id": "00000000-0000-0000-0000-000000000003",
     "username": "Defensive Debbie (Medium)",
-    "elo": 871,
+    "elo": 902,
     "type": "minimax",
     "depth": 3,
     "weights": {
@@ -34,7 +34,7 @@
   "medium_mobile": {
     "id": "00000000-0000-0000-0000-000000000004",
     "username": "Mobile Monty (Medium)",
-    "elo": 817,
+    "elo": 896,
     "type": "minimax",
     "depth": 3,
     "weights": {
@@ -47,7 +47,7 @@
   "hard_tactical": {
     "id": "00000000-0000-0000-0000-000000000005",
     "username": "Tactical Toby (Hard)",
-    "elo": 925,
+    "elo": 847,
     "type": "minimax",
     "depth": 4,
     "weights": {
@@ -60,9 +60,22 @@
   "expert_garry": {
     "id": "00000000-0000-0000-0000-000000000006",
     "username": "Grandmaster Garry (Expert)",
-    "elo": 962,
+    "elo": 1152,
     "type": "minimax",
     "depth": 5,
+    "weights": {
+      "material": 150,
+      "mill": 160,
+      "blocked": -90,
+      "threat": 90
+    }
+  },
+  "legendary_magnus": {
+    "id": "00000000-0000-0000-0000-000000000007",
+    "username": "Champion Magnus (Legendary)",
+    "elo": 1197,
+    "type": "minimax",
+    "depth": 6,
     "weights": {
       "material": 150,
       "mill": 160,

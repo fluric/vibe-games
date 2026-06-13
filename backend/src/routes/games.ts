@@ -260,7 +260,7 @@ export async function gameRoutes(server: FastifyInstance) {
       gameType: GameType;
       isPublic?: boolean;
       vsAi?: boolean;
-      aiLevel?: 'easy' | 'medium' | 'hard' | 'easy_random' | 'medium_aggressive' | 'medium_defensive' | 'medium_mobile' | 'hard_tactical' | 'expert_garry';
+      aiLevel?: 'easy' | 'medium' | 'hard' | 'easy_random' | 'medium_aggressive' | 'medium_defensive' | 'medium_mobile' | 'hard_tactical' | 'expert_garry' | 'legendary_magnus';
     };
   }>('/', async (request, reply) => {
     const user = request.user;

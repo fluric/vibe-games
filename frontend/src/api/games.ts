@@ -54,7 +54,7 @@ export async function createGame(
   gameType: 'mill',
   isPublic = true,
   vsAi = false,
-  aiLevel?: 'easy' | 'medium' | 'hard' | 'easy_random' | 'medium_aggressive' | 'medium_defensive' | 'medium_mobile' | 'hard_tactical' | 'expert_garry'
+  aiLevel?: 'easy' | 'medium' | 'hard' | 'easy_random' | 'medium_aggressive' | 'medium_defensive' | 'medium_mobile' | 'hard_tactical' | 'expert_garry' | 'legendary_magnus'
 ): Promise<GameDto> {
   return request<GameDto>('/games', {
     method: 'POST',
