@@ -646,13 +646,29 @@ function minimax(
 /**
  * Iterative Deepening Minimax Search.
  *
- * Searches depth 1, 2, 3, ... up to maxDepth, stopping if the time budget runs out.
- * Returns the best move found at the deepest completed depth.
- * This ensures we always have a valid move even if deeper search is cut short.
+ * Improvements over the naive version:
  *
- * Default timeLimitMs is 1500ms — fast enough for tournaments while still reaching
- * depth 6 in most positions thanks to TT pruning. Human-facing callers can pass a
- * higher limit (e.g. 4000ms) for more thinking time.
+ * 1. **Time-based depth ceiling**: Rather than stopping at a hard maxDepth,
+ *    the search continues as deep as possible within the time budget.
+ *    In late game (few pieces), this naturally reaches depth 8-10+.
+ *    The `maxDepth` parameter is treated as a soft minimum, not a hard cap.
+ *
+ * 2. **Partial-depth safety**: `bestAction` is only updated when a depth
+ *    iteration COMPLETES fully. If time expires mid-depth, we keep the
+ *    result from the last fully-completed iteration — no blunders from
+ *    evaluating only the first K moves of a deeper search.
+ *
+ * 3. **Aspiration windows**: After depth 1 establishes a score baseline,
+ *    each subsequent depth searches with a narrow [prevScore-Δ, prevScore+Δ]
+ *    window first. Alpha-beta is much faster in a narrow window. On failure
+ *    (score outside window), falls back to full-width search for that depth.
+ *
+ * 4. **Root move reordering**: After each completed depth, moves are sorted
+ *    by their scores so the best move is tried first at the next depth —
+ *    maximising alpha-beta cutoffs at the root level.
+ *
+ * Default timeLimitMs is 1500ms — fast enough for tournaments while still
+ * reaching depth 6+ in most positions. Human-facing callers pass 4000ms.
  */
 function iterativeDeepening(
   state: MillGameState,
@@ -660,21 +676,43 @@ function iterativeDeepening(
   weights: StrategyWeights,
   timeLimitMs: number = 1500,
 ): AiAction {
-  const actions = orderActions(state, getValidActions(state));
+  let actions = orderActions(state, getValidActions(state));
   if (actions.length === 0) throw new Error('AI opponent has no valid actions');
   if (actions.length === 1) return actions[0];
 
   const startTime = Date.now();
-  let bestAction = actions[0];
+  const elapsed = () => Date.now() - startTime;
 
-  for (let depth = 1; depth <= maxDepth; depth++) {
-    if (Date.now() - startTime > timeLimitMs) break;
+  let bestAction = actions[0];
+  let prevDepthScore = 0;
+  // Aspiration window delta — 60 centipawns. Wide enough to rarely need
+  // a full re-search, narrow enough to give useful pruning.
+  const ASPIRATION_DELTA = 60;
+  // Safety ceiling: time limit should terminate before this in any real position.
+  const ABSOLUTE_MAX_DEPTH = Math.max(maxDepth, 20);
+
+  for (let depth = 1; depth <= ABSOLUTE_MAX_DEPTH; depth++) {
+    // Stop if we've used more than 90% of the time budget before starting a new depth.
+    // The 10% buffer lets the current last action of each root move finish cleanly.
+    if (elapsed() > timeLimitMs * 0.9) break;
 
     let depthBestAction = actions[0];
     let depthBestValue = -Infinity;
+    let depthComplete = true;
 
+    // ── Aspiration window setup ──────────────────────────────────────────────
+    // For depth 1 use full window (-∞, +∞).
+    // For deeper iterations use a narrow window around previous depth's score.
+    let aspirationAlpha = depth > 1 ? prevDepthScore - ASPIRATION_DELTA : -Infinity;
+    let aspirationBeta  = depth > 1 ? prevDepthScore + ASPIRATION_DELTA :  Infinity;
+    let needsFullSearch = false;
+
+    // ── Root move loop ───────────────────────────────────────────────────────
     for (const action of actions) {
-      if (Date.now() - startTime > timeLimitMs) break;
+      if (elapsed() > timeLimitMs) {
+        depthComplete = false;
+        break;
+      }
 
       let nextState: MillGameState;
       try {
@@ -683,19 +721,78 @@ function iterativeDeepening(
         continue;
       }
 
-      const value = minimax(nextState, depth - 1, -Infinity, Infinity, nextState.turn === 'O', weights);
+      const value = minimax(
+        nextState, depth - 1,
+        aspirationAlpha, aspirationBeta,
+        nextState.turn === 'O',
+        weights,
+      );
 
       if (value > depthBestValue) {
         depthBestValue = value;
         depthBestAction = action;
+        // Raise the lower bound — subsequent moves must beat this score
+        if (value > aspirationAlpha) aspirationAlpha = value;
+      }
+
+      // Fail-high or fail-low — aspiration window is too narrow
+      if (value >= aspirationBeta || depthBestValue <= prevDepthScore - ASPIRATION_DELTA) {
+        needsFullSearch = true;
       }
     }
 
-    bestAction = depthBestAction;
+    // ── Aspiration window failed: re-search with full window ─────────────────
+    if (needsFullSearch && depthComplete) {
+      depthBestValue = -Infinity;
+      for (const action of actions) {
+        if (elapsed() > timeLimitMs) {
+          depthComplete = false;
+          break;
+        }
+        let nextState: MillGameState;
+        try {
+          nextState = simulateAction(state, action, 'O');
+        } catch (_) {
+          continue;
+        }
+        const value = minimax(nextState, depth - 1, -Infinity, Infinity, nextState.turn === 'O', weights);
+        if (value > depthBestValue) {
+          depthBestValue = value;
+          depthBestAction = action;
+        }
+      }
+    }
+
+    // ── Commit results only from FULLY completed depth iterations ────────────
+    if (depthComplete) {
+      bestAction = depthBestAction;
+      prevDepthScore = depthBestValue;
+
+      // Re-sort root actions by score (best first) to maximise alpha-beta
+      // cutoffs at the root level for the next depth iteration.
+      const actionScores = new Map<AiAction, number>();
+      for (const action of actions) {
+        let nextState: MillGameState;
+        try {
+          nextState = simulateAction(state, action, 'O');
+        } catch (_) {
+          continue;
+        }
+        // Use depth-1 eval as a quick proxy for move quality ordering
+        // (already in TT from the just-completed depth search)
+        const score = minimax(nextState, 0, -Infinity, Infinity, nextState.turn === 'O', weights);
+        actionScores.set(action, score);
+      }
+      actions = actions.slice().sort((a, b) => (actionScores.get(b) ?? 0) - (actionScores.get(a) ?? 0));
+
+      // Early termination: found a forced win/loss, no need to go deeper
+      if (Math.abs(depthBestValue) >= 90000) break;
+    }
   }
 
   return bestAction;
 }
+
 
 /**
  * Returns the best action for the current player using opening book + iterative deepening minimax.

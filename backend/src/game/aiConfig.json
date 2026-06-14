@@ -86,22 +86,7 @@
   "perfect_oracle": {
     "id": "00000000-0000-0000-0000-000000000008",
     "username": "Perfect Oracle (Grandmaster)",
-    "elo": 1149,
-    "type": "minimax",
-    "depth": 6,
-    "weights": {
-      "material": 150,
-      "mill": 160,
-      "blocked": -100,
-      "threat": 90,
-      "positional": 20,
-      "fork": 60
-    }
-  },
-  "oracle_challenger": {
-    "id": "00000000-0000-0000-0000-000000000009",
-    "username": "Oracle Challenger (Testing)",
-    "elo": 1149,
+    "elo": 1309,
     "type": "minimax",
     "depth": 6,
     "weights": {
