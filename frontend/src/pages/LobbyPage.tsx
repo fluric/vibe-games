@@ -201,6 +201,10 @@ export function LobbyPage() {
               if (authRes.user) {
                 localStorage.setItem('vibe-games-user-id', authRes.user.id);
               }
+              // Store token for Safari ITP: sent as Authorization header on all requests
+              if (authRes.token) {
+                localStorage.setItem('vibe-games-token', authRes.token);
+              }
             } catch (err) {
               audio.playErrorSound();
               alert(err instanceof Error ? err.message : 'Google Login failed');
@@ -262,6 +266,10 @@ export function LobbyPage() {
       if (authRes.user) {
         localStorage.setItem('vibe-games-user-id', authRes.user.id);
       }
+      // Store token for Safari ITP: sent as Authorization header on all requests
+      if (authRes.token) {
+        localStorage.setItem('vibe-games-token', authRes.token);
+      }
     } catch (err) {
       audio.playErrorSound();
       alert(err instanceof Error ? err.message : 'Developer login failed');
@@ -277,6 +285,7 @@ export function LobbyPage() {
       await api.logout();
       setCurrentUser(null);
       localStorage.removeItem('vibe-games-user-id');
+      localStorage.removeItem('vibe-games-token');
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Log out failed');
     }

@@ -33,6 +33,14 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   headers.set('Content-Type', 'application/json');
   headers.set('x-user-id', getUserId());
 
+  // Safari on iOS (ITP) blocks third-party cookies for cross-domain requests.
+  // If we have a JWT stored in localStorage (set at login), send it as a Bearer
+  // token so /auth/me and other authenticated endpoints work on Safari.
+  const storedToken = localStorage.getItem('vibe-games-token');
+  if (storedToken) {
+    headers.set('Authorization', `Bearer ${storedToken}`);
+  }
+
   const response = await fetch(url, {
     credentials: 'include',
     ...options,

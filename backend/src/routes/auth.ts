@@ -83,11 +83,11 @@ async function getOrCreateGoogleUser(
 }
 
 export async function authRoutes(server: FastifyInstance) {
-  // Helper to set cookie
-  const setSessionCookie = (reply: any, userId: string) => {
+  // Helper to set cookie AND return the token for clients that can't use cookies (Safari ITP)
+  const setSessionCookie = (reply: any, userId: string): string => {
     const token = jwt.sign({ userId }, JWT_SECRET, { expiresIn: '30d' });
     const isProd = process.env.NODE_ENV === 'production';
-    
+
     reply.setCookie('session', token, {
       path: '/',
       httpOnly: true,
@@ -95,6 +95,13 @@ export async function authRoutes(server: FastifyInstance) {
       sameSite: isProd ? 'none' : 'lax',
       maxAge: 30 * 24 * 60 * 60, // 30 days
     });
+
+    // Return the token so callers can include it in the response body.
+    // Safari on iOS (ITP) blocks third-party httpOnly cookies when frontend
+    // and backend are on different domains, causing session loss on reload.
+    // The frontend stores this token in localStorage and sends it via
+    // Authorization: Bearer header instead.
+    return token;
   };
 
   // Google Login Route
@@ -130,9 +137,9 @@ export async function authRoutes(server: FastifyInstance) {
       }
 
       const user = await getOrCreateGoogleUser(googleId, email, name, picture);
-      setSessionCookie(reply, user.id);
+      const token = setSessionCookie(reply, user.id);
 
-      return reply.send({ user: await toUserDto(user) });
+      return reply.send({ user: await toUserDto(user), token } satisfies AuthStatusResponse);
     } catch (err: any) {
       request.log.error(err);
       return reply.code(401).send({ error: 'Failed to verify Google token' });
@@ -158,9 +165,9 @@ export async function authRoutes(server: FastifyInstance) {
     try {
       const googleId = `mock-${email}`;
       const user = await getOrCreateGoogleUser(googleId, email, name, avatarUrl);
-      setSessionCookie(reply, user.id);
+      const token = setSessionCookie(reply, user.id);
 
-      return reply.send({ user: await toUserDto(user) });
+      return reply.send({ user: await toUserDto(user), token } satisfies AuthStatusResponse);
     } catch (err: any) {
       request.log.error(err);
       return reply.code(500).send({ error: 'Failed to perform mock login' });
@@ -177,23 +184,35 @@ export async function authRoutes(server: FastifyInstance) {
     return reply.send({ success: true });
   });
 
-  // Get current user session
+  // Get current user session.
+  // Accepts token via:
+  //   1. Authorization: Bearer <token>  — primary (for Safari ITP / cross-domain)
+  //   2. session cookie                 — fallback (non-Safari browsers)
   server.get('/me', async (request, reply) => {
-    const sessionCookie = request.cookies.session;
-    if (!sessionCookie) {
-      return reply.send({ user: null });
+    // Extract token from Authorization header first, then cookie
+    const authHeader = request.headers.authorization;
+    let sessionToken: string | undefined;
+
+    if (authHeader?.startsWith('Bearer ')) {
+      sessionToken = authHeader.slice(7);
+    } else {
+      sessionToken = request.cookies.session;
+    }
+
+    if (!sessionToken) {
+      return reply.send({ user: null } satisfies AuthStatusResponse);
     }
 
     try {
-      const decoded = jwt.verify(sessionCookie, JWT_SECRET) as { userId: string };
+      const decoded = jwt.verify(sessionToken, JWT_SECRET) as { userId: string };
       const userRepo = AppDataSource.getRepository(User);
       const user = await userRepo.findOneBy({ id: decoded.userId });
 
       if (!user) {
-        return reply.send({ user: null });
+        return reply.send({ user: null } satisfies AuthStatusResponse);
       }
 
-      return reply.send({ user: await toUserDto(user) });
+      return reply.send({ user: await toUserDto(user) } satisfies AuthStatusResponse);
     } catch (err) {
       // Clear invalid session cookie
       reply.clearCookie('session', {
@@ -201,7 +220,7 @@ export async function authRoutes(server: FastifyInstance) {
         secure: process.env.NODE_ENV === 'production',
         sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
       });
-      return reply.send({ user: null });
+      return reply.send({ user: null } satisfies AuthStatusResponse);
     }
   });
 }

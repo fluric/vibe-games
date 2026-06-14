@@ -30,6 +30,8 @@ export interface UserDto {
 
 export interface AuthStatusResponse {
   user: UserDto | null;
+  /** JWT token — returned on login for clients that can't use httpOnly cookies (e.g. Safari ITP) */
+  token?: string;
 }
 
 // ─── Game ─────────────────────────────────────────────────────────────────────

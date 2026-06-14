@@ -107,12 +107,47 @@ const OPENING_BOOK: Map<string, number> = new Map([
   // X took cross-point 15 → take 11
   ['...............X........', 11],
 
-  // ── Move 2: O plays 4th overall (3 pieces on board) ─────────────────────────
-  // After O has claimed one cross-point, go for a second cross-point to prepare
-  // a double-mill fork. Aim for two adjacent cross-points on the middle ring.
-  // If O has 9 and 11 available, take 11; if O has 9, take 13 for fork potential.
-  // These are approximations — we rely on minimax for positions not in the book.
+  // ── Move 2 is intentionally not in the book. ──────────────────────────────
+  // After O's first cross-point move, minimax + positional values handle
+  // the second placement better than hardcoded rules.
+  // NOTE: No two cross-points (9,11,13,15) share a mill line, so any
+  // "adjacency" heuristic would always fall through to cross-point fallback.
 ]);
+
+// ── X-Side Opening Book (for the first player) ────────────────────────────────
+// When the Oracle plays as X (first player) in tournament inversion, the engine
+// inverts the board so X always looks like O. BUT for self-play analysis, we need
+// to understand: when Oracle takes 9 first and opponent mirrors with 13, then X
+// needs a non-cross-point 3rd move to avoid the symmetric 2-2 split.
+//
+// Strategy for X's 3rd move (after X:9, O:13, X:?):
+// Instead of taking another cross-point (11 or 15, which O mirrors perfectly),
+// take a spoke that extends 9 → builds a 2-in-a-row.
+// Best choices: 17 (inner spoke 1-9-17), or 1 (outer spoke 1-9-17 other end),
+// or 8 (middle ring 8-9-10, connects 9 to the ring).
+const X_OPENING_BOOK: Map<string, number> = new Map([
+  // X's 1st move (board is empty): always take 9 (best cross-point)
+  ['........................', 9],
+
+  // X's 2nd move: board has X@9 + O's response
+  // O took 13 (opposite) → X extends 9 via spoke: take 17 (inner) or 1 (outer)
+  // 17 connects to 9 via the 1-9-17 mill line (taking 1 later completes it)
+  ['.........X...O..........', 17],  // X@9, O@13 → X takes 17
+  // O took 11 (adjacent) → X takes 13 to control two opposite cross-points
+  ['.........XO.............', 13],  // X@9, O@11 → X takes 13
+  // O took 15 (adjacent other side) → X takes 11
+  ['.........X.....O........', 11],  // X@9, O@15 → X takes 11
+  // O took non-cross-point → X takes 13 (second cross-point)
+  ['O........X..............', 13],  // X@9, O@0 → X takes 13
+  ['.O.......X..............', 13],  // X@9, O@1 → X takes 13
+  ['..O......X..............', 13],  // X@9, O@2 → X takes 13
+
+  // X's 3rd move: after X@9 + X@17, O has two pieces
+  // Now X wants to complete the 1-9-17 mill → take 1
+  ['.X.......X.....O.O......', 1],   // X:9,17 O:11,15 → take 1 (threatens mill)
+  ['.........X.O...O.X......', 1],   // variation → take 1
+]);
+
 
 /**
  * Creates a compact board key for the opening book lookup.
@@ -270,8 +305,11 @@ export function evaluateBoard(state: MillGameState, weights: StrategyWeights = D
   if (state.winner === 'draw') return 0;
 
   const board = state.board;
-  const oCount = state.piecesOnBoard.O + state.placementsRemaining.O;
-  const xCount = state.piecesOnBoard.X + state.placementsRemaining.X;
+  const oOnBoard = state.piecesOnBoard.O;
+  const xOnBoard = state.piecesOnBoard.X;
+  const oCount = oOnBoard + state.placementsRemaining.O;
+  const xCount = xOnBoard + state.placementsRemaining.X;
+  const isPlacement = state.phase === 'placement';
 
   // ── 1. Material (total pieces) ────────────────────────────────────────────
   const materialScore = (oCount - xCount) * weights.material;
@@ -286,18 +324,38 @@ export function evaluateBoard(state: MillGameState, weights: StrategyWeights = D
   const xThreats = countMillThreats(board, 'X');
   const threatScore = (oThreats - xThreats) * weights.threat;
 
-  // ── 4. Blocked pieces (pieces with no moves) ──────────────────────────────
+  // ── 4. Blocked pieces + Mobility (movement phase only) ───────────────────
+  // blocked: pieces with zero legal moves (fully cornered)
+  // mobility: total legal move count — richer signal, rewards piece flexibility
   let blockedScore = 0;
-  if (state.phase !== 'placement') {
+  let mobilityScore = 0;
+  if (!isPlacement) {
     const oBlocked = countBlocked(board, 'O');
     const xBlocked = countBlocked(board, 'X');
     blockedScore = (oBlocked - xBlocked) * weights.blocked;
+
+    const mobilityWeight = weights.mobility ?? 0;
+    if (mobilityWeight > 0) {
+      const canOFly = oOnBoard === 3;
+      const canXFly = xOnBoard === 3;
+      const emptyCount = board.filter(c => c === null).length;
+      let oMoves = 0;
+      let xMoves = 0;
+      for (let i = 0; i < board.length; i++) {
+        if (board[i] === 'O') {
+          oMoves += canOFly ? emptyCount : (ADJACENCY_LIST[i] || []).filter(n => board[n] === null).length;
+        } else if (board[i] === 'X') {
+          xMoves += canXFly ? emptyCount : (ADJACENCY_LIST[i] || []).filter(n => board[n] === null).length;
+        }
+      }
+      mobilityScore = (oMoves - xMoves) * mobilityWeight;
+    }
   }
 
   // ── 5. Positional value (placement phase only) ───────────────────────────
   let positionalScore = 0;
   const positionalWeight = weights.positional ?? 15;
-  if (positionalWeight > 0 && state.phase === 'placement') {
+  if (positionalWeight > 0 && isPlacement) {
     let oPosVal = 0;
     let xPosVal = 0;
     for (let i = 0; i < board.length; i++) {
@@ -307,9 +365,7 @@ export function evaluateBoard(state: MillGameState, weights: StrategyWeights = D
     positionalScore = (oPosVal - xPosVal) * positionalWeight;
   }
 
-  // ── 6. Fork detection (double-mill / seesaw opportunities) ────────────────
-  // A fork is an empty position where placing would complete ≥2 mills.
-  // This is the decisive tactical pattern in NMM — detect it in all phases.
+  // ── 6. Fork detection ────────────────────────────────────────────────────
   let forkScore = 0;
   const forkWeight = weights.fork ?? 0;
   if (forkWeight > 0) {
@@ -319,17 +375,14 @@ export function evaluateBoard(state: MillGameState, weights: StrategyWeights = D
   }
 
   // ── 7. Double-mill (seesaw) detection ────────────────────────────────────
-  // A seesaw exists when a player has two ACTIVE mills sharing a piece that
-  // is adjacent to an empty square — moving it out and back captures every turn.
-  // This is the dominant winning pattern in NMM. Reward it heavily.
   let seesawScore = 0;
-  if (state.phase !== 'placement') {
+  if (!isPlacement) {
     const oSeesaw = countSeesaws(board, 'O');
     const xSeesaw = countSeesaws(board, 'X');
     seesawScore = (oSeesaw - xSeesaw) * 300;
   }
 
-  return materialScore + millScore + threatScore + blockedScore + positionalScore + forkScore + seesawScore;
+  return materialScore + millScore + threatScore + blockedScore + mobilityScore + positionalScore + forkScore + seesawScore;
 }
 
 /**
@@ -645,7 +698,8 @@ function iterativeDeepening(
 }
 
 /**
- * Returns the best action for player O using opening book + iterative deepening minimax.
+ * Returns the best action for the current player using opening book + iterative deepening minimax.
+ * Works for both X (first player) and O (second player).
  */
 export function getBestMinimaxMove(
   state: MillGameState,
@@ -653,50 +707,58 @@ export function getBestMinimaxMove(
   weights: StrategyWeights = DEFAULT_WEIGHTS
 ): AiAction {
   // ── Opening Book ────────────────────────────────────────────────────────────
-  // Only use the book during the placement phase and for the first few moves.
-  // After 6 pieces are on the board, the game tree is specific enough that
-  // minimax outperforms any hand-coded book.
-  if (state.phase === 'placement') {
+  // Only apply during early placement (≤6 pieces total on board),
+  // AND only when not in a mill-formed removal state (must remove first).
+  if (state.phase === 'placement' && !state.millFormedThisTurn) {
     const totalPieces = state.board.filter(c => c !== null).length;
+    const crossPoints = [9, 11, 13, 15];
 
+    // Book applies for the first 4 placements (2 each). After that, minimax takes over.
     if (totalPieces <= 4) {
-      // Try to find a book entry for this exact position
       const boardKey = getBoardKey(state.board);
-      const bookMove = OPENING_BOOK.get(boardKey);
 
-      if (bookMove !== undefined && state.board[bookMove] === null) {
-        return { type: 'place', position: bookMove };
-      }
+      if (state.turn === 'X') {
+        // ── X-side opening book ──────────────────────────────────────────────
+        const xBookMove = X_OPENING_BOOK.get(boardKey);
+        if (xBookMove !== undefined && state.board[xBookMove] === null) {
+          return { type: 'place', position: xBookMove };
+        }
 
-      // Fallback: always prefer a free middle-ring cross-point (9, 11, 13, 15).
-      // These are the best positions on the board — 3-mill junctions.
-      // Priority: take one that shares a mill line with our existing pieces (to build threats).
-      const crossPoints = [9, 11, 13, 15];
+        const xOwnedCross = crossPoints.filter(p => state.board[p] === 'X');
+        const oOwnedCross = crossPoints.filter(p => state.board[p] === 'O');
 
-      // Find which cross-points O already owns
-      const oOwnedCross = crossPoints.filter(p => state.board[p] === 'O');
-
-      if (oOwnedCross.length > 0) {
-        // We have at least one cross-point. Look for an adjacent (same mill line) free cross-point.
-        for (const ours of oOwnedCross) {
-          for (const candidate of crossPoints) {
-            if (state.board[candidate] === null) {
-              // Check if they share a mill line (would create a 2-in-line threat)
-              const sharesMill = MILLS.some(line =>
-                line.includes(ours) && line.includes(candidate)
-              );
-              if (sharesMill) {
-                return { type: 'place', position: candidate };
-              }
+        // If both sides have ≥2 cross-points, switch to spoke extension strategy
+        // to break the symmetric deadlock and build a faster mill threat.
+        if (xOwnedCross.length >= 2 && oOwnedCross.length >= 2) {
+          const spokePriority = [17, 1, 19, 3, 21, 5, 23, 7];
+          for (const spoke of spokePriority) {
+            if (state.board[spoke] !== null) continue;
+            const sharesMill = MILLS.some(line =>
+              line.includes(spoke) && xOwnedCross.some(cp => line.includes(cp))
+            );
+            if (sharesMill) {
+              return { type: 'place', position: spoke };
             }
           }
         }
-      }
 
-      // No adjacent cross-point available — take any free cross-point
-      for (const p of crossPoints) {
-        if (state.board[p] === null) {
-          return { type: 'place', position: p };
+        // Otherwise grab any free cross-point
+        for (const p of crossPoints) {
+          if (state.board[p] === null) return { type: 'place', position: p };
+        }
+
+      } else {
+        // ── O-side opening book ──────────────────────────────────────────────
+        const oBookMove = OPENING_BOOK.get(boardKey);
+        if (oBookMove !== undefined && state.board[oBookMove] === null) {
+          return { type: 'place', position: oBookMove };
+        }
+
+        // Fallback: always prefer a free cross-point.
+        // Cross-points (9,11,13,15) participate in 3 mills each — always the best square.
+        // NOTE: No two cross-points share a mill line, so skip the adjacency check.
+        for (const p of crossPoints) {
+          if (state.board[p] === null) return { type: 'place', position: p };
         }
       }
     }
