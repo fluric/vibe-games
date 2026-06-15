@@ -11,6 +11,13 @@ const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
 
 const botKeys = Object.keys(config);
 
+// ── CLI args ──────────────────────────────────────────────────────────────────
+// --time <ms>  Per-move time budget for all bots (default: 500ms).
+// Fast enough to finish in ~2h; strong enough to reach depth 5-6.
+const timeArgIdx = process.argv.indexOf('--time');
+const MOVE_TIME_MS = timeArgIdx !== -1 ? parseInt(process.argv[timeArgIdx + 1], 10) : 500;
+console.log(`⏱️  Move time budget: ${MOVE_TIME_MS}ms per move`);
+
 // Initialize tournament ratings
 const ratings: Record<string, number> = {};
 const winCounts: Record<string, Record<string, number>> = {};
@@ -45,14 +52,33 @@ function invertState(state: MillGameState): MillGameState {
 }
 
 /**
- * Simulates a single game between two bots
+ * Returns a compact position key for 3-fold repetition detection.
+ * Encodes board + turn — enough to detect repeated positions.
+ */
+function getPositionKey(state: MillGameState): string {
+  return `${state.board.join('')}${state.turn}`;
+}
+
+/**
+ * Simulates a single game between two bots.
+ * Enforces 3-fold repetition (draw) and a move-count hard cap.
  */
 function runGame(botX: string, botO: string): { winner: PlayerPiece | 'draw' } {
   let state = createInitialState();
   let moveCount = 0;
-  const maxMoves = 150; // Avoid infinite loops in draw situations
+  const maxMoves = 150;
+  // 3-fold repetition: count how often each position has been seen
+  const positionCounts = new Map<string, number>();
 
   while (!state.winner && moveCount < maxMoves) {
+    // ── 3-fold repetition check ───────────────────────────────────────────
+    const posKey = getPositionKey(state);
+    const seen = (positionCounts.get(posKey) ?? 0) + 1;
+    positionCounts.set(posKey, seen);
+    if (seen >= 3) {
+      return { winner: 'draw' }; // Official NMM rule: same position 3 times = draw
+    }
+
     const currentBot = state.turn === 'X' ? botX : botO;
     const botType = config[currentBot].type;
     const botDepth = config[currentBot].depth ?? 3;
@@ -61,7 +87,7 @@ function runGame(botX: string, botO: string): { winner: PlayerPiece | 'draw' } {
     try {
       if (state.turn === 'X') {
         const invState = invertState(state);
-        const action = getAiAction(invState, botType, botDepth, botWeights);
+        const action = getAiAction(invState, botType, botDepth, botWeights, MOVE_TIME_MS);
         if (action.type === 'place') {
           state = handlePlaceAction(state, action.position!, 'X');
         } else if (action.type === 'move') {
@@ -70,7 +96,7 @@ function runGame(botX: string, botO: string): { winner: PlayerPiece | 'draw' } {
           state = handleRemoveAction(state, action.position!, 'X');
         }
       } else {
-        const action = getAiAction(state, botType, botDepth, botWeights);
+        const action = getAiAction(state, botType, botDepth, botWeights, MOVE_TIME_MS);
         if (action.type === 'place') {
           state = handlePlaceAction(state, action.position!, 'O');
         } else if (action.type === 'move') {
@@ -81,7 +107,6 @@ function runGame(botX: string, botO: string): { winner: PlayerPiece | 'draw' } {
       }
     } catch (err: any) {
       console.error(`  ❌ Error during ${state.turn} (${currentBot}) turn:`, err.message);
-      // In case of any engine action validation failure, the other player wins
       return { winner: state.turn === 'X' ? 'O' : 'X' };
     }
     moveCount++;

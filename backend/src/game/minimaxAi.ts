@@ -646,29 +646,25 @@ function minimax(
 /**
  * Iterative Deepening Minimax Search.
  *
- * Improvements over the naive version:
+ * Improvements over naive ID:
  *
- * 1. **Time-based depth ceiling**: Rather than stopping at a hard maxDepth,
- *    the search continues as deep as possible within the time budget.
- *    In late game (few pieces), this naturally reaches depth 8-10+.
- *    The `maxDepth` parameter is treated as a soft minimum, not a hard cap.
+ * 1. **Partial-depth safety**: `bestAction` is only committed from FULLY
+ *    completed depth iterations. If time expires mid-depth, we keep the
+ *    result from the last fully-completed depth — no blunders from
+ *    evaluating only the first K root moves of a deeper search.
  *
- * 2. **Partial-depth safety**: `bestAction` is only updated when a depth
- *    iteration COMPLETES fully. If time expires mid-depth, we keep the
- *    result from the last fully-completed iteration — no blunders from
- *    evaluating only the first K moves of a deeper search.
+ * 2. **Root move reordering**: After each completed depth, root moves are
+ *    re-sorted by their scores (best first) so the next depth starts with
+ *    the most promising move — maximising alpha-beta cutoffs.
  *
- * 3. **Aspiration windows**: After depth 1 establishes a score baseline,
- *    each subsequent depth searches with a narrow [prevScore-Δ, prevScore+Δ]
- *    window first. Alpha-beta is much faster in a narrow window. On failure
- *    (score outside window), falls back to full-width search for that depth.
+ * 3. **Early exit on forced win/loss**: If a mate/loss score is found,
+ *    searching deeper cannot change the outcome.
  *
- * 4. **Root move reordering**: After each completed depth, moves are sorted
- *    by their scores so the best move is tried first at the next depth —
- *    maximising alpha-beta cutoffs at the root level.
+ * NOTE: Aspiration windows were tried and removed — applying them at the
+ * root-action level (not the whole subtree) caused nearly every iteration
+ * to trigger a full re-search, roughly doubling work per depth.
  *
- * Default timeLimitMs is 1500ms — fast enough for tournaments while still
- * reaching depth 6+ in most positions. Human-facing callers pass 4000ms.
+ * Default timeLimitMs is 1500ms — fast for tournaments; human games pass 4000ms.
  */
 function iterativeDeepening(
   state: MillGameState,
@@ -684,30 +680,16 @@ function iterativeDeepening(
   const elapsed = () => Date.now() - startTime;
 
   let bestAction = actions[0];
-  let prevDepthScore = 0;
-  // Aspiration window delta — 60 centipawns. Wide enough to rarely need
-  // a full re-search, narrow enough to give useful pruning.
-  const ASPIRATION_DELTA = 60;
-  // Safety ceiling: time limit should terminate before this in any real position.
-  const ABSOLUTE_MAX_DEPTH = Math.max(maxDepth, 20);
 
-  for (let depth = 1; depth <= ABSOLUTE_MAX_DEPTH; depth++) {
-    // Stop if we've used more than 90% of the time budget before starting a new depth.
-    // The 10% buffer lets the current last action of each root move finish cleanly.
+  for (let depth = 1; depth <= maxDepth; depth++) {
+    // Stop before starting a new depth if 90% of budget is spent.
+    // The 10% buffer allows the current root action's minimax to finish cleanly.
     if (elapsed() > timeLimitMs * 0.9) break;
 
     let depthBestAction = actions[0];
     let depthBestValue = -Infinity;
     let depthComplete = true;
 
-    // ── Aspiration window setup ──────────────────────────────────────────────
-    // For depth 1 use full window (-∞, +∞).
-    // For deeper iterations use a narrow window around previous depth's score.
-    let aspirationAlpha = depth > 1 ? prevDepthScore - ASPIRATION_DELTA : -Infinity;
-    let aspirationBeta  = depth > 1 ? prevDepthScore + ASPIRATION_DELTA :  Infinity;
-    let needsFullSearch = false;
-
-    // ── Root move loop ───────────────────────────────────────────────────────
     for (const action of actions) {
       if (elapsed() > timeLimitMs) {
         depthComplete = false;
@@ -721,55 +703,21 @@ function iterativeDeepening(
         continue;
       }
 
-      const value = minimax(
-        nextState, depth - 1,
-        aspirationAlpha, aspirationBeta,
-        nextState.turn === 'O',
-        weights,
-      );
+      const value = minimax(nextState, depth - 1, -Infinity, Infinity, nextState.turn === 'O', weights);
 
       if (value > depthBestValue) {
         depthBestValue = value;
         depthBestAction = action;
-        // Raise the lower bound — subsequent moves must beat this score
-        if (value > aspirationAlpha) aspirationAlpha = value;
-      }
-
-      // Fail-high or fail-low — aspiration window is too narrow
-      if (value >= aspirationBeta || depthBestValue <= prevDepthScore - ASPIRATION_DELTA) {
-        needsFullSearch = true;
       }
     }
 
-    // ── Aspiration window failed: re-search with full window ─────────────────
-    if (needsFullSearch && depthComplete) {
-      depthBestValue = -Infinity;
-      for (const action of actions) {
-        if (elapsed() > timeLimitMs) {
-          depthComplete = false;
-          break;
-        }
-        let nextState: MillGameState;
-        try {
-          nextState = simulateAction(state, action, 'O');
-        } catch (_) {
-          continue;
-        }
-        const value = minimax(nextState, depth - 1, -Infinity, Infinity, nextState.turn === 'O', weights);
-        if (value > depthBestValue) {
-          depthBestValue = value;
-          depthBestAction = action;
-        }
-      }
-    }
-
-    // ── Commit results only from FULLY completed depth iterations ────────────
+    // ── Commit only from fully completed iterations ───────────────────────────
     if (depthComplete) {
       bestAction = depthBestAction;
-      prevDepthScore = depthBestValue;
 
-      // Re-sort root actions by score (best first) to maximise alpha-beta
-      // cutoffs at the root level for the next depth iteration.
+      // Re-sort root moves by score — best move first for next depth.
+      // Uses the TT (populated by the just-finished depth) via depth-0 calls,
+      // so the overhead is just N leaf evaluations.
       const actionScores = new Map<AiAction, number>();
       for (const action of actions) {
         let nextState: MillGameState;
@@ -778,21 +726,18 @@ function iterativeDeepening(
         } catch (_) {
           continue;
         }
-        // Use depth-1 eval as a quick proxy for move quality ordering
-        // (already in TT from the just-completed depth search)
         const score = minimax(nextState, 0, -Infinity, Infinity, nextState.turn === 'O', weights);
         actionScores.set(action, score);
       }
       actions = actions.slice().sort((a, b) => (actionScores.get(b) ?? 0) - (actionScores.get(a) ?? 0));
 
-      // Early termination: found a forced win/loss, no need to go deeper
+      // Early exit: forced win or loss found — deeper search won't change outcome
       if (Math.abs(depthBestValue) >= 90000) break;
     }
   }
 
   return bestAction;
 }
-
 
 /**
  * Returns the best action for the current player using opening book + iterative deepening minimax.
@@ -801,7 +746,8 @@ function iterativeDeepening(
 export function getBestMinimaxMove(
   state: MillGameState,
   depth: number = 6,
-  weights: StrategyWeights = DEFAULT_WEIGHTS
+  weights: StrategyWeights = DEFAULT_WEIGHTS,
+  timeLimitMs: number = 1500,
 ): AiAction {
   // ── Opening Book ────────────────────────────────────────────────────────────
   // Only apply during early placement (≤6 pieces total on board),
@@ -863,7 +809,8 @@ export function getBestMinimaxMove(
 
   tt.clear();
 
-  // 4000ms for human-facing games (feels responsive while thinking deeply).
-  // Tournament scripts benefit from the faster 1500ms default.
-  return iterativeDeepening(state, depth, weights, 4000);
+  // Pass through the caller-supplied time limit.
+  // Human-facing games use 4000ms (more thinking time, feels responsive).
+  // Tournament/benchmark scripts use the 1500ms default (fast, still strong).
+  return iterativeDeepening(state, depth, weights, timeLimitMs);
 }

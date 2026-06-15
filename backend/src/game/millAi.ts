@@ -14,7 +14,8 @@ export function getAiAction(
   state: MillGameState,
   type: 'random' | 'heuristic' | 'minimax',
   depth: number = 3,
-  weights?: StrategyWeights
+  weights?: StrategyWeights,
+  timeLimitMs: number = 1500,
 ): AiAction {
   if (type === 'random') {
     const valid = getValidActions(state);
@@ -26,7 +27,7 @@ export function getAiAction(
   }
 
   if (type === 'minimax') {
-    return getBestMinimaxMove(state, depth, weights);
+    return getBestMinimaxMove(state, depth, weights, timeLimitMs);
   }
 
   // Fallback to Heuristics (Medium)

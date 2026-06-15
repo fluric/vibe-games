@@ -62,7 +62,7 @@ function runAiLoopIfNeeded(game: Game) {
     try {
       // Invert the state if the AI is Player X (since minimax assumes maximizing O)
       const stateToPass = aiPiece === 'X' ? invertState(game.state) : game.state;
-      const rawAction = getAiAction(stateToPass, botInfo.type as any, botInfo.depth, botInfo.weights);
+      const rawAction = getAiAction(stateToPass, botInfo.type as any, botInfo.depth, botInfo.weights, 4000);
 
       if (rawAction.type === 'place') {
         game.state = handlePlaceAction(game.state, rawAction.position!, aiPiece);
