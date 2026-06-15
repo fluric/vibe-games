@@ -4,7 +4,7 @@ import { AppDataSource } from '../data-source';
 import { gameRoutes } from '../routes/games';
 import { Game } from '../entities/Game';
 import { User } from '../entities/User';
-import { GameDto } from '@vibe-games/shared';
+import { GameDto, MillGameState } from '@vibe-games/shared';
 
 const AI_USER_ID = '00000000-0000-0000-0000-000000000002';
 
@@ -145,6 +145,9 @@ async function runTests() {
     },
   });
 
+  if (aiCreateRes.statusCode !== 200) {
+    console.error("❌ vsAi game creation failed. Response body:", aiCreateRes.body);
+  }
   assert.strictEqual(aiCreateRes.statusCode, 200);
   const aiGame = JSON.parse(aiCreateRes.body) as GameDto;
   assert.strictEqual(aiGame.status, 'in_progress');
@@ -177,8 +180,9 @@ async function runTests() {
   // AI should have placed exactly one piece on the board as 'O'.
   const oCount = gameAfterMove1.state.board.filter((c) => c === 'O').length;
   assert.strictEqual(oCount, 1);
-  assert.strictEqual(gameAfterMove1.state.piecesOnBoard.O, 1);
-  assert.strictEqual(gameAfterMove1.state.piecesOnBoard.X, 1);
+  const millState = gameAfterMove1.state as MillGameState;
+  assert.strictEqual(millState.piecesOnBoard.O, 1);
+  assert.strictEqual(millState.piecesOnBoard.X, 1);
 
   // Try to play as O (which is AI) and verify error
   const invalidPlayerRes = await app.inject({

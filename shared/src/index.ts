@@ -36,11 +36,17 @@ export interface AuthStatusResponse {
 
 // ─── Game ─────────────────────────────────────────────────────────────────────
 
-export type GameType = 'mill' | 'tic_tac_toe';
+export type GameType = 'mill' | 'connect_four' | 'tic_tac_toe';
 
 export type GameStatus = 'waiting' | 'in_progress' | 'finished';
 
 export type PlayerPiece = 'X' | 'O';
+
+export interface ConnectFourGameState {
+  board: (PlayerPiece | null)[]; // 42 board positions (6 rows * 7 cols, row-major)
+  turn: PlayerPiece;
+  winner: PlayerPiece | 'draw' | null;
+}
 
 // State definition for the game of Mill (Nine Men's Morris)
 export interface MillGameState {
@@ -68,7 +74,7 @@ export interface GameDto {
   playerX: UserDto | null;
   playerO: UserDto | null;
   winnerId: string | null;
-  state: MillGameState; // Generic state, typed as MillGameState for gameType: 'mill'
+  state: MillGameState | ConnectFourGameState; // Generic state, typed based on gameType
   isPublic: boolean;
   createdAt: string; // ISO 8601
   updatedAt: string; // ISO 8601

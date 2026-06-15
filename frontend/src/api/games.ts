@@ -1,4 +1,4 @@
-import type { GameDto, AuthStatusResponse, LeaderboardResponse } from '@vibe-games/shared';
+import type { GameDto, AuthStatusResponse, LeaderboardResponse, GameType } from '@vibe-games/shared';
 
 // Helper to get or generate a persistent local user ID
 export function getUserId(): string {
@@ -59,10 +59,10 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 }
 
 export async function createGame(
-  gameType: 'mill',
+  gameType: GameType,
   isPublic = true,
   vsAi = false,
-  aiLevel?: 'easy' | 'medium' | 'hard' | 'easy_random' | 'medium_aggressive' | 'medium_defensive' | 'medium_mobile' | 'hard_tactical' | 'expert_garry' | 'legendary_magnus' | 'perfect_oracle',
+  aiLevel?: 'easy' | 'medium' | 'hard' | 'easy_random' | 'easy_cowardly' | 'easy_greedy' | 'easy_aggressive' | 'medium_aggressive' | 'medium_defensive' | 'medium_mobile' | 'hard_tactical' | 'expert_garry' | 'legendary_magnus' | 'perfect_oracle',
   aiStarts = false
 ): Promise<GameDto> {
   return request<GameDto>('/games', {
@@ -93,6 +93,7 @@ export async function submitMove(
     position?: number;
     from?: number;
     to?: number;
+    column?: number;
   }
 ): Promise<GameDto> {
   return request<GameDto>(`/games/${id}/move`, {
@@ -144,6 +145,6 @@ export async function logout(): Promise<{ success: boolean }> {
   });
 }
 
-export async function getLeaderboard(gameType: 'mill' | 'tic_tac_toe'): Promise<LeaderboardResponse> {
+export async function getLeaderboard(gameType: 'mill' | 'connect_four'): Promise<LeaderboardResponse> {
   return request<LeaderboardResponse>(`/games/leaderboard/${gameType}`);
 }

@@ -6,15 +6,9 @@ import { User } from '../entities/User';
 import { UserStats } from '../entities/UserStats';
 import { GameDto, UserDto, PlayerPiece, GameType, MillGameState, LeaderboardResponse, LeaderboardEntryDto } from '@vibe-games/shared';
 import { calculateElo } from '../game/elo';
-import { getAiAction } from '../game/millAi';
+import { ENGINES } from '../game/gameRegistry';
 import { StrategyWeights } from '../game/minimaxAi';
-const aiConfig: Record<string, { id: string; username: string; elo: number; type: string; depth?: number; weights?: StrategyWeights }> = require('../game/aiConfig.json');
-import {
-  createInitialState,
-  handlePlaceAction,
-  handleMoveAction,
-  handleRemoveAction,
-} from '../game/millEngine';
+const aiConfig: Record<string, Record<string, { id: string; username: string; elo: number; type: string; depth?: number; weights?: StrategyWeights }>> = require('../game/aiConfig.json');
 
 declare module 'fastify' {
   interface FastifyRequest {
@@ -24,30 +18,10 @@ declare module 'fastify' {
 
 // BOTS configuration lookup map
 const BOTS_MAP = new Map<string, { username: string; elo: number; type: string; depth?: number; weights?: StrategyWeights }>();
-for (const [key, val] of Object.entries(aiConfig)) {
-  BOTS_MAP.set(val.id, { username: val.username, elo: val.elo, type: val.type, depth: val.depth, weights: val.weights });
-}
-
-function invertState(state: MillGameState): MillGameState {
-  const invertedBoard = state.board.map((cell: PlayerPiece | null) => {
-    if (cell === 'X') return 'O';
-    if (cell === 'O') return 'X';
-    return null;
-  });
-
-  return {
-    ...state,
-    board: invertedBoard,
-    turn: state.turn === 'X' ? 'O' : 'X',
-    placementsRemaining: {
-      X: state.placementsRemaining.O,
-      O: state.placementsRemaining.X,
-    },
-    piecesOnBoard: {
-      X: state.piecesOnBoard.O,
-      O: state.piecesOnBoard.X,
-    }
-  };
+for (const gameBots of Object.values(aiConfig)) {
+  for (const bot of Object.values(gameBots)) {
+    BOTS_MAP.set(bot.id, { username: bot.username, elo: bot.elo, type: bot.type, depth: bot.depth, weights: bot.weights });
+  }
 }
 
 function runAiLoopIfNeeded(game: Game) {
@@ -57,20 +31,14 @@ function runAiLoopIfNeeded(game: Game) {
   const botInfo = BOTS_MAP.get(botId)!;
   const aiPiece: PlayerPiece = botId === game.playerXId ? 'X' : 'O';
 
+  const engine = ENGINES[game.gameType];
+  if (!engine) return;
+
   let aiActive = !game.state.winner;
   while (aiActive && game.state.turn === aiPiece) {
     try {
-      // Invert the state if the AI is Player X (since minimax assumes maximizing O)
-      const stateToPass = aiPiece === 'X' ? invertState(game.state) : game.state;
-      const rawAction = getAiAction(stateToPass, botInfo.type as any, botInfo.depth, botInfo.weights, 4000);
-
-      if (rawAction.type === 'place') {
-        game.state = handlePlaceAction(game.state, rawAction.position!, aiPiece);
-      } else if (rawAction.type === 'move') {
-        game.state = handleMoveAction(game.state, rawAction.from!, rawAction.to!, aiPiece);
-      } else if (rawAction.type === 'remove') {
-        game.state = handleRemoveAction(game.state, rawAction.position!, aiPiece);
-      }
+      const rawAction = engine.getAiAction(game.state, botInfo.type, botInfo.depth || 3, botInfo.weights, 4000);
+      game.state = engine.handleMove(game.state, rawAction, aiPiece);
 
       if (game.state.winner) {
         game.status = 'finished';
@@ -78,6 +46,7 @@ function runAiLoopIfNeeded(game: Game) {
         aiActive = false;
       }
     } catch (err) {
+      console.error('AI execution error:', err);
       game.status = 'finished';
       const humanPiece = aiPiece === 'X' ? 'O' : 'X';
       game.winnerId = humanPiece === 'X' ? game.playerXId : game.playerOId;
@@ -116,33 +85,36 @@ async function seedBots() {
   const userRepo = AppDataSource.getRepository(User);
   const userStatsRepo = AppDataSource.getRepository(UserStats);
 
-  for (const bot of Object.values(aiConfig)) {
-    let existing = await userRepo.findOneBy({ id: bot.id });
-    if (!existing) {
-      existing = userRepo.create({
-        id: bot.id,
-        username: bot.username,
-        googleId: `bot-${bot.id}`,
-        email: `bot-${bot.id}@vibegames.local`,
-      });
-      try {
-        await userRepo.save(existing);
-      } catch (err) {
-        // Safe to ignore if concurrent seed process inserted first
+  for (const [gameType, gameBots] of Object.entries(aiConfig)) {
+    const targetGameType = gameType as GameType;
+    for (const bot of Object.values(gameBots)) {
+      let existing = await userRepo.findOneBy({ id: bot.id });
+      if (!existing) {
+        existing = userRepo.create({
+          id: bot.id,
+          username: bot.username,
+          googleId: `bot-${bot.id}`,
+          email: `bot-${bot.id}@vibegames.local`,
+        });
+        try {
+          await userRepo.save(existing);
+        } catch (err) {
+          // Safe to ignore if concurrent seed process inserted first
+        }
       }
-    }
 
-    let stats = await userStatsRepo.findOneBy({ userId: bot.id, gameType: 'mill' });
-    if (!stats) {
-      stats = userStatsRepo.create({
-        userId: bot.id,
-        gameType: 'mill',
-        elo: bot.elo,
-      });
-      try {
-        await userStatsRepo.save(stats);
-      } catch (err) {
-        // Safe to ignore if concurrent seed process inserted first
+      let stats = await userStatsRepo.findOneBy({ userId: bot.id, gameType: targetGameType });
+      if (!stats) {
+        stats = userStatsRepo.create({
+          userId: bot.id,
+          gameType: targetGameType,
+          elo: bot.elo,
+        });
+        try {
+          await userStatsRepo.save(stats);
+        } catch (err) {
+          // Safe to ignore if concurrent seed process inserted first
+        }
       }
     }
   }
@@ -330,7 +302,8 @@ export async function gameRoutes(server: FastifyInstance) {
     }
 
     const { gameType, isPublic = true, vsAi = false, aiLevel = 'medium_aggressive', aiStarts = false } = request.body;
-    if (gameType !== 'mill') {
+    const engine = ENGINES[gameType];
+    if (!engine) {
       return reply.code(400).send({ error: 'Unsupported game type' });
     }
 
@@ -347,7 +320,8 @@ export async function gameRoutes(server: FastifyInstance) {
       else if (botKey === 'medium') botKey = 'medium_aggressive';
       else if (botKey === 'hard') botKey = 'hard_tactical';
 
-      const botConfig = aiConfig[botKey] || aiConfig['medium_aggressive'];
+      const gameBots = aiConfig[gameType] || aiConfig['mill'];
+      const botConfig = gameBots[botKey] || gameBots['medium_aggressive'];
       const botUser = await getOrCreateUser(botConfig.id);
 
       if (aiStarts) {
@@ -368,7 +342,7 @@ export async function gameRoutes(server: FastifyInstance) {
       status: vsAi ? 'in_progress' : 'waiting',
       playerXId,
       playerOId,
-      state: createInitialState(),
+      state: engine.createInitialState(),
       isPublic,
       playerX: playerXEntity,
       playerO: playerOEntity,
@@ -425,7 +399,7 @@ export async function gameRoutes(server: FastifyInstance) {
   // Get ELO Leaderboard for a game type
   server.get<{ Params: { gameType: GameType } }>('/leaderboard/:gameType', async (request, reply) => {
     const { gameType } = request.params;
-    if (gameType !== 'mill' && gameType !== 'tic_tac_toe') {
+    if (gameType !== 'mill' && gameType !== 'connect_four') {
       return reply.code(400).send({ error: 'Unsupported game type' });
     }
 
@@ -626,23 +600,13 @@ export async function gameRoutes(server: FastifyInstance) {
       return reply.code(400).send({ error: `It is not your turn (current turn: ${game.state.turn})` });
     }
 
-    const { action, position, from, to } = request.body;
+    const engine = ENGINES[game.gameType];
+    if (!engine) {
+      return reply.code(400).send({ error: 'Unsupported game type' });
+    }
 
     try {
-      if (action === 'place') {
-        if (position === undefined) return reply.code(400).send({ error: 'Missing position' });
-        game.state = handlePlaceAction(game.state, position, playerPiece);
-      } else if (action === 'move') {
-        if (from === undefined || to === undefined) {
-          return reply.code(400).send({ error: 'Missing from/to coordinates' });
-        }
-        game.state = handleMoveAction(game.state, from, to, playerPiece);
-      } else if (action === 'remove') {
-        if (position === undefined) return reply.code(400).send({ error: 'Missing position' });
-        game.state = handleRemoveAction(game.state, position, playerPiece);
-      } else {
-        return reply.code(400).send({ error: 'Invalid game action type' });
-      }
+      game.state = engine.handleMove(game.state, request.body, playerPiece);
     } catch (err: any) {
       return reply.code(400).send({ error: err.message });
     }

@@ -5,6 +5,84 @@ import { API_VERSION, type GameDto, type UserDto, type LeaderboardEntryDto } fro
 import * as audio from '../components/AudioEffects';
 import aiConfig from '../../../backend/src/game/aiConfig.json';
 
+const BOT_DESCRIPTIONS: Record<string, Record<string, string>> = {
+  mill: {
+    easy_random: "Random Play",
+    easy_cowardly: "Blocked-Avoidance & Defense",
+    easy_greedy: "Material Hunter",
+    easy_aggressive: "Mill Hunter",
+    medium_aggressive: "Material & Mills",
+    medium_defensive: "Threat Blocking",
+    medium_mobile: "Piece Mobility",
+    hard_tactical: "Minimax Depth 4",
+    expert_garry: "Minimax Depth 5",
+    legendary_magnus: "Minimax Depth 6",
+    perfect_oracle: "Solved Openings & Positional Search",
+  },
+  connect_four: {
+    easy_random: "Random Play",
+    medium_aggressive: "Center Control & Openings",
+    medium_defensive: "Defensive Blocking",
+    medium_mobile: "Spaced Alignment",
+    hard_tactical: "Minimax Depth 4",
+    expert_garry: "Minimax Depth 5",
+    legendary_magnus: "Minimax Depth 6",
+    perfect_oracle: "Center Alignment Search",
+  }
+};
+
+const BOT_EMOJIS: Record<string, Record<string, string>> = {
+  mill: {
+    easy_random: "🟢",
+    easy_cowardly: "🟢",
+    easy_greedy: "🟢",
+    easy_aggressive: "🟢",
+    medium_aggressive: "🟡",
+    medium_defensive: "🟡",
+    medium_mobile: "🟡",
+    hard_tactical: "🔴",
+    expert_garry: "🔥",
+    legendary_magnus: "👑",
+    perfect_oracle: "🌌",
+  },
+  connect_four: {
+    easy_random: "🟢",
+    medium_aggressive: "🟡",
+    medium_defensive: "🟡",
+    medium_mobile: "🟡",
+    hard_tactical: "🔴",
+    expert_garry: "🔥",
+    legendary_magnus: "👑",
+    perfect_oracle: "🌌",
+  }
+};
+
+const BOT_HELP_TEXT: Record<string, Record<string, string>> = {
+  mill: {
+    easy_random: "Randy plays completely random moves. Great for absolute beginners.",
+    easy_cowardly: "Connie searches shallowly and hates getting blocked. Easy to maneuver around.",
+    easy_greedy: "Gordon values material over safety. Trappable by planning ahead.",
+    easy_aggressive: "Arthur pursues mill structures single-mindedly, often leaving his own pieces exposed.",
+    medium_aggressive: "Archie uses 3 plies of search prioritizing making mills and material count.",
+    medium_defensive: "Debbie searches 3 plies deep prioritizing blocking opponent threats.",
+    medium_mobile: "Monty searches 3 plies deep prioritizing keeping his own pieces free.",
+    hard_tactical: "Toby calculates 4 plies ahead. He will punish tactical mistakes.",
+    expert_garry: "Garry evaluates 5 plies deep with optimized positional heuristics. A true challenge!",
+    legendary_magnus: "Magnus calculates 6 plies deep with extremely optimized weights. Legendary level!",
+    perfect_oracle: "The Oracle uses deep positional evaluation and solved center column openings for maximum control.",
+  },
+  connect_four: {
+    easy_random: "Randy plays completely random moves. Great for absolute beginners.",
+    medium_aggressive: "Archie searches 3 plies deep, prioritizing connecting pieces and center column alignment.",
+    medium_defensive: "Debbie searches 3 plies deep, focusing on blocking opponent 3-in-a-row threats.",
+    medium_mobile: "Monty searches 3 plies deep, focusing on maintaining flexible, non-blocked connections.",
+    hard_tactical: "Toby calculates 4 plies ahead, focusing on blocking and creating alignment traps.",
+    expert_garry: "Garry evaluates 5 plies deep with optimized positional heuristics. A true challenge!",
+    legendary_magnus: "Magnus calculates 6 plies deep with extremely optimized weights. Legendary level!",
+    perfect_oracle: "The Oracle uses deep positional evaluation and center column search for maximum control.",
+  }
+};
+
 interface GoogleAccountsId {
   initialize: (config: {
     client_id: string;
@@ -32,12 +110,13 @@ export function LobbyPage() {
   const [joiningCode, setJoiningCode] = useState(false);
   const [lobbyError, setLobbyError] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
-  const [aiLevel, setAiLevel] = useState<'easy_random' | 'medium_aggressive' | 'medium_defensive' | 'medium_mobile' | 'hard_tactical' | 'expert_garry' | 'legendary_magnus' | 'perfect_oracle'>('medium_aggressive');
+  const [aiLevel, setAiLevel] = useState<'easy_random' | 'easy_cowardly' | 'easy_greedy' | 'easy_aggressive' | 'medium_aggressive' | 'medium_defensive' | 'medium_mobile' | 'hard_tactical' | 'expert_garry' | 'legendary_magnus' | 'perfect_oracle'>('medium_aggressive');
   const [aiStarts, setAiStarts] = useState<boolean>(false);
 
   const [lobbyTab, setLobbyTab] = useState<'lobbies' | 'leaderboard'>('lobbies');
-  const [leaderboardGameType, setLeaderboardGameType] = useState<'mill' | 'tic_tac_toe'>('mill');
+  const [activeGameTab, setActiveGameTab] = useState<'mill' | 'connect_four'>('mill');
   const [leaderboardEntries, setLeaderboardEntries] = useState<LeaderboardEntryDto[]>([]);
+  const filteredLobbies = openGames.filter((g) => g.gameType === activeGameTab);
   const [loadingLeaderboard, setLoadingLeaderboard] = useState(false);
   const [leaderboardError, setLeaderboardError] = useState<string | null>(null);
 
@@ -125,7 +204,7 @@ export function LobbyPage() {
     setLoadingLeaderboard(true);
     setLeaderboardError(null);
     try {
-      const data = await api.getLeaderboard(leaderboardGameType);
+      const data = await api.getLeaderboard(activeGameTab);
       setLeaderboardEntries(data.entries);
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Failed to load leaderboard';
@@ -134,14 +213,14 @@ export function LobbyPage() {
     } finally {
       setLoadingLeaderboard(false);
     }
-  }, [leaderboardGameType]);
+  }, [activeGameTab]);
 
   useEffect(() => {
     if (lobbyTab === 'leaderboard') {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       fetchLeaderboard();
     }
-  }, [lobbyTab, leaderboardGameType, fetchLeaderboard]);
+  }, [lobbyTab, activeGameTab, fetchLeaderboard]);
 
   useEffect(() => {
     const checkSession = async () => {
@@ -322,7 +401,7 @@ export function LobbyPage() {
   const handleCreateGame = async (
     vsAi = false,
     isPublic = true,
-    selectedAiLevel?: 'easy' | 'medium' | 'hard' | 'easy_random' | 'medium_aggressive' | 'medium_defensive' | 'medium_mobile' | 'hard_tactical' | 'expert_garry' | 'legendary_magnus' | 'perfect_oracle'
+    selectedAiLevel?: 'easy' | 'medium' | 'hard' | 'easy_random' | 'easy_cowardly' | 'easy_greedy' | 'easy_aggressive' | 'medium_aggressive' | 'medium_defensive' | 'medium_mobile' | 'hard_tactical' | 'expert_garry' | 'legendary_magnus' | 'perfect_oracle'
   ) => {
     if (syncStatus === 'mismatch') {
       alert('Cannot create match: API version mismatch. Please refresh the page.');
@@ -332,7 +411,7 @@ export function LobbyPage() {
     setCreatingGame(true);
     try {
       audio.playPlaceSound();
-      const newGame = await api.createGame('mill', isPublic, vsAi, selectedAiLevel, vsAi ? aiStarts : false);
+      const newGame = await api.createGame(activeGameTab, isPublic, vsAi, selectedAiLevel, vsAi ? aiStarts : false);
       navigate(`/game/${newGame.id}`);
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Failed to create game');
@@ -540,6 +619,30 @@ export function LobbyPage() {
           </div>
         )}
 
+        {/* Game Mode Selector Tabs */}
+        <div className="flex bg-neutral-900/60 border border-neutral-800 p-1.5 rounded-2xl gap-2 w-full max-w-md mx-auto shadow-lg backdrop-blur-md">
+          <button
+            onClick={() => setActiveGameTab('mill')}
+            className={`flex-1 py-3 text-sm rounded-xl font-bold transition-all active:scale-[0.98] ${
+              activeGameTab === 'mill'
+                ? 'bg-blue-600 shadow-[0_0_15px_rgba(59,130,246,0.4)] text-white'
+                : 'text-neutral-400 hover:text-white hover:bg-neutral-800/40'
+            }`}
+          >
+            🎮 Nine Men's Morris
+          </button>
+          <button
+            onClick={() => setActiveGameTab('connect_four')}
+            className={`flex-1 py-3 text-sm rounded-xl font-bold transition-all active:scale-[0.98] ${
+              activeGameTab === 'connect_four'
+                ? 'bg-rose-600 shadow-[0_0_15px_rgba(239,68,68,0.4)] text-white'
+                : 'text-neutral-400 hover:text-white hover:bg-neutral-800/40'
+            }`}
+          >
+            🔴 Connect Four
+          </button>
+        </div>
+
         {/* User Card & Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="md:col-span-1 bg-neutral-900/60 border border-neutral-800 rounded-2xl p-6 backdrop-blur-md flex flex-col justify-between">
@@ -593,24 +696,14 @@ export function LobbyPage() {
                   onChange={(e) => setAiLevel(e.target.value as typeof aiLevel)}
                   className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2.5 text-xs text-neutral-100 focus:outline-none focus:border-indigo-500 transition-all font-sans"
                 >
-                  <option value="easy_random">🟢 Random Randy (Easy) — ELO {aiConfig.easy_random.elo} [Random Play]</option>
-                  <option value="medium_aggressive">🟡 Aggressive Archie (Medium) — ELO {aiConfig.medium_aggressive.elo} [Material & Mills]</option>
-                  <option value="medium_defensive">🟡 Defensive Debbie (Medium) — ELO {aiConfig.medium_defensive.elo} [Threat Blocking]</option>
-                  <option value="medium_mobile">🟡 Mobile Monty (Medium) — ELO {aiConfig.medium_mobile.elo} [Piece Mobility]</option>
-                  <option value="hard_tactical">🔴 Tactical Toby (Hard) — ELO {aiConfig.hard_tactical.elo} [Minimax Depth 4]</option>
-                  <option value="expert_garry">🔥 Grandmaster Garry (Expert) — ELO {aiConfig.expert_garry.elo} [Minimax Depth 5]</option>
-                  <option value="legendary_magnus">👑 Champion Magnus (Legendary) — ELO {aiConfig.legendary_magnus.elo} [Minimax Depth 6]</option>
-                  <option value="perfect_oracle">🌌 Perfect Oracle (Grandmaster) — ELO {aiConfig.perfect_oracle.elo} [Solved Openings & Positional Search]</option>
+                  {Object.entries((aiConfig as any)[activeGameTab] || (aiConfig as any).mill).map(([key, bot]: [string, any]) => (
+                    <option key={key} value={key}>
+                      {BOT_EMOJIS[activeGameTab]?.[key] || "🤖"} {bot.username} — ELO {bot.elo} [{BOT_DESCRIPTIONS[activeGameTab]?.[key] || "AI Bot"}]
+                    </option>
+                  ))}
                 </select>
                 <p className="text-[10px] text-neutral-500 mt-1">
-                  {aiLevel === 'easy_random' && " Randy makes completely random moves. Great for learning the rules!"}
-                  {aiLevel === 'medium_aggressive' && " Archie values pieces highly and actively seeks to form mills to capture yours."}
-                  {aiLevel === 'medium_defensive' && " Debbie prioritizes blocking your threats and maintaining a strong defensive structure."}
-                  {aiLevel === 'medium_mobile' && " Monty works to restrict your moves and maximize his own piece mobility."}
-                  {aiLevel === 'hard_tactical' && " Toby calculates 4 plies ahead. He will punish tactical mistakes."}
-                  {aiLevel === 'expert_garry' && " Garry evaluates 5 plies deep with optimized positional heuristics. A true challenge!"}
-                  {aiLevel === 'legendary_magnus' && " Magnus calculates 6 plies deep with extremely optimized block/mobility weights. Legendary level!"}
-                  {aiLevel === 'perfect_oracle' && " The Oracle uses a solved opening midpoint strategy and degree-based positional evaluation for maximum control. Unbeatable!"}
+                  {BOT_HELP_TEXT[activeGameTab]?.[aiLevel] || "AI Bot will calculate moves based on difficulty."}
                 </p>
 
                 <div className="border-t border-neutral-800/80 my-2"></div>
@@ -811,12 +904,12 @@ export function LobbyPage() {
               ) : (
                 <div className="flex items-center gap-2">
                   <select
-                    value={leaderboardGameType}
-                    onChange={(e) => setLeaderboardGameType(e.target.value as 'mill' | 'tic_tac_toe')}
+                    value={activeGameTab}
+                    onChange={(e) => setActiveGameTab(e.target.value as 'mill' | 'connect_four')}
                     className="bg-neutral-950 border border-neutral-800 rounded-lg px-2 py-1 text-xs text-neutral-300 focus:outline-none focus:border-neutral-700 font-medium"
                   >
                     <option value="mill">Nine Men's Morris</option>
-                    <option value="tic_tac_toe">Tic-Tac-Toe</option>
+                    <option value="connect_four">Connect Four</option>
                   </select>
                   <button
                     onClick={fetchLeaderboard}
@@ -841,12 +934,12 @@ export function LobbyPage() {
                     <div className="text-center py-8 text-neutral-500 text-sm">
                       Loading lobbies...
                     </div>
-                  ) : openGames.length === 0 ? (
+                  ) : filteredLobbies.length === 0 ? (
                     <div className="text-center py-8 border border-dashed border-neutral-800 rounded-xl text-neutral-500 text-sm">
                       No public games waiting. Create a game above to start!
                     </div>
                   ) : (
-                    openGames.map((game) => (
+                    filteredLobbies.map((game) => (
                       <div
                         key={game.id}
                         className="flex justify-between items-center p-4 rounded-xl bg-neutral-950 border border-neutral-800 hover:border-neutral-700 transition-all"

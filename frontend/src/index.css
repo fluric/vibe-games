@@ -12,3 +12,25 @@ body {
 #root {
   min-height: 100svh;
 }
+
+@keyframes drop-cell-anim {
+  0% {
+    transform: translateY(-300px);
+    animation-timing-function: cubic-bezier(0.55, 0.055, 0.675, 0.19);
+  }
+  80% {
+    transform: translateY(0);
+    animation-timing-function: cubic-bezier(0.215, 0.61, 0.355, 1);
+  }
+  90% {
+    transform: translateY(-16px);
+    animation-timing-function: cubic-bezier(0.55, 0.055, 0.675, 0.19);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+.animate-drop-cell {
+  animation: drop-cell-anim 0.45s ease-out forwards;
+}

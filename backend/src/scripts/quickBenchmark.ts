@@ -14,7 +14,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 const configPath = path.join(__dirname, '../game/aiConfig.json');
-const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+const config = JSON.parse(fs.readFileSync(configPath, 'utf8')).mill;
 
 // Parse CLI args
 const args = process.argv.slice(2);
