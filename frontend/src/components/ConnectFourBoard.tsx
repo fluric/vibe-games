@@ -48,7 +48,7 @@ export const ConnectFourBoard: React.FC<ConnectFourBoardProps> = ({
     if (cellValue === 'X') {
       return (
         <div 
-          className="w-[82%] h-[82%] rounded-full bg-gradient-to-br from-red-500 to-rose-700 border border-red-400 shadow-[0_2px_4px_rgba(0,0,0,0.4),0_0_12px_rgba(239,68,68,0.5)] animate-drop-cell"
+          className="w-[76%] h-[76%] rounded-full bg-gradient-to-br from-red-500 to-rose-700 border border-red-400 shadow-[0_2px_4px_rgba(0,0,0,0.4),0_0_12px_rgba(239,68,68,0.5)] animate-drop-cell"
           style={{ '--target-row': row } as React.CSSProperties}
         />
       );
@@ -57,7 +57,7 @@ export const ConnectFourBoard: React.FC<ConnectFourBoardProps> = ({
     if (cellValue === 'O') {
       return (
         <div 
-          className="w-[82%] h-[82%] rounded-full bg-gradient-to-br from-amber-400 to-yellow-600 border border-amber-300 shadow-[0_2px_4px_rgba(0,0,0,0.4),0_0_12px_rgba(245,158,11,0.5)] animate-drop-cell"
+          className="w-[76%] h-[76%] rounded-full bg-gradient-to-br from-amber-400 to-yellow-600 border border-amber-300 shadow-[0_2px_4px_rgba(0,0,0,0.4),0_0_12px_rgba(245,158,11,0.5)] animate-drop-cell"
           style={{ '--target-row': row } as React.CSSProperties}
         />
       );
@@ -67,7 +67,7 @@ export const ConnectFourBoard: React.FC<ConnectFourBoardProps> = ({
     if (!disabled && hoveredCol === col && getLowestEmptyRow(col) === row) {
       return (
         <div 
-          className={`w-[82%] h-[82%] rounded-full opacity-45 border border-dashed transition-all duration-200 ${
+          className={`w-[76%] h-[76%] rounded-full opacity-45 border border-dashed transition-all duration-200 ${
             turn === 'X' 
               ? 'bg-rose-500/20 border-rose-400 shadow-[0_0_8px_rgba(239,68,68,0.3)]' 
               : 'bg-amber-400/20 border-amber-300 shadow-[0_0_8px_rgba(245,158,11,0.3)]'

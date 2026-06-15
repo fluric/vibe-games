@@ -317,7 +317,7 @@ export function GamePage() {
       <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-blue-500/5 blur-[120px] pointer-events-none" />
       <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-rose-500/5 blur-[120px] pointer-events-none" />
 
-      <div className="w-full max-w-4xl flex flex-col gap-6 z-10">
+      <div className="w-full max-w-6xl flex flex-col gap-6 z-10">
         
         {/* Navigation Bar */}
         <div className="flex justify-between items-center border-b border-neutral-800 pb-4">
@@ -376,7 +376,7 @@ export function GamePage() {
         <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-center mt-2">
           
           {/* Player X Stats (Left Column) */}
-          <div className="md:col-span-3 flex flex-col gap-4">
+          <div className="col-span-12 md:col-span-6 xl:col-span-3 order-1 xl:order-none flex flex-col gap-4">
             <div data-testid="player-x-card" className={`p-5 rounded-2xl border transition-all ${
               game.status === 'in_progress' && game.state.turn === 'X'
                 ? 'bg-blue-500/10 border-blue-500/30'
@@ -427,7 +427,7 @@ export function GamePage() {
           </div>
 
           {/* Interactive SVG Game Canvas (Middle Column) */}
-          <div className="md:col-span-6 flex flex-col items-center justify-center">
+          <div className="col-span-12 xl:col-span-6 order-3 xl:order-none flex flex-col items-center justify-center">
             {game.gameType === 'mill' ? (
               <MillBoard
                 board={game.state.board}
@@ -450,7 +450,7 @@ export function GamePage() {
           </div>
 
           {/* Player O Stats (Right Column) */}
-          <div className="md:col-span-3 flex flex-col gap-4">
+          <div className="col-span-12 md:col-span-6 xl:col-span-3 order-2 xl:order-none flex flex-col gap-4">
             <div data-testid="player-o-card" className={`p-5 rounded-2xl border transition-all ${
               game.status === 'in_progress' && game.state.turn === 'O'
                 ? 'bg-rose-500/10 border-rose-500/30'
