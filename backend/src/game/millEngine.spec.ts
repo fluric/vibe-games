@@ -4,6 +4,7 @@ import {
   handlePlaceAction,
   handleMoveAction,
   handleRemoveAction,
+  getPositionKey,
 } from './millEngine';
 import { MillGameState } from '@vibe-games/shared';
 
@@ -285,6 +286,47 @@ function testDrawCondition() {
   // movesSinceLastCapture should reset to 0
   assert.strictEqual(state2.movesSinceLastCapture, 0);
   assert.strictEqual(state2.winner, null);
+
+  // 👉 Testing 3-Fold Repetition Draw Condition
+  console.log('👉 Testing 3-Fold Repetition Draw Condition...');
+  let repState = createInitialState();
+  repState.phase = 'movement';
+  repState.placementsRemaining = { X: 0, O: 0 };
+  repState.piecesOnBoard = { X: 3, O: 3 };
+  repState.board[0] = 'X';
+  repState.board[8] = 'O';
+  repState.board[1] = 'X';
+  repState.board[9] = 'O';
+  repState.board[3] = 'X';
+  repState.board[11] = 'O';
+  repState.turn = 'X';
+  
+  // Initialize position history manually
+  const initialKey = getPositionKey(repState.board, 'X');
+  repState.positionHistory = [initialKey];
+
+  // Alternating moves:
+  // Move 1: X moves 0 -> 7
+  repState = handleMoveAction(repState, 0, 7, 'X'); 
+  // Move 2: O moves 8 -> 15
+  repState = handleMoveAction(repState, 8, 15, 'O'); 
+  
+  // Move 3: X moves 7 -> 0
+  repState = handleMoveAction(repState, 7, 0, 'X'); 
+  // Move 4: O moves 15 -> 8 (this returns to starting board state)
+  repState = handleMoveAction(repState, 15, 8, 'O'); 
+  
+  // Move 5: X moves 0 -> 7
+  repState = handleMoveAction(repState, 0, 7, 'X'); 
+  // Move 6: O moves 8 -> 15
+  repState = handleMoveAction(repState, 8, 15, 'O'); 
+  
+  // Move 7: X moves 7 -> 0
+  repState = handleMoveAction(repState, 7, 0, 'X'); 
+  // Move 8: O moves 15 -> 8 (third occurrence of starting board state!)
+  repState = handleMoveAction(repState, 15, 8, 'O');
+  
+  assert.strictEqual(repState.winner, 'draw');
 }
 
 // Execute tests

@@ -58,6 +58,7 @@ export interface MillGameState {
   winner: PlayerPiece | 'draw' | null;
   millFormedThisTurn: boolean; // True if player needs to remove an opponent piece
   movesSinceLastCapture?: number; // ply count since last capture
+  positionHistory?: string[]; // board positions in '........................X' format
 }
 
 export interface GameDto {
@@ -71,4 +72,20 @@ export interface GameDto {
   isPublic: boolean;
   createdAt: string; // ISO 8601
   updatedAt: string; // ISO 8601
+}
+
+export interface LeaderboardEntryDto {
+  userId: string;
+  username: string;
+  avatarUrl?: string | null;
+  elo: number;
+  wins: number;
+  losses: number;
+  draws: number;
+  isBot: boolean;
+}
+
+export interface LeaderboardResponse {
+  gameType: GameType;
+  entries: LeaderboardEntryDto[];
 }

@@ -4,7 +4,7 @@ import { IsNull, In } from 'typeorm';
 import { Game } from '../entities/Game';
 import { User } from '../entities/User';
 import { UserStats } from '../entities/UserStats';
-import { GameDto, UserDto, PlayerPiece, GameType, MillGameState } from '@vibe-games/shared';
+import { GameDto, UserDto, PlayerPiece, GameType, MillGameState, LeaderboardResponse, LeaderboardEntryDto } from '@vibe-games/shared';
 import { calculateElo } from '../game/elo';
 import { getAiAction } from '../game/millAi';
 import { StrategyWeights } from '../game/minimaxAi';
@@ -420,6 +420,58 @@ export async function gameRoutes(server: FastifyInstance) {
     });
 
     return reply.send(await Promise.all(myGames.map(toGameDto)));
+  });
+
+  // Get ELO Leaderboard for a game type
+  server.get<{ Params: { gameType: GameType } }>('/leaderboard/:gameType', async (request, reply) => {
+    const { gameType } = request.params;
+    if (gameType !== 'mill' && gameType !== 'tic_tac_toe') {
+      return reply.code(400).send({ error: 'Unsupported game type' });
+    }
+
+    const statsRepo = AppDataSource.getRepository(UserStats);
+    const statsList = await statsRepo.find({
+      where: { gameType },
+      relations: ['user'],
+      order: { elo: 'DESC' },
+      take: 100, // Limit to top 100
+    });
+
+    const entries: LeaderboardEntryDto[] = statsList.map(stats => {
+      const isBot = BOTS_MAP.has(stats.userId);
+      // If it is a bot, use the dynamic bot configuration elo rating (loaded from aiConfig.json)
+      // to keep it in sync with tournament results!
+      let currentElo = stats.elo;
+      let username = stats.user ? stats.user.username : `Player_${stats.userId.substring(0, 5)}`;
+      if (isBot) {
+        const botInfo = BOTS_MAP.get(stats.userId);
+        if (botInfo) {
+          currentElo = botInfo.elo;
+          username = botInfo.username;
+        }
+      }
+
+      return {
+        userId: stats.userId,
+        username,
+        avatarUrl: stats.user ? stats.user.avatarUrl : null,
+        elo: currentElo,
+        wins: stats.wins,
+        losses: stats.losses,
+        draws: stats.draws,
+        isBot,
+      };
+    });
+
+    // Also sort entries by ELO DESC again, because bots might have updated configurations
+    entries.sort((a, b) => b.elo - a.elo);
+
+    const response: LeaderboardResponse = {
+      gameType,
+      entries,
+    };
+
+    return reply.send(response);
   });
 
   // 3. Get Game Details

@@ -53,10 +53,12 @@ function invertState(state: MillGameState): MillGameState {
 
 /**
  * Returns a compact position key for 3-fold repetition detection.
- * Encodes board + turn — enough to detect repeated positions.
+ * Each cell is exactly 1 character: 'X', 'O', or '.' (null).
+ * Using join('') without mapping null would collapse different positions
+ * to the same string (e.g. [null,'X'] and ['X',null] both → "X").
  */
 function getPositionKey(state: MillGameState): string {
-  return `${state.board.join('')}${state.turn}`;
+  return state.board.map(c => c ?? '.').join('') + state.turn;
 }
 
 /**

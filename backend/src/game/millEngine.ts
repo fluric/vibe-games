@@ -7,6 +7,10 @@ import {
   areAllPiecesInMills,
 } from './millRules';
 
+export function getPositionKey(board: (PlayerPiece | null)[], turn: PlayerPiece): string {
+  return board.map(c => c ?? '.').join('') + turn;
+}
+
 /**
  * Creates the default initial state for a new Nine Men's Morris game.
  */
@@ -26,6 +30,7 @@ export function createInitialState(): MillGameState {
     winner: null,
     millFormedThisTurn: false,
     movesSinceLastCapture: 0,
+    positionHistory: ['........................X'],
   };
 }
 
@@ -101,9 +106,16 @@ export function handlePlaceAction(
 
   const nextPhase = getNextPhase(newPlacements, newPiecesOnBoard, nextTurn);
 
+  const nextHistory = state.positionHistory ? [...state.positionHistory] : [];
+  const nextKey = getPositionKey(newBoard, nextTurn);
+  nextHistory.push(nextKey);
+
   let nextWinner: PlayerPiece | 'draw' | null = state.winner;
   if (nextWinner === null) {
-    if (nextPhase === 'movement' && !millCreated && !hasValidMoves(newBoard, nextTurn)) {
+    const occurrences = nextHistory.filter(k => k === nextKey).length;
+    if (occurrences >= 3) {
+      nextWinner = 'draw';
+    } else if (nextPhase === 'movement' && !millCreated && !hasValidMoves(newBoard, nextTurn)) {
       nextWinner = player;
     } else if (nextMovesSinceLastCapture >= 50) {
       nextWinner = 'draw';
@@ -120,6 +132,7 @@ export function handlePlaceAction(
     millFormedThisTurn: millPending,
     movesSinceLastCapture: nextMovesSinceLastCapture,
     winner: nextWinner,
+    positionHistory: nextHistory,
   };
 }
 
@@ -182,6 +195,10 @@ export function handleMoveAction(
 
   const nextPhase = getNextPhase(state.placementsRemaining, state.piecesOnBoard, nextTurn);
 
+  const nextHistory = state.positionHistory ? [...state.positionHistory] : [];
+  const nextKey = getPositionKey(newBoard, nextTurn);
+  nextHistory.push(nextKey);
+
   let nextState: MillGameState = {
     ...state,
     board: newBoard,
@@ -189,6 +206,7 @@ export function handleMoveAction(
     turn: nextTurn,
     millFormedThisTurn: millPending,
     movesSinceLastCapture: nextMovesSinceLastCapture,
+    positionHistory: nextHistory,
   };
 
   // 3. Post-move checks (e.g. check if opponent is blocked)
@@ -202,8 +220,13 @@ export function handleMoveAction(
     }
   }
 
-  if (nextState.winner === null && nextMovesSinceLastCapture >= 50) {
-    nextState.winner = 'draw';
+  if (nextState.winner === null) {
+    const occurrences = nextHistory.filter(k => k === nextKey).length;
+    if (occurrences >= 3) {
+      nextState.winner = 'draw';
+    } else if (nextMovesSinceLastCapture >= 50) {
+      nextState.winner = 'draw';
+    }
   }
 
   return nextState;
@@ -265,6 +288,17 @@ export function handleRemoveAction(
 
   const nextPhase = getNextPhase(state.placementsRemaining, newPiecesOnBoard, nextTurn);
 
+  const nextHistory = state.positionHistory ? [...state.positionHistory] : [];
+  const nextKey = getPositionKey(newBoard, nextTurn);
+  nextHistory.push(nextKey);
+
+  if (nextWinner === null) {
+    const occurrences = nextHistory.filter(k => k === nextKey).length;
+    if (occurrences >= 3) {
+      nextWinner = 'draw';
+    }
+  }
+
   return {
     ...state,
     board: newBoard,
@@ -274,5 +308,6 @@ export function handleRemoveAction(
     millFormedThisTurn: false, // Reset removal flag
     winner: nextWinner,
     movesSinceLastCapture: 0, // Reset draw counter on capture
+    positionHistory: nextHistory,
   };
 }

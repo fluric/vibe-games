@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import * as api from '../api/games';
-import { API_VERSION, type GameDto, type UserDto } from '@vibe-games/shared';
+import { API_VERSION, type GameDto, type UserDto, type LeaderboardEntryDto } from '@vibe-games/shared';
 import * as audio from '../components/AudioEffects';
 import aiConfig from '../../../backend/src/game/aiConfig.json';
 
@@ -34,6 +34,12 @@ export function LobbyPage() {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [aiLevel, setAiLevel] = useState<'easy_random' | 'medium_aggressive' | 'medium_defensive' | 'medium_mobile' | 'hard_tactical' | 'expert_garry' | 'legendary_magnus' | 'perfect_oracle'>('medium_aggressive');
   const [aiStarts, setAiStarts] = useState<boolean>(false);
+
+  const [lobbyTab, setLobbyTab] = useState<'lobbies' | 'leaderboard'>('lobbies');
+  const [leaderboardGameType, setLeaderboardGameType] = useState<'mill' | 'tic_tac_toe'>('mill');
+  const [leaderboardEntries, setLeaderboardEntries] = useState<LeaderboardEntryDto[]>([]);
+  const [loadingLeaderboard, setLoadingLeaderboard] = useState(false);
+  const [leaderboardError, setLeaderboardError] = useState<string | null>(null);
 
   const [syncStatus, setSyncStatus] = useState<'synced' | 'warn' | 'mismatch'>('synced');
   const [backendApiVersion, setBackendApiVersion] = useState<string | null>(null);
@@ -114,6 +120,28 @@ export function LobbyPage() {
       console.error('Failed to load active games:', err);
     }
   }, [currentUser]);
+
+  const fetchLeaderboard = useCallback(async () => {
+    setLoadingLeaderboard(true);
+    setLeaderboardError(null);
+    try {
+      const data = await api.getLeaderboard(leaderboardGameType);
+      setLeaderboardEntries(data.entries);
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : 'Failed to load leaderboard';
+      console.error('Failed to fetch leaderboard:', err);
+      setLeaderboardError(errorMsg);
+    } finally {
+      setLoadingLeaderboard(false);
+    }
+  }, [leaderboardGameType]);
+
+  useEffect(() => {
+    if (lobbyTab === 'leaderboard') {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      fetchLeaderboard();
+    }
+  }, [lobbyTab, leaderboardGameType, fetchLeaderboard]);
 
   useEffect(() => {
     const checkSession = async () => {
@@ -748,59 +776,171 @@ export function LobbyPage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Public Lobby List */}
           <div className="md:col-span-2 bg-neutral-900/60 border border-neutral-800 rounded-2xl p-6 backdrop-blur-md flex flex-col gap-4">
-            <div className="flex justify-between items-center">
-              <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                Active Public Lobbies
-              </h3>
-              <button
-                onClick={fetchLobby}
-                className="text-xs text-neutral-400 hover:text-white transition-colors"
-              >
-                🔄 Refresh
-              </button>
-            </div>
-
-            {lobbyError && (
-              <div className="p-3 text-xs bg-rose-500/10 border border-rose-500/30 rounded-lg text-rose-400">
-                {lobbyError}
+            {/* Tabs Header */}
+            <div className="flex justify-between items-center border-b border-neutral-800 pb-2">
+              <div className="flex gap-4">
+                <button
+                  onClick={() => setLobbyTab('lobbies')}
+                  className={`text-sm font-bold transition-colors pb-2 border-b-2 ${
+                    lobbyTab === 'lobbies'
+                      ? 'text-white border-indigo-500'
+                      : 'text-neutral-400 border-transparent hover:text-white'
+                  }`}
+                >
+                  🌍 Active Lobbies
+                </button>
+                <button
+                  onClick={() => setLobbyTab('leaderboard')}
+                  className={`text-sm font-bold transition-colors pb-2 border-b-2 ${
+                    lobbyTab === 'leaderboard'
+                      ? 'text-white border-indigo-500'
+                      : 'text-neutral-400 border-transparent hover:text-white'
+                  }`}
+                >
+                  🏆 ELO Leaderboard
+                </button>
               </div>
-            )}
 
-            <div className="flex flex-col gap-3 max-h-[300px] overflow-y-auto pr-1">
-              {loadingLobby ? (
-                <div className="text-center py-8 text-neutral-500 text-sm">
-                  Loading lobbies...
-                </div>
-              ) : openGames.length === 0 ? (
-                <div className="text-center py-8 border border-dashed border-neutral-800 rounded-xl text-neutral-500 text-sm">
-                  No public games waiting. Create a game above to start!
-                </div>
+              {lobbyTab === 'lobbies' ? (
+                <button
+                  onClick={fetchLobby}
+                  className="text-xs text-neutral-400 hover:text-white transition-colors"
+                >
+                  🔄 Refresh Lobbies
+                </button>
               ) : (
-                openGames.map((game) => (
-                  <div
-                    key={game.id}
-                    className="flex justify-between items-center p-4 rounded-xl bg-neutral-950 border border-neutral-800 hover:border-neutral-700 transition-all"
+                <div className="flex items-center gap-2">
+                  <select
+                    value={leaderboardGameType}
+                    onChange={(e) => setLeaderboardGameType(e.target.value as 'mill' | 'tic_tac_toe')}
+                    className="bg-neutral-950 border border-neutral-800 rounded-lg px-2 py-1 text-xs text-neutral-300 focus:outline-none focus:border-neutral-700 font-medium"
                   >
-                    <div>
-                      <div className="text-xs font-semibold text-neutral-300">
-                        {game.playerX?.username || 'Unknown Player'}'s Game
-                      </div>
-                      <div className="text-[10px] text-neutral-500 font-mono mt-0.5">
-                        ID: {game.id.substring(0, 8)}...
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => handleJoinGame(game.id)}
-                      disabled={syncStatus === 'mismatch'}
-                      className="px-4 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 disabled:bg-neutral-800 disabled:text-neutral-600 disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none text-xs font-bold text-white transition-colors active:scale-95"
-                    >
-                      Join Match
-                    </button>
-                  </div>
-                ))
+                    <option value="mill">Nine Men's Morris</option>
+                    <option value="tic_tac_toe">Tic-Tac-Toe</option>
+                  </select>
+                  <button
+                    onClick={fetchLeaderboard}
+                    className="text-xs text-neutral-400 hover:text-white transition-colors"
+                  >
+                    🔄 Refresh
+                  </button>
+                </div>
               )}
             </div>
+
+            {lobbyTab === 'lobbies' ? (
+              <>
+                {lobbyError && (
+                  <div className="p-3 text-xs bg-rose-500/10 border border-rose-500/30 rounded-lg text-rose-400">
+                    {lobbyError}
+                  </div>
+                )}
+
+                <div className="flex flex-col gap-3 max-h-[300px] overflow-y-auto pr-1">
+                  {loadingLobby ? (
+                    <div className="text-center py-8 text-neutral-500 text-sm">
+                      Loading lobbies...
+                    </div>
+                  ) : openGames.length === 0 ? (
+                    <div className="text-center py-8 border border-dashed border-neutral-800 rounded-xl text-neutral-500 text-sm">
+                      No public games waiting. Create a game above to start!
+                    </div>
+                  ) : (
+                    openGames.map((game) => (
+                      <div
+                        key={game.id}
+                        className="flex justify-between items-center p-4 rounded-xl bg-neutral-950 border border-neutral-800 hover:border-neutral-700 transition-all"
+                      >
+                        <div>
+                          <div className="text-xs font-semibold text-neutral-300">
+                            {game.playerX?.username || 'Unknown Player'}'s Game
+                          </div>
+                          <div className="text-[10px] text-neutral-500 font-mono mt-0.5">
+                            ID: {game.id.substring(0, 8)}...
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => handleJoinGame(game.id)}
+                          disabled={syncStatus === 'mismatch'}
+                          className="px-4 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 disabled:bg-neutral-800 disabled:text-neutral-600 disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none text-xs font-bold text-white transition-colors active:scale-95"
+                        >
+                          Join Match
+                        </button>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </>
+            ) : (
+              <>
+                {leaderboardError && (
+                  <div className="p-3 text-xs bg-rose-500/10 border border-rose-500/30 rounded-lg text-rose-400">
+                    {leaderboardError}
+                  </div>
+                )}
+
+                <div className="flex flex-col gap-2 max-h-[300px] overflow-y-auto pr-1">
+                  {loadingLeaderboard ? (
+                    <div className="text-center py-8 text-neutral-500 text-sm">
+                      Loading leaderboard...
+                    </div>
+                  ) : leaderboardEntries.length === 0 ? (
+                    <div className="text-center py-8 border border-dashed border-neutral-800 rounded-xl text-neutral-500 text-sm">
+                      No ranked players yet for this game type.
+                    </div>
+                  ) : (
+                    <table className="w-full text-left border-collapse text-xs text-neutral-300">
+                      <thead>
+                        <tr className="border-b border-neutral-800 text-neutral-500 font-semibold">
+                          <th className="py-2 px-3 w-12 text-center">Rank</th>
+                          <th className="py-2 px-3">Player</th>
+                          <th className="py-2 px-3 w-20 text-right">ELO</th>
+                          <th className="py-2 px-3 w-32 text-center">Record (W-L-D)</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {leaderboardEntries.map((entry, index) => {
+                          const isCurrentUser = entry.userId === currentUser?.id;
+                          return (
+                            <tr
+                              key={entry.userId}
+                              className={`border-b border-neutral-850 hover:bg-neutral-950/30 transition-all ${
+                                isCurrentUser ? 'bg-indigo-600/5 text-indigo-200' : ''
+                              }`}
+                            >
+                              <td className="py-2.5 px-3 text-center font-bold font-mono">
+                                {index + 1}
+                              </td>
+                              <td className="py-2.5 px-3 flex items-center gap-2">
+                                <span className="font-semibold text-neutral-200 flex items-center gap-1.5">
+                                  {entry.username}
+                                  {entry.isBot && (
+                                    <span className="text-[9px] font-extrabold px-1.5 py-0.5 rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+                                      BOT
+                                    </span>
+                                  )}
+                                  {isCurrentUser && (
+                                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                                      YOU
+                                    </span>
+                                  )}
+                                </span>
+                              </td>
+                              <td className="py-2.5 px-3 text-right font-bold font-mono text-white">
+                                {entry.elo}
+                              </td>
+                              <td className="py-2.5 px-3 text-center font-mono text-neutral-400">
+                                {entry.wins} - {entry.losses} - {entry.draws}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  )}
+                </div>
+              </>
+            )}
           </div>
 
           {/* Join Direct Code Card */}

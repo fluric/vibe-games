@@ -6,7 +6,7 @@ import { Game } from '../entities/Game';
 import { User } from '../entities/User';
 import { GameDto } from '@vibe-games/shared';
 
-const AI_USER_ID = '00000000-0000-0000-0000-000000000000';
+const AI_USER_ID = '00000000-0000-0000-0000-000000000002';
 
 async function runTests() {
   console.log('🧪 Starting Games API Integration Tests...\n');
@@ -30,6 +30,25 @@ async function runTests() {
 
   const user1Id = '11111111-1111-1111-1111-111111111111';
   const user2Id = '22222222-2222-2222-2222-222222222222';
+  const randomUserId = '99999999-9999-9999-9999-999999999999';
+
+  // Create test users
+  const user1 = userRepo.create({
+    id: user1Id,
+    username: 'Alice',
+    email: 'alice@vibegames.local',
+  });
+  const user2 = userRepo.create({
+    id: user2Id,
+    username: 'Bob',
+    email: 'bob@vibegames.local',
+  });
+  const randomUser = userRepo.create({
+    id: randomUserId,
+    username: 'Charlie',
+    email: 'charlie@vibegames.local',
+  });
+  await userRepo.save([user1, user2, randomUser]);
 
   let testGameId: string = '';
 
@@ -261,7 +280,6 @@ async function runTests() {
   console.log('👉 Testing: Forfeiting/Resigning a Game...');
   
   // Try to forfeit a game we are not a participant in (using a random user ID)
-  const randomUserId = '99999999-9999-9999-9999-999999999999';
   const wrongForfeitRes = await app.inject({
     method: 'POST',
     url: `/games/${testGameId}/forfeit`,

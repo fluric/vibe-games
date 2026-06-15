@@ -132,20 +132,20 @@ const X_OPENING_BOOK: Map<string, number> = new Map([
   // X's 2nd move: board has X@9 + O's response
   // O took 13 (opposite) → X extends 9 via spoke: take 17 (inner) or 1 (outer)
   // 17 connects to 9 via the 1-9-17 mill line (taking 1 later completes it)
-  ['.........X...O..........', 17],  // X@9, O@13 → X takes 17
+  ['.........O...X..........', 17],  // X@9, O@13 → X takes 17 (O is bot, X is opponent)
   // O took 11 (adjacent) → X takes 13 to control two opposite cross-points
-  ['.........XO.............', 13],  // X@9, O@11 → X takes 13
+  ['.........OX.............', 13],  // X@9, O@11 → X takes 13
   // O took 15 (adjacent other side) → X takes 11
-  ['.........X.....O........', 11],  // X@9, O@15 → X takes 11
+  ['.........O.....X........', 11],  // X@9, O@15 → X takes 11
   // O took non-cross-point → X takes 13 (second cross-point)
-  ['O........X..............', 13],  // X@9, O@0 → X takes 13
-  ['.O.......X..............', 13],  // X@9, O@1 → X takes 13
-  ['..O......X..............', 13],  // X@9, O@2 → X takes 13
+  ['X........O..............', 13],  // X@9, O@0 → X takes 13
+  ['.X.......O..............', 13],  // X@9, O@1 → X takes 13
+  ['..X......O..............', 13],  // X@9, O@2 → X takes 13
 
   // X's 3rd move: after X@9 + X@17, O has two pieces
   // Now X wants to complete the 1-9-17 mill → take 1
-  ['.X.......X.....O.O......', 1],   // X:9,17 O:11,15 → take 1 (threatens mill)
-  ['.........X.O...O.X......', 1],   // variation → take 1
+  ['.O.......O.....X.X......', 1],   // X:9,17 O:11,15 → take 1 (threatens mill)
+  ['.........O.X...X.O......', 1],   // variation → take 1
 ]);
 
 
@@ -760,15 +760,17 @@ export function getBestMinimaxMove(
     if (totalPieces <= 4) {
       const boardKey = getBoardKey(state.board);
 
-      if (state.turn === 'X') {
-        // ── X-side opening book ──────────────────────────────────────────────
+      const isFirstPlayer = state.placementsRemaining.X === state.placementsRemaining.O;
+
+      if (isFirstPlayer) {
+        // ── First player opening book (bot is always O in search) ─────────────
         const xBookMove = X_OPENING_BOOK.get(boardKey);
         if (xBookMove !== undefined && state.board[xBookMove] === null) {
           return { type: 'place', position: xBookMove };
         }
 
-        const xOwnedCross = crossPoints.filter(p => state.board[p] === 'X');
-        const oOwnedCross = crossPoints.filter(p => state.board[p] === 'O');
+        const xOwnedCross = crossPoints.filter(p => state.board[p] === 'X'); // Opponent
+        const oOwnedCross = crossPoints.filter(p => state.board[p] === 'O'); // Bot
 
         // If both sides have ≥2 cross-points, switch to spoke extension strategy
         // to break the symmetric deadlock and build a faster mill threat.
@@ -776,8 +778,9 @@ export function getBestMinimaxMove(
           const spokePriority = [17, 1, 19, 3, 21, 5, 23, 7];
           for (const spoke of spokePriority) {
             if (state.board[spoke] !== null) continue;
+            // Spoke extension: check if this spoke shares a mill line with the bot's own cross-points (O)
             const sharesMill = MILLS.some(line =>
-              line.includes(spoke) && xOwnedCross.some(cp => line.includes(cp))
+              line.includes(spoke) && oOwnedCross.some(cp => line.includes(cp))
             );
             if (sharesMill) {
               return { type: 'place', position: spoke };
@@ -791,7 +794,7 @@ export function getBestMinimaxMove(
         }
 
       } else {
-        // ── O-side opening book ──────────────────────────────────────────────
+        // ── Second player opening book (bot is always O in search) ────────────
         const oBookMove = OPENING_BOOK.get(boardKey);
         if (oBookMove !== undefined && state.board[oBookMove] === null) {
           return { type: 'place', position: oBookMove };

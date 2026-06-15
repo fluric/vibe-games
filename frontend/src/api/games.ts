@@ -1,4 +1,4 @@
-import type { GameDto, AuthStatusResponse } from '@vibe-games/shared';
+import type { GameDto, AuthStatusResponse, LeaderboardResponse } from '@vibe-games/shared';
 
 // Helper to get or generate a persistent local user ID
 export function getUserId(): string {
@@ -142,4 +142,8 @@ export async function logout(): Promise<{ success: boolean }> {
     method: 'POST',
     body: JSON.stringify({}),
   });
+}
+
+export async function getLeaderboard(gameType: 'mill' | 'tic_tac_toe'): Promise<LeaderboardResponse> {
+  return request<LeaderboardResponse>(`/games/leaderboard/${gameType}`);
 }
