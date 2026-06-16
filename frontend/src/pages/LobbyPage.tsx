@@ -124,6 +124,11 @@ export function LobbyPage() {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   type BotLevel = 'easy_random' | 'easy_cowardly' | 'easy_greedy' | 'easy_aggressive' | 'medium_aggressive' | 'medium_defensive' | 'medium_mobile' | 'hard_tactical' | 'expert_garry' | 'legendary_magnus' | 'perfect_oracle';
 
+  const [activeGameTab, setActiveGameTab] = useState<'mill' | 'connect_four'>(() => {
+    const saved = localStorage.getItem('vibe-games-active-tab');
+    return (saved === 'mill' || saved === 'connect_four') ? saved : 'mill';
+  });
+
   const [aiLevelMill, setAiLevelMill] = useState<BotLevel>(() => {
     const saved = localStorage.getItem('vibe-games-ai-level-mill');
     const validLevels = [
@@ -144,13 +149,28 @@ export function LobbyPage() {
     return (saved && validLevels.includes(saved)) ? (saved as BotLevel) : 'medium_aggressive';
   });
 
-  const [aiStarts, setAiStarts] = useState<boolean>(false);
+  const [aiStartsMill, setAiStartsMill] = useState<boolean>(() => {
+    return localStorage.getItem('vibe-games-ai-starts-mill') === 'true';
+  });
+  const [aiStartsConnectFour, setAiStartsConnectFour] = useState<boolean>(() => {
+    return localStorage.getItem('vibe-games-ai-starts-connect_four') === 'true';
+  });
+
+  const currentAiStarts = activeGameTab === 'mill' ? aiStartsMill : aiStartsConnectFour;
+
+  const [gameModeMill, setGameModeMill] = useState<'ai' | 'human'>(() => {
+    const saved = localStorage.getItem('vibe-games-game-mode-mill');
+    return saved === 'human' ? 'human' : 'ai';
+  });
+  const [gameModeConnectFour, setGameModeConnectFour] = useState<'ai' | 'human'>(() => {
+    const saved = localStorage.getItem('vibe-games-game-mode-connect_four');
+    return saved === 'human' ? 'human' : 'ai';
+  });
+
+  const currentGameMode = activeGameTab === 'mill' ? gameModeMill : gameModeConnectFour;
 
   const [lobbyTab, setLobbyTab] = useState<'lobbies' | 'leaderboard'>('lobbies');
-  const [activeGameTab, setActiveGameTab] = useState<'mill' | 'connect_four'>(() => {
-    const saved = localStorage.getItem('vibe-games-active-tab');
-    return (saved === 'mill' || saved === 'connect_four') ? saved : 'mill';
-  });
+
 
   const currentAiLevel = activeGameTab === 'mill' ? aiLevelMill : aiLevelConnectFour;
 
@@ -165,6 +185,22 @@ export function LobbyPage() {
   useEffect(() => {
     localStorage.setItem('vibe-games-active-tab', activeGameTab);
   }, [activeGameTab]);
+
+  useEffect(() => {
+    localStorage.setItem('vibe-games-ai-starts-mill', String(aiStartsMill));
+  }, [aiStartsMill]);
+
+  useEffect(() => {
+    localStorage.setItem('vibe-games-ai-starts-connect_four', String(aiStartsConnectFour));
+  }, [aiStartsConnectFour]);
+
+  useEffect(() => {
+    localStorage.setItem('vibe-games-game-mode-mill', gameModeMill);
+  }, [gameModeMill]);
+
+  useEffect(() => {
+    localStorage.setItem('vibe-games-game-mode-connect_four', gameModeConnectFour);
+  }, [gameModeConnectFour]);
   const [leaderboardEntries, setLeaderboardEntries] = useState<LeaderboardEntryDto[]>([]);
   const filteredLobbies = openGames.filter((g) => g.gameType === activeGameTab);
   const [loadingLeaderboard, setLoadingLeaderboard] = useState(false);
@@ -232,7 +268,7 @@ export function LobbyPage() {
     try {
       const games = await api.listOpenGames();
       // Filter out matches created by this player (since they can't play against themselves)
-      setOpenGames(games.filter((g) => g.playerX?.id !== currentUser.id));
+      setOpenGames(games.filter((g) => g.playerX?.id !== currentUser.id && g.playerO?.id !== currentUser.id));
       setLobbyError(null);
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Error updating lobby';
@@ -461,7 +497,7 @@ export function LobbyPage() {
     setCreatingGame(true);
     try {
       audio.playPlaceSound();
-      const newGame = await api.createGame(activeGameTab, isPublic, vsAi, selectedAiLevel, vsAi ? aiStarts : false);
+      const newGame = await api.createGame(activeGameTab, isPublic, vsAi, selectedAiLevel, currentAiStarts);
       navigate(`/game/${newGame.id}`);
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Failed to create game');
@@ -732,40 +768,72 @@ export function LobbyPage() {
             <div>
               <h3 className="text-lg font-bold text-white">Create a New Match</h3>
               <p className="text-sm text-neutral-400 mt-1">
-                Launch a match of Nine Men's Morris ("Mill") immediately.
+                Launch a match of {activeGameTab === 'mill' ? "Nine Men's Morris" : 'Connect Four'} immediately.
               </p>
             </div>
             <div className="flex flex-col gap-4">
-              <div className="flex flex-col gap-2 bg-neutral-950/40 border border-neutral-800/80 rounded-2xl p-4 w-full">
-                <label htmlFor="ai-bot-select" className="text-xs text-neutral-400 font-semibold">
-                  Select AI Opponent:
-                </label>
-                <select
-                  id="ai-bot-select"
-                  value={currentAiLevel}
-                  onChange={(e) => {
-                    const val = e.target.value as BotLevel;
-                    if (activeGameTab === 'mill') {
-                      setAiLevelMill(val);
-                    } else {
-                      setAiLevelConnectFour(val);
-                    }
-                  }}
-                  className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2.5 text-xs text-neutral-100 focus:outline-none focus:border-indigo-500 transition-all font-sans"
-                >
-                  {Object.entries(typedConfig[activeGameTab] || typedConfig.mill)
-                    .sort((a, b) => a[1].elo - b[1].elo)
-                    .map(([key, bot]) => (
-                      <option key={key} value={key}>
-                        {BOT_EMOJIS[activeGameTab]?.[key] || "🤖"} {bot.username} — ELO {bot.elo} [{BOT_DESCRIPTIONS[activeGameTab]?.[key] || "AI Bot"}]
-                      </option>
-                    ))}
-                </select>
-                <p className="text-[10px] text-neutral-500 mt-1">
-                  {BOT_HELP_TEXT[activeGameTab]?.[currentAiLevel] || "AI Bot will calculate moves based on difficulty."}
-                </p>
 
-                <div className="border-t border-neutral-800/80 my-2"></div>
+              {/* Game mode toggle */}
+              <div className="flex bg-neutral-950/60 border border-neutral-800/80 p-1 rounded-xl gap-1">
+                <button
+                  type="button"
+                  onClick={() => activeGameTab === 'mill' ? setGameModeMill('ai') : setGameModeConnectFour('ai')}
+                  className={`flex-1 py-2 text-xs rounded-lg font-semibold transition-all ${
+                    currentGameMode === 'ai'
+                      ? 'bg-indigo-600 text-white shadow'
+                      : 'text-neutral-400 hover:text-white'
+                  }`}
+                >
+                  🤖 vs AI
+                </button>
+                <button
+                  type="button"
+                  onClick={() => activeGameTab === 'mill' ? setGameModeMill('human') : setGameModeConnectFour('human')}
+                  className={`flex-1 py-2 text-xs rounded-lg font-semibold transition-all ${
+                    currentGameMode === 'human'
+                      ? 'bg-indigo-600 text-white shadow'
+                      : 'text-neutral-400 hover:text-white'
+                  }`}
+                >
+                  👥 vs Human
+                </button>
+              </div>
+
+              <div className="flex flex-col gap-2 bg-neutral-950/40 border border-neutral-800/80 rounded-2xl p-4 w-full">
+
+                {/* AI strength — only shown in AI mode */}
+                {currentGameMode === 'ai' && (
+                  <>
+                    <label htmlFor="ai-bot-select" className="text-xs text-neutral-400 font-semibold">
+                      Select AI Opponent:
+                    </label>
+                    <select
+                      id="ai-bot-select"
+                      value={currentAiLevel}
+                      onChange={(e) => {
+                        const val = e.target.value as BotLevel;
+                        if (activeGameTab === 'mill') {
+                          setAiLevelMill(val);
+                        } else {
+                          setAiLevelConnectFour(val);
+                        }
+                      }}
+                      className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2.5 text-xs text-neutral-100 focus:outline-none focus:border-indigo-500 transition-all font-sans"
+                    >
+                      {Object.entries(typedConfig[activeGameTab] || typedConfig.mill)
+                        .sort((a, b) => a[1].elo - b[1].elo)
+                        .map(([key, bot]) => (
+                          <option key={key} value={key}>
+                            {BOT_EMOJIS[activeGameTab]?.[key] || "🤖"} {bot.username} — ELO {bot.elo} [{BOT_DESCRIPTIONS[activeGameTab]?.[key] || "AI Bot"}]
+                          </option>
+                        ))}
+                    </select>
+                    <p className="text-[10px] text-neutral-500 mt-1">
+                      {BOT_HELP_TEXT[activeGameTab]?.[currentAiLevel] || "AI Bot will calculate moves based on difficulty."}
+                    </p>
+                    <div className="border-t border-neutral-800/80 my-2"></div>
+                  </>
+                )}
 
                 <label className="text-xs text-neutral-400 font-semibold">
                   Who Starts the Game?
@@ -773,9 +841,9 @@ export function LobbyPage() {
                 <div className="flex gap-2 mt-0.5">
                   <button
                     type="button"
-                    onClick={() => setAiStarts(false)}
+                    onClick={() => activeGameTab === 'mill' ? setAiStartsMill(false) : setAiStartsConnectFour(false)}
                     className={`flex-1 py-2 text-xs rounded-xl font-semibold border transition-all ${
-                      !aiStarts
+                      !currentAiStarts
                         ? 'bg-indigo-600/10 border-indigo-500 text-indigo-400 font-bold'
                         : 'bg-neutral-950 border-neutral-800 text-neutral-400 hover:border-neutral-700'
                     }`}
@@ -784,19 +852,20 @@ export function LobbyPage() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => setAiStarts(true)}
+                    onClick={() => activeGameTab === 'mill' ? setAiStartsMill(true) : setAiStartsConnectFour(true)}
                     className={`flex-1 py-2 text-xs rounded-xl font-semibold border transition-all ${
-                      aiStarts
+                      currentAiStarts
                         ? 'bg-indigo-600/10 border-indigo-500 text-indigo-400 font-bold'
                         : 'bg-neutral-950 border-neutral-800 text-neutral-400 hover:border-neutral-700'
                     }`}
                   >
-                    🤖 AI Starts (First)
+                    {currentGameMode === 'ai' ? '🤖 AI Starts (First)' : '🧑 Opponent Starts (First)'}
                   </button>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {/* Action buttons */}
+              {currentGameMode === 'ai' ? (
                 <button
                   onClick={() => handleCreateGame(true, false, currentAiLevel)}
                   disabled={creatingGame || syncStatus === 'mismatch'}
@@ -808,34 +877,35 @@ export function LobbyPage() {
                   <span className="font-bold text-xs text-white">Play vs AI</span>
                   <span className="text-[10px] text-neutral-500 text-center">Practice offline</span>
                 </button>
-
-              <button
-                onClick={() => handleCreateGame(false, true)}
-                disabled={creatingGame || syncStatus === 'mismatch'}
-                className="flex flex-col items-center justify-center gap-2 p-4 rounded-xl bg-gradient-to-b from-neutral-800 to-neutral-900 hover:from-neutral-700 hover:to-neutral-800 border border-neutral-700/50 hover:border-neutral-600 transition-all group active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none"
-              >
-                <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-400 group-hover:scale-110 transition-transform">
-                  🌍
+              ) : (
+                <div className="grid grid-cols-2 gap-4">
+                  <button
+                    onClick={() => handleCreateGame(false, true)}
+                    disabled={creatingGame || syncStatus === 'mismatch'}
+                    className="flex flex-col items-center justify-center gap-2 p-4 rounded-xl bg-gradient-to-b from-neutral-800 to-neutral-900 hover:from-neutral-700 hover:to-neutral-800 border border-neutral-700/50 hover:border-neutral-600 transition-all group active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none"
+                  >
+                    <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-400 group-hover:scale-110 transition-transform">
+                      🌍
+                    </div>
+                    <span className="font-bold text-xs text-white">Host Public</span>
+                    <span className="text-[10px] text-neutral-500 text-center">List in public lobby</span>
+                  </button>
+                  <button
+                    onClick={() => handleCreateGame(false, false)}
+                    disabled={creatingGame || syncStatus === 'mismatch'}
+                    className="flex flex-col items-center justify-center gap-2 p-4 rounded-xl bg-gradient-to-b from-neutral-800 to-neutral-900 hover:from-neutral-700 hover:to-neutral-800 border border-neutral-700/50 hover:border-neutral-600 transition-all group active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none"
+                  >
+                    <div className="w-10 h-10 rounded-lg bg-rose-500/10 flex items-center justify-center text-rose-400 group-hover:scale-110 transition-transform">
+                      🔗
+                    </div>
+                    <span className="font-bold text-xs text-white">Host Private</span>
+                    <span className="text-[10px] text-neutral-500 text-center">Share direct link</span>
+                  </button>
                 </div>
-                <span className="font-bold text-xs text-white">Host Public</span>
-                <span className="text-[10px] text-neutral-500 text-center">List in public lobby</span>
-              </button>
-
-              <button
-                onClick={() => handleCreateGame(false, false)}
-                disabled={creatingGame || syncStatus === 'mismatch'}
-                className="flex flex-col items-center justify-center gap-2 p-4 rounded-xl bg-gradient-to-b from-neutral-800 to-neutral-900 hover:from-neutral-700 hover:to-neutral-800 border border-neutral-700/50 hover:border-neutral-600 transition-all group active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none"
-              >
-                <div className="w-10 h-10 rounded-lg bg-rose-500/10 flex items-center justify-center text-rose-400 group-hover:scale-110 transition-transform">
-                  🔗
-                </div>
-                <span className="font-bold text-xs text-white">Host Private</span>
-                <span className="text-[10px] text-neutral-500 text-center">Share direct link</span>
-              </button>
+              )}
             </div>
           </div>
         </div>
-      </div>
 
         {/* Active Matches Section */}
         {activeGames.length > 0 && (
@@ -846,12 +916,10 @@ export function LobbyPage() {
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {activeGames.map((game) => {
-                const isCreator = game.playerX?.id === userId;
-                const opponentName = isCreator
-                  ? (game.playerO?.username || 'Waiting for opponent...')
-                  : (game.playerX?.username || 'Unknown Player');
+                const myPiece = game.playerX?.id === userId ? 'X' : 'O';
+                const opponentPlayer = myPiece === 'X' ? game.playerO : game.playerX;
                 const isWaiting = game.status === 'waiting';
-                const myPiece = isCreator ? 'X' : 'O';
+                const opponentName = opponentPlayer?.username || (isWaiting ? 'Waiting for opponent...' : 'Unknown Player');
                 const isMyTurn = game.state.turn === myPiece;
 
                 return (

@@ -46,6 +46,7 @@ export function GamePage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [game, setGame] = useState<GameDto | null>(null);
+  const [submittingMove, setSubmittingMove] = useState(false);
   const connectFourTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -106,8 +107,10 @@ export function GamePage() {
     try {
       const data = await api.getGame(id);
       
-      // Auto-join if the game is waiting and we are a different user
-      if (data.status === 'waiting' && data.playerX?.id !== userId && data.playerO === null) {
+      // Auto-join if the game is waiting and we are not already a player
+      const alreadyInGame = data.playerX?.id === userId || data.playerO?.id === userId;
+      const hasEmptySlot = data.playerX === null || data.playerO === null;
+      if (data.status === 'waiting' && !alreadyInGame && hasEmptySlot) {
         try {
           const joined = await api.joinGame(id);
           setGame(joined);
@@ -176,98 +179,106 @@ export function GamePage() {
     action: 'place' | 'move' | 'remove',
     params: { position?: number; from?: number; to?: number }
   ) => {
-    if (!id) return;
-    
-    const updated = await api.submitMove(id, {
-      action,
-      ...params,
-    });
-    
-    const oldBoard = game?.state.board;
-    const newBoard = updated.state.board;
-    const isAiGame = isGameAgainstAi(updated);
+    if (!id || submittingMove) return;
+    setSubmittingMove(true);
 
-    console.log('[DEBUG UI Delay] Check:', {
-      gameType: updated.gameType,
-      isAiGame,
-      oldBoardExists: !!oldBoard,
-      newBoardExists: !!newBoard,
-      oldBoardLen: oldBoard?.length,
-      newBoardLen: newBoard?.length,
-      playerXId: updated.playerX?.id,
-      playerOId: updated.playerO?.id,
-      isPlayerXBot: updated.playerX ? isBotId(updated.playerX.id) : false,
-      isPlayerOBot: updated.playerO ? isBotId(updated.playerO.id) : false,
-    });
+    try {
+      const updated = await api.submitMove(id, {
+        action,
+        ...params,
+      });
+      
+      const oldBoard = game?.state.board;
+      const newBoard = updated.state.board;
+      const isAiGame = isGameAgainstAi(updated);
 
-    if (updated.gameType === 'connect_four' && isAiGame && oldBoard && newBoard) {
-      const newIndices: number[] = [];
-      for (let i = 0; i < newBoard.length; i++) {
-        if (oldBoard[i] === null && newBoard[i] !== null) {
-          newIndices.push(i);
-        }
-      }
-      console.log('[DEBUG UI Delay] Diff indices:', newIndices);
-      if (newIndices.length === 2) {
-        const humanPiece = getMyPiece(updated);
-        const humanIndex = newIndices.find(idx => newBoard[idx] === humanPiece);
-        const aiIndex = newIndices.find(idx => newBoard[idx] !== humanPiece);
+      console.log('[DEBUG UI Delay] Check:', {
+        gameType: updated.gameType,
+        isAiGame,
+        oldBoardExists: !!oldBoard,
+        newBoardExists: !!newBoard,
+        oldBoardLen: oldBoard?.length,
+        newBoardLen: newBoard?.length,
+        playerXId: updated.playerX?.id,
+        playerOId: updated.playerO?.id,
+        isPlayerXBot: updated.playerX ? isBotId(updated.playerX.id) : false,
+        isPlayerOBot: updated.playerO ? isBotId(updated.playerO.id) : false,
+      });
 
-        console.log('[DEBUG UI Delay] Human piece:', humanPiece, 'humanIndex:', humanIndex, 'aiIndex:', aiIndex);
-
-        if (humanIndex !== undefined && aiIndex !== undefined) {
-          const intermediateBoard = [...newBoard];
-          intermediateBoard[aiIndex] = null; // Hide AI move temporarily
-
-          const intermediateGame: GameDto = {
-            ...updated,
-            state: {
-              ...updated.state,
-              board: intermediateBoard,
-              turn: updated.state.turn === 'X' ? 'O' : 'X', // Set turn back to AI
-              winner: null,
-            },
-            status: 'in_progress',
-          };
-
-          setGame(intermediateGame);
-
-          if (connectFourTimeoutRef.current) {
-            clearTimeout(connectFourTimeoutRef.current);
+      if (updated.gameType === 'connect_four' && isAiGame && oldBoard && newBoard) {
+        const newIndices: number[] = [];
+        for (let i = 0; i < newBoard.length; i++) {
+          if (oldBoard[i] === null && newBoard[i] !== null) {
+            newIndices.push(i);
           }
+        }
+        console.log('[DEBUG UI Delay] Diff indices:', newIndices);
+        if (newIndices.length === 2) {
+          const humanPiece = getMyPiece(updated);
+          const humanIndex = newIndices.find(idx => newBoard[idx] === humanPiece);
+          const aiIndex = newIndices.find(idx => newBoard[idx] !== humanPiece);
 
-          connectFourTimeoutRef.current = setTimeout(() => {
-            setGame(updated);
-            if (updated.status === 'finished') {
-              const myPiece = getMyPiece(updated);
-              if (myPiece && updated.state.winner === myPiece) {
-                audio.playVictorySound();
-              } else if (myPiece && updated.state.winner && updated.state.winner !== myPiece) {
-                audio.playErrorSound();
-              }
+          console.log('[DEBUG UI Delay] Human piece:', humanPiece, 'humanIndex:', humanIndex, 'aiIndex:', aiIndex);
+
+          if (humanIndex !== undefined && aiIndex !== undefined) {
+            const intermediateBoard = [...newBoard];
+            intermediateBoard[aiIndex] = null; // Hide AI move temporarily
+
+            const intermediateGame: GameDto = {
+              ...updated,
+              state: {
+                ...updated.state,
+                board: intermediateBoard,
+                turn: updated.state.turn === 'X' ? 'O' : 'X', // Set turn back to AI
+                winner: null,
+              },
+              status: 'in_progress',
+            };
+
+            setGame(intermediateGame);
+
+            if (connectFourTimeoutRef.current) {
+              clearTimeout(connectFourTimeoutRef.current);
             }
-          }, 1200);
 
-          return;
+            connectFourTimeoutRef.current = setTimeout(() => {
+              setGame(updated);
+              setSubmittingMove(false);
+              if (updated.status === 'finished') {
+                const myPiece = getMyPiece(updated);
+                if (myPiece && updated.state.winner === myPiece) {
+                  audio.playVictorySound();
+                } else if (myPiece && updated.state.winner && updated.state.winner !== myPiece) {
+                  audio.playErrorSound();
+                }
+              }
+            }, 1200);
+
+            return;
+          }
         }
       }
-    }
 
-    setGame(updated);
+      setGame(updated);
+      setSubmittingMove(false);
 
-    // Play victory / defeat sounds
-    if (updated.status === 'finished') {
-      const myPiece = getMyPiece(updated);
-      if (myPiece && updated.state.winner === myPiece) {
-        audio.playVictorySound();
-      } else if (myPiece && updated.state.winner && updated.state.winner !== myPiece) {
-        audio.playErrorSound();
+      // Play victory / defeat sounds
+      if (updated.status === 'finished') {
+        const myPiece = getMyPiece(updated);
+        if (myPiece && updated.state.winner === myPiece) {
+          audio.playVictorySound();
+        } else if (myPiece && updated.state.winner && updated.state.winner !== myPiece) {
+          audio.playErrorSound();
+        }
+      } else {
+        // Play mill chime if a mill was newly formed
+        if (updated.gameType === 'mill' && (updated.state as MillGameState).millFormedThisTurn && updated.state.turn === getMyPiece(updated)) {
+          audio.playMillSound();
+        }
       }
-    } else {
-      // Play mill chime if a mill was newly formed
-      if (updated.gameType === 'mill' && (updated.state as MillGameState).millFormedThisTurn && updated.state.turn === getMyPiece(updated)) {
-        audio.playMillSound();
-      }
+    } catch (err) {
+      console.error(err);
+      setSubmittingMove(false);
     }
   };
 
@@ -425,7 +436,7 @@ export function GamePage() {
               ⬅️ Leave Match
             </Link>
 
-            {game.status === 'waiting' && game.playerX?.id === userId && (
+            {game.status === 'waiting' && (game.playerX?.id === userId || game.playerO?.id === userId) && (
               <button
                 onClick={handleCancelGame}
                 className="px-3 py-1.5 rounded-lg bg-rose-950/40 hover:bg-rose-900/40 text-xs font-semibold text-rose-400 transition-all border border-rose-900/30 hover:border-rose-800/50 active:scale-95"
@@ -482,7 +493,11 @@ export function GamePage() {
                 <span className="w-2.5 h-2.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.6)]" />
               </div>
               <div className="flex items-center gap-3 mt-3">
-                {game.playerX?.avatarUrl ? (
+                {game.playerX && isBotId(game.playerX.id) ? (
+                  <div className="w-10 h-10 rounded-full bg-neutral-800 border border-neutral-700 flex items-center justify-center text-lg shadow-md">
+                    🤖
+                  </div>
+                ) : game.playerX?.avatarUrl ? (
                   <img
                     src={game.playerX.avatarUrl}
                     alt={game.playerX.username}
@@ -538,7 +553,7 @@ export function GamePage() {
                 board={game.state.board}
                 turn={game.state.turn}
                 currentPlayerPiece={myPiece}
-                disabled={game.status !== 'in_progress' || !isMyTurn}
+                disabled={game.status !== 'in_progress' || !isMyTurn || submittingMove}
                 onAction={(act) => handleBoardAction('place', { position: act.column })}
               />
             )}
@@ -556,7 +571,7 @@ export function GamePage() {
                 <span className="w-2.5 h-2.5 rounded-full bg-rose-500 shadow-[0_0_8px_rgba(239,68,68,0.6)]" />
               </div>
               <div className="flex items-center gap-3 mt-3">
-                {isAiOpponent ? (
+                {game.playerO && isBotId(game.playerO.id) ? (
                   <div className="w-10 h-10 rounded-full bg-neutral-800 border border-neutral-700 flex items-center justify-center text-lg shadow-md">
                     🤖
                   </div>

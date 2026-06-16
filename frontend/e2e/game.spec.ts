@@ -59,6 +59,11 @@ test.describe('Vibe Games Matchmaking & Gameplay E2E', () => {
     page.on('pageerror', error => console.error('BROWSER ERROR:', error.message));
     await page.goto('/');
 
+    // Toggle to vs Human mode to show Host Private button
+    const vsHumanButton = page.locator('button:has-text("vs Human")');
+    await expect(vsHumanButton).toBeVisible();
+    await vsHumanButton.click();
+
     // Host Private Game
     const hostPrivateButton = page.locator('button:has-text("Host Private")');
     await expect(hostPrivateButton).toBeVisible();
@@ -104,6 +109,12 @@ test.describe('Vibe Games Matchmaking & Gameplay E2E', () => {
     await hostPage.fill('input[placeholder="Developer Name"]', `Host_${testId}`);
     await hostPage.fill('input[placeholder="developer@vibegames.local"]', `host-${testId}@vibegames.local`);
     await hostPage.click('button[type="submit"]');
+    
+    // Toggle to vs Human mode to show Host Private button
+    const vsHumanButton = hostPage.locator('button:has-text("vs Human")');
+    await expect(vsHumanButton).toBeVisible();
+    await vsHumanButton.click();
+    
     await hostPage.click('button:has-text("Host Private")');
     await hostPage.waitForURL(/\/game\/[a-f0-9-]+/);
     const gameUrl = hostPage.url();
@@ -130,6 +141,11 @@ test.describe('Vibe Games Matchmaking & Gameplay E2E', () => {
 
   test('should host a private game, and cancel it directly from the game page', async ({ page }) => {
     await page.goto('/');
+
+    // Toggle to vs Human mode to show Host Private button
+    const vsHumanButton = page.locator('button:has-text("vs Human")');
+    await expect(vsHumanButton).toBeVisible();
+    await vsHumanButton.click();
 
     // Host Private Game
     const hostPrivateButton = page.locator('button:has-text("Host Private")');

@@ -309,10 +309,10 @@ export async function gameRoutes(server: FastifyInstance) {
 
     const gameRepo = AppDataSource.getRepository(Game);
 
-    let playerXId = user.id;
-    let playerOId = null;
-    let playerXEntity = user;
-    let playerOEntity = null;
+    let playerXId: string | null = user.id;
+    let playerOId: string | null = null;
+    let playerXEntity: User | null = user;
+    let playerOEntity: User | null = null;
 
     if (vsAi) {
       let botKey: string = aiLevel || 'medium_aggressive';
@@ -335,6 +335,12 @@ export async function gameRoutes(server: FastifyInstance) {
         playerXEntity = user;
         playerOEntity = botUser;
       }
+    } else if (aiStarts) {
+      // Human game, host wants to go second (be player O)
+      playerXId = null;
+      playerOId = user.id;
+      playerXEntity = null;
+      playerOEntity = user;
     }
 
     const game = gameRepo.create({
@@ -363,11 +369,10 @@ export async function gameRoutes(server: FastifyInstance) {
   server.get('/', async (request, reply) => {
     const gameRepo = AppDataSource.getRepository(Game);
     const openGames = await gameRepo.find({
-      where: {
-        status: 'waiting',
-        isPublic: true,
-        playerOId: IsNull(),
-      },
+      where: [
+        { status: 'waiting', isPublic: true, playerOId: IsNull() },
+        { status: 'waiting', isPublic: true, playerXId: IsNull() },
+      ],
       relations: ['playerX', 'playerO'],
       order: { createdAt: 'DESC' },
     });
@@ -483,13 +488,17 @@ export async function gameRoutes(server: FastifyInstance) {
     if (game.status !== 'waiting') {
       return reply.code(400).send({ error: 'Game is not in a joinable status' });
     }
-    if (game.playerXId === userId) {
+    if (game.playerXId === userId || game.playerOId === userId) {
       return reply.code(400).send({ error: 'Cannot play against yourself' });
     }
 
-    const playerO = user;
-    game.playerOId = playerO.id;
-    game.playerO = playerO;
+    if (game.playerXId === null) {
+      game.playerXId = user.id;
+      game.playerX = user;
+    } else {
+      game.playerOId = user.id;
+      game.playerO = user;
+    }
     game.status = 'in_progress';
 
     await gameRepo.save(game);
@@ -512,7 +521,7 @@ export async function gameRoutes(server: FastifyInstance) {
     if (!game) {
       return reply.code(404).send({ error: 'Game not found' });
     }
-    if (game.playerXId !== userId) {
+    if (game.playerXId !== userId && game.playerOId !== userId) {
       return reply.code(403).send({ error: 'Only the creator can cancel this game' });
     }
     if (game.status !== 'waiting') {
