@@ -60,12 +60,12 @@ function runGame(xKey: string, oKey: string): PlayerPiece | 'draw' {
     try {
       let action;
       if (state.turn === 'X') {
-        action = getAiAction(invertState(state), cfg.type, cfg.depth ?? 3, cfg.weights);
+        action = getAiAction(invertState(state), cfg.type, cfg.depth ?? 3, cfg.weights, cfg.timeLimitMs ?? 1500);
         if (action.type === 'place') state = handlePlaceAction(state, action.position!, 'X');
         else if (action.type === 'move') state = handleMoveAction(state, action.from!, action.to!, 'X');
         else state = handleRemoveAction(state, action.position!, 'X');
       } else {
-        action = getAiAction(state, cfg.type, cfg.depth ?? 3, cfg.weights);
+        action = getAiAction(state, cfg.type, cfg.depth ?? 3, cfg.weights, cfg.timeLimitMs ?? 1500);
         if (action.type === 'place') state = handlePlaceAction(state, action.position!, 'O');
         else if (action.type === 'move') state = handleMoveAction(state, action.from!, action.to!, 'O');
         else state = handleRemoveAction(state, action.position!, 'O');
