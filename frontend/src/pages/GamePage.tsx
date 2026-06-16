@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import * as api from '../api/games';
 import type { GameDto, PlayerPiece, UserDto, MillGameState } from '@vibe-games/shared';
@@ -22,10 +22,14 @@ const AI_BOT_IDS = [
   '00000000-0000-0000-0000-000000000012', // Mobile Monty (C4 Medium)
   '00000000-0000-0000-0000-000000000013', // Tactical Toby (C4 Hard)
   '00000000-0000-0000-0000-000000000014', // Grandmaster Garry (C4 Expert)
+  '00000000-0000-0000-0000-000000000015', // Champion Magnus (C4 Legendary)
   '00000000-0000-0000-0000-000000000016', // Perfect Oracle (C4 Grandmaster)
   '00000000-0000-0000-0000-000000000017', // Cowardly Connie (Easy)
   '00000000-0000-0000-0000-000000000018', // Greedy Gordon (Easy)
   '00000000-0000-0000-0000-000000000019', // Arthur the Aggressive (Easy)
+  '00000000-0000-0000-0000-000000000020', // Cowardly Connie (C4 Easy)
+  '00000000-0000-0000-0000-000000000021', // Greedy Gordon (C4 Easy)
+  '00000000-0000-0000-0000-000000000022', // Arthur the Aggressive (C4 Easy)
 ];
 
 function isBotId(id?: string): boolean {
@@ -33,15 +37,32 @@ function isBotId(id?: string): boolean {
   return AI_BOT_IDS.includes(id);
 }
 
+function isGameAgainstAi(game?: GameDto | null): boolean {
+  if (!game) return false;
+  return isBotId(game.playerX?.id) || isBotId(game.playerO?.id);
+}
+
 export function GamePage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [game, setGame] = useState<GameDto | null>(null);
+  const connectFourTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (connectFourTimeoutRef.current) {
+        clearTimeout(connectFourTimeoutRef.current);
+      }
+    };
+  }, []);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [currentUser, setCurrentUser] = useState<UserDto | null>(null);
   const [checkingAuth, setCheckingAuth] = useState(true);
+
+
 
   const userId = currentUser?.id || api.getUserId();
 
@@ -129,23 +150,27 @@ export function GamePage() {
     }
   }, [id, userId, game, getMyPiece]);
 
-  // Poll game state
+  // Initial game load
   useEffect(() => {
-    if (checkingAuth) return;
+    if (checkingAuth || game) return;
     // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchGame();
+  }, [checkingAuth, game, fetchGame]);
 
-    if (!id) return;
+  // Poll game state
+  useEffect(() => {
+    if (checkingAuth || !id || !game) return;
     
     // Set up polling interval only if game is not finished and not an AI game
-    const isAiGame = game?.playerO ? isBotId(game.playerO.id) : false;
+    const isAiGame = isGameAgainstAi(game);
     const isFinished = game?.status === 'finished';
 
     if (isFinished || isAiGame) return;
 
     const interval = setInterval(fetchGame, 2000);
     return () => clearInterval(interval);
-  }, [id, game?.status, game?.playerO, fetchGame, checkingAuth]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, game?.status, game?.playerX?.id, game?.playerO?.id, fetchGame, checkingAuth]);
 
   const handleBoardAction = async (
     action: 'place' | 'move' | 'remove',
@@ -158,6 +183,76 @@ export function GamePage() {
       ...params,
     });
     
+    const oldBoard = game?.state.board;
+    const newBoard = updated.state.board;
+    const isAiGame = isGameAgainstAi(updated);
+
+    console.log('[DEBUG UI Delay] Check:', {
+      gameType: updated.gameType,
+      isAiGame,
+      oldBoardExists: !!oldBoard,
+      newBoardExists: !!newBoard,
+      oldBoardLen: oldBoard?.length,
+      newBoardLen: newBoard?.length,
+      playerXId: updated.playerX?.id,
+      playerOId: updated.playerO?.id,
+      isPlayerXBot: updated.playerX ? isBotId(updated.playerX.id) : false,
+      isPlayerOBot: updated.playerO ? isBotId(updated.playerO.id) : false,
+    });
+
+    if (updated.gameType === 'connect_four' && isAiGame && oldBoard && newBoard) {
+      const newIndices: number[] = [];
+      for (let i = 0; i < newBoard.length; i++) {
+        if (oldBoard[i] === null && newBoard[i] !== null) {
+          newIndices.push(i);
+        }
+      }
+      console.log('[DEBUG UI Delay] Diff indices:', newIndices);
+      if (newIndices.length === 2) {
+        const humanPiece = getMyPiece(updated);
+        const humanIndex = newIndices.find(idx => newBoard[idx] === humanPiece);
+        const aiIndex = newIndices.find(idx => newBoard[idx] !== humanPiece);
+
+        console.log('[DEBUG UI Delay] Human piece:', humanPiece, 'humanIndex:', humanIndex, 'aiIndex:', aiIndex);
+
+        if (humanIndex !== undefined && aiIndex !== undefined) {
+          const intermediateBoard = [...newBoard];
+          intermediateBoard[aiIndex] = null; // Hide AI move temporarily
+
+          const intermediateGame: GameDto = {
+            ...updated,
+            state: {
+              ...updated.state,
+              board: intermediateBoard,
+              turn: updated.state.turn === 'X' ? 'O' : 'X', // Set turn back to AI
+              winner: null,
+            },
+            status: 'in_progress',
+          };
+
+          setGame(intermediateGame);
+
+          if (connectFourTimeoutRef.current) {
+            clearTimeout(connectFourTimeoutRef.current);
+          }
+
+          connectFourTimeoutRef.current = setTimeout(() => {
+            setGame(updated);
+            if (updated.status === 'finished') {
+              const myPiece = getMyPiece(updated);
+              if (myPiece && updated.state.winner === myPiece) {
+                audio.playVictorySound();
+              } else if (myPiece && updated.state.winner && updated.state.winner !== myPiece) {
+                audio.playErrorSound();
+              }
+            }
+          }, 1200);
+
+          return;
+        }
+      }
+    }
+
     setGame(updated);
 
     // Play victory / defeat sounds
@@ -242,7 +337,7 @@ export function GamePage() {
   const isSpectator = myPiece === null;
   const opponent = myPiece === 'X' ? game.playerO : game.playerX;
   const isMyTurn = game.status === 'in_progress' && game.state.turn === myPiece && !isSpectator;
-  const isAiOpponent = game.playerO ? isBotId(game.playerO.id) : false;
+  const isAiOpponent = opponent ? isBotId(opponent.id) : false;
 
   // Inventory numbers (only for Mill)
   let xPlaced = 0;

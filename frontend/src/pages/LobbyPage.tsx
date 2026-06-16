@@ -5,6 +5,9 @@ import { API_VERSION, type GameDto, type UserDto, type LeaderboardEntryDto } fro
 import * as audio from '../components/AudioEffects';
 import aiConfig from '../../../backend/src/game/aiConfig.json';
 
+const typedConfig = aiConfig as unknown as Record<'mill' | 'connect_four', Record<string, { id: string; username: string; elo: number; type: string }>>;
+
+
 const BOT_DESCRIPTIONS: Record<string, Record<string, string>> = {
   mill: {
     easy_random: "Random Play",
@@ -21,6 +24,9 @@ const BOT_DESCRIPTIONS: Record<string, Record<string, string>> = {
   },
   connect_four: {
     easy_random: "Random Play",
+    easy_cowardly: "Blocked-Avoidance & Defense",
+    easy_greedy: "Material Hunter",
+    easy_aggressive: "Line Hunter",
     medium_aggressive: "Center Control & Openings",
     medium_defensive: "Defensive Blocking",
     medium_mobile: "Spaced Alignment",
@@ -47,6 +53,9 @@ const BOT_EMOJIS: Record<string, Record<string, string>> = {
   },
   connect_four: {
     easy_random: "🟢",
+    easy_cowardly: "🟢",
+    easy_greedy: "🟢",
+    easy_aggressive: "🟢",
     medium_aggressive: "🟡",
     medium_defensive: "🟡",
     medium_mobile: "🟡",
@@ -73,6 +82,9 @@ const BOT_HELP_TEXT: Record<string, Record<string, string>> = {
   },
   connect_four: {
     easy_random: "Randy plays completely random moves. Great for absolute beginners.",
+    easy_cowardly: "Connie searches shallowly and hates getting blocked. Easy to maneuver around.",
+    easy_greedy: "Gordon values material over safety. Trappable by planning ahead.",
+    easy_aggressive: "Arthur pursues line structures single-mindedly, often leaving his own pieces exposed.",
     medium_aggressive: "Archie searches 3 plies deep, prioritizing connecting pieces and center column alignment.",
     medium_defensive: "Debbie searches 3 plies deep, focusing on blocking opponent 3-in-a-row threats.",
     medium_mobile: "Monty searches 3 plies deep, focusing on maintaining flexible, non-blocked connections.",
@@ -110,11 +122,49 @@ export function LobbyPage() {
   const [joiningCode, setJoiningCode] = useState(false);
   const [lobbyError, setLobbyError] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
-  const [aiLevel, setAiLevel] = useState<'easy_random' | 'easy_cowardly' | 'easy_greedy' | 'easy_aggressive' | 'medium_aggressive' | 'medium_defensive' | 'medium_mobile' | 'hard_tactical' | 'expert_garry' | 'legendary_magnus' | 'perfect_oracle'>('medium_aggressive');
+  type BotLevel = 'easy_random' | 'easy_cowardly' | 'easy_greedy' | 'easy_aggressive' | 'medium_aggressive' | 'medium_defensive' | 'medium_mobile' | 'hard_tactical' | 'expert_garry' | 'legendary_magnus' | 'perfect_oracle';
+
+  const [aiLevelMill, setAiLevelMill] = useState<BotLevel>(() => {
+    const saved = localStorage.getItem('vibe-games-ai-level-mill');
+    const validLevels = [
+      'easy_random', 'easy_cowardly', 'easy_greedy', 'easy_aggressive',
+      'medium_aggressive', 'medium_defensive', 'medium_mobile',
+      'hard_tactical', 'expert_garry', 'legendary_magnus', 'perfect_oracle'
+    ];
+    return (saved && validLevels.includes(saved)) ? (saved as BotLevel) : 'medium_aggressive';
+  });
+
+  const [aiLevelConnectFour, setAiLevelConnectFour] = useState<BotLevel>(() => {
+    const saved = localStorage.getItem('vibe-games-ai-level-connect_four');
+    const validLevels = [
+      'easy_random', 'easy_cowardly', 'easy_greedy', 'easy_aggressive',
+      'medium_aggressive', 'medium_defensive', 'medium_mobile',
+      'hard_tactical', 'expert_garry', 'legendary_magnus', 'perfect_oracle'
+    ];
+    return (saved && validLevels.includes(saved)) ? (saved as BotLevel) : 'medium_aggressive';
+  });
+
   const [aiStarts, setAiStarts] = useState<boolean>(false);
 
   const [lobbyTab, setLobbyTab] = useState<'lobbies' | 'leaderboard'>('lobbies');
-  const [activeGameTab, setActiveGameTab] = useState<'mill' | 'connect_four'>('mill');
+  const [activeGameTab, setActiveGameTab] = useState<'mill' | 'connect_four'>(() => {
+    const saved = localStorage.getItem('vibe-games-active-tab');
+    return (saved === 'mill' || saved === 'connect_four') ? saved : 'mill';
+  });
+
+  const currentAiLevel = activeGameTab === 'mill' ? aiLevelMill : aiLevelConnectFour;
+
+  useEffect(() => {
+    localStorage.setItem('vibe-games-ai-level-mill', aiLevelMill);
+  }, [aiLevelMill]);
+
+  useEffect(() => {
+    localStorage.setItem('vibe-games-ai-level-connect_four', aiLevelConnectFour);
+  }, [aiLevelConnectFour]);
+
+  useEffect(() => {
+    localStorage.setItem('vibe-games-active-tab', activeGameTab);
+  }, [activeGameTab]);
   const [leaderboardEntries, setLeaderboardEntries] = useState<LeaderboardEntryDto[]>([]);
   const filteredLobbies = openGames.filter((g) => g.gameType === activeGameTab);
   const [loadingLeaderboard, setLoadingLeaderboard] = useState(false);
@@ -692,18 +742,27 @@ export function LobbyPage() {
                 </label>
                 <select
                   id="ai-bot-select"
-                  value={aiLevel}
-                  onChange={(e) => setAiLevel(e.target.value as typeof aiLevel)}
+                  value={currentAiLevel}
+                  onChange={(e) => {
+                    const val = e.target.value as BotLevel;
+                    if (activeGameTab === 'mill') {
+                      setAiLevelMill(val);
+                    } else {
+                      setAiLevelConnectFour(val);
+                    }
+                  }}
                   className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2.5 text-xs text-neutral-100 focus:outline-none focus:border-indigo-500 transition-all font-sans"
                 >
-                  {Object.entries((aiConfig as any)[activeGameTab] || (aiConfig as any).mill).map(([key, bot]: [string, any]) => (
-                    <option key={key} value={key}>
-                      {BOT_EMOJIS[activeGameTab]?.[key] || "🤖"} {bot.username} — ELO {bot.elo} [{BOT_DESCRIPTIONS[activeGameTab]?.[key] || "AI Bot"}]
-                    </option>
-                  ))}
+                  {Object.entries(typedConfig[activeGameTab] || typedConfig.mill)
+                    .sort((a, b) => a[1].elo - b[1].elo)
+                    .map(([key, bot]) => (
+                      <option key={key} value={key}>
+                        {BOT_EMOJIS[activeGameTab]?.[key] || "🤖"} {bot.username} — ELO {bot.elo} [{BOT_DESCRIPTIONS[activeGameTab]?.[key] || "AI Bot"}]
+                      </option>
+                    ))}
                 </select>
                 <p className="text-[10px] text-neutral-500 mt-1">
-                  {BOT_HELP_TEXT[activeGameTab]?.[aiLevel] || "AI Bot will calculate moves based on difficulty."}
+                  {BOT_HELP_TEXT[activeGameTab]?.[currentAiLevel] || "AI Bot will calculate moves based on difficulty."}
                 </p>
 
                 <div className="border-t border-neutral-800/80 my-2"></div>
@@ -739,7 +798,7 @@ export function LobbyPage() {
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <button
-                  onClick={() => handleCreateGame(true, false, aiLevel)}
+                  onClick={() => handleCreateGame(true, false, currentAiLevel)}
                   disabled={creatingGame || syncStatus === 'mismatch'}
                   className="flex flex-col items-center justify-center gap-2 p-4 rounded-xl bg-gradient-to-b from-neutral-800 to-neutral-900 hover:from-neutral-700 hover:to-neutral-800 border border-neutral-700/50 hover:border-neutral-600 transition-all group active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none"
                 >
@@ -902,22 +961,12 @@ export function LobbyPage() {
                   🔄 Refresh Lobbies
                 </button>
               ) : (
-                <div className="flex items-center gap-2">
-                  <select
-                    value={activeGameTab}
-                    onChange={(e) => setActiveGameTab(e.target.value as 'mill' | 'connect_four')}
-                    className="bg-neutral-950 border border-neutral-800 rounded-lg px-2 py-1 text-xs text-neutral-300 focus:outline-none focus:border-neutral-700 font-medium"
-                  >
-                    <option value="mill">Nine Men's Morris</option>
-                    <option value="connect_four">Connect Four</option>
-                  </select>
-                  <button
-                    onClick={fetchLeaderboard}
-                    className="text-xs text-neutral-400 hover:text-white transition-colors"
-                  >
-                    🔄 Refresh
-                  </button>
-                </div>
+                <button
+                  onClick={fetchLeaderboard}
+                  className="text-xs text-neutral-400 hover:text-white transition-colors"
+                >
+                  🔄 Refresh Leaderboard
+                </button>
               )}
             </div>
 

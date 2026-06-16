@@ -1,6 +1,6 @@
 import { MillGameState, PlayerPiece } from '@vibe-games/shared';
 import { handlePlaceAction, handleMoveAction, handleRemoveAction } from './millEngine';
-import { ADJACENCY_LIST, isPieceInMill, areAllPiecesInMills, MILLS } from './millRules';
+import { ADJACENCY_LIST, isPieceInMill, areAllPiecesInMills, MILLS, POSITION_MILLS } from './millRules';
 
 export interface AiAction {
   type: 'place' | 'move' | 'remove';
@@ -157,36 +157,6 @@ function getBoardKey(board: (PlayerPiece | null)[]): string {
 }
 
 /**
- * Counts active mills for a player
- */
-function countMills(board: (PlayerPiece | null)[], player: PlayerPiece): number {
-  let count = 0;
-  for (const line of MILLS) {
-    if (board[line[0]] === player && board[line[1]] === player && board[line[2]] === player) {
-      count++;
-    }
-  }
-  return count;
-}
-
-/**
- * Counts open mill threats (2 pieces of player, 1 empty spot)
- */
-function countMillThreats(board: (PlayerPiece | null)[], player: PlayerPiece): number {
-  let count = 0;
-  for (const line of MILLS) {
-    const p1 = board[line[0]];
-    const p2 = board[line[1]];
-    const p3 = board[line[2]];
-
-    if (p1 === player && p2 === player && p3 === null) count++;
-    else if (p1 === player && p3 === player && p2 === null) count++;
-    else if (p2 === player && p3 === player && p1 === null) count++;
-  }
-  return count;
-}
-
-/**
  * Gets positions where the opponent has an active mill threat (2 pieces, 1 empty)
  */
 function getOpponentThreats(board: (PlayerPiece | null)[], opponent: PlayerPiece): number[] {
@@ -212,12 +182,12 @@ function countForks(board: (PlayerPiece | null)[], player: PlayerPiece): number 
   for (let i = 0; i < board.length; i++) {
     if (board[i] === null) {
       let millsFormed = 0;
-      for (const line of MILLS) {
-        if (line.includes(i)) {
-          const otherPos = line.filter(p => p !== i);
-          if (board[otherPos[0]] === player && board[otherPos[1]] === player) {
-            millsFormed++;
-          }
+      const lines = POSITION_MILLS[i] || [];
+      for (const line of lines) {
+        const other0 = line[0] === i ? line[1] : line[0];
+        const other1 = line[2] === i ? line[1] : line[2];
+        if (board[other0] === player && board[other1] === player) {
+          millsFormed++;
         }
       }
       if (millsFormed >= 2) {
@@ -228,66 +198,38 @@ function countForks(board: (PlayerPiece | null)[], player: PlayerPiece): number 
   return forks;
 }
 
-/**
- * Counts blocked pieces (pieces with no free adjacent position)
- */
-function countBlocked(board: (PlayerPiece | null)[], player: PlayerPiece): number {
-  let blocked = 0;
-  for (let i = 0; i < board.length; i++) {
-    if (board[i] === player) {
-      const neighbors = ADJACENCY_LIST[i] || [];
-      const hasFreeNeighbor = neighbors.some(n => board[n] === null);
-      if (!hasFreeNeighbor) {
-        blocked++;
-      }
-    }
-  }
-  return blocked;
-}
+// Precomputed seesaw configurations in Nine Men's Morris.
+// A seesaw consists of two parallel mills connected by a midpoint spoke slider path (posA <-> posB).
+// millA and millB contain the OTHER two positions that must be occupied by the player for each mill.
+const SEESAWS = [
+  { posA: 1, posB: 9, millA: [0, 2], millB: [8, 10] },
+  { posA: 3, posB: 11, millA: [2, 4], millB: [10, 12] },
+  { posA: 5, posB: 13, millA: [4, 6], millB: [12, 14] },
+  { posA: 7, posB: 15, millA: [6, 0], millB: [14, 8] },
+  { posA: 9, posB: 17, millA: [8, 10], millB: [16, 18] },
+  { posA: 11, posB: 19, millA: [10, 12], millB: [18, 20] },
+  { posA: 13, posB: 21, millA: [12, 14], millB: [20, 22] },
+  { posA: 15, posB: 23, millA: [14, 8], millB: [22, 16] },
+];
 
 /**
  * Counts seesaw (double-mill) configurations for a player.
- * A seesaw exists when:
- *   1. A player has two complete, ACTIVE mills (all 3 squares of each mill occupied)
- *   2. The two mills share exactly one piece (the "pivot")
- *   3. The pivot piece has at least one free adjacent square to slide into and back
- *
- * This is the dominant winning pattern in Nine Men's Morris. A seesaw means the
- * player captures one opponent piece every turn indefinitely until they win.
+ * A seesaw exists when a player has two parallel mills connected by a spoke, and
+ * a single piece (the slider) can move back and forth along the spoke to alternately
+ * close one mill (while opening the other) on every turn.
  */
 function countSeesaws(board: (PlayerPiece | null)[], player: PlayerPiece): number {
   let seesaws = 0;
-
-  // Find all active mills for the player
-  const activeMills: number[][] = [];
-  for (const line of MILLS) {
-    if (board[line[0]] === player && board[line[1]] === player && board[line[2]] === player) {
-      activeMills.push(line);
-    }
-  }
-
-  // Check all pairs of active mills for seesaw configuration
-  for (let i = 0; i < activeMills.length; i++) {
-    for (let j = i + 1; j < activeMills.length; j++) {
-      const millA = activeMills[i];
-      const millB = activeMills[j];
-
-      // Find the shared piece (pivot)
-      const shared = millA.filter(pos => millB.includes(pos));
-      if (shared.length !== 1) continue; // Must share exactly one piece
-
-      const pivot = shared[0];
-
-      // Check if the pivot can slide to an adjacent empty square
-      const neighbors = ADJACENCY_LIST[pivot] || [];
-      const hasEscape = neighbors.some(n => board[n] === null);
-
-      if (hasEscape) {
+  for (const config of SEESAWS) {
+    const ownerA = board[config.posA];
+    const ownerB = board[config.posB];
+    if ((ownerA === player && ownerB === null) || (ownerB === player && ownerA === null)) {
+      if (board[config.millA[0]] === player && board[config.millA[1]] === player &&
+          board[config.millB[0]] === player && board[config.millB[1]] === player) {
         seesaws++;
       }
     }
   }
-
   return seesaws;
 }
 
@@ -314,42 +256,83 @@ export function evaluateBoard(state: MillGameState, weights: StrategyWeights = D
   // ── 1. Material (total pieces) ────────────────────────────────────────────
   const materialScore = (oCount - xCount) * weights.material;
 
-  // ── 2. Active mills ───────────────────────────────────────────────────────
-  const oMills = countMills(board, 'O');
-  const xMills = countMills(board, 'X');
-  const millScore = (oMills - xMills) * weights.mill;
+  // ── 2. Active mills + 3. Mill threats (2-in-a-row with empty) ────────────────
+  let oMills = 0;
+  let xMills = 0;
+  let oThreats = 0;
+  let xThreats = 0;
 
-  // ── 3. Mill threats (2-in-a-row with empty) ───────────────────────────────
-  const oThreats = countMillThreats(board, 'O');
-  const xThreats = countMillThreats(board, 'X');
+  for (const line of MILLS) {
+    const p1 = board[line[0]];
+    const p2 = board[line[1]];
+    const p3 = board[line[2]];
+
+    if (p1 === 'O' && p2 === 'O' && p3 === 'O') {
+      oMills++;
+    } else if (p1 === 'X' && p2 === 'X' && p3 === 'X') {
+      xMills++;
+    } else {
+      let oPieces = 0;
+      let xPieces = 0;
+      let nullCount = 0;
+
+      if (p1 === 'O') oPieces++; else if (p1 === 'X') xPieces++; else nullCount++;
+      if (p2 === 'O') oPieces++; else if (p2 === 'X') xPieces++; else nullCount++;
+      if (p3 === 'O') oPieces++; else if (p3 === 'X') xPieces++; else nullCount++;
+
+      if (nullCount === 1) {
+        if (oPieces === 2) oThreats++;
+        else if (xPieces === 2) xThreats++;
+      }
+    }
+  }
+
+  const millScore = (oMills - xMills) * weights.mill;
   const threatScore = (oThreats - xThreats) * weights.threat;
 
   // ── 4. Blocked pieces + Mobility (movement phase only) ───────────────────
-  // blocked: pieces with zero legal moves (fully cornered)
-  // mobility: total legal move count — richer signal, rewards piece flexibility
   let blockedScore = 0;
   let mobilityScore = 0;
   if (!isPlacement) {
-    const oBlocked = countBlocked(board, 'O');
-    const xBlocked = countBlocked(board, 'X');
-    blockedScore = (oBlocked - xBlocked) * weights.blocked;
+    let oBlocked = 0;
+    let xBlocked = 0;
+    let oMoves = 0;
+    let xMoves = 0;
 
-    const mobilityWeight = weights.mobility ?? 0;
-    if (mobilityWeight > 0) {
-      const canOFly = oOnBoard === 3;
-      const canXFly = xOnBoard === 3;
-      const emptyCount = board.filter(c => c === null).length;
-      let oMoves = 0;
-      let xMoves = 0;
-      for (let i = 0; i < board.length; i++) {
-        if (board[i] === 'O') {
-          oMoves += canOFly ? emptyCount : (ADJACENCY_LIST[i] || []).filter(n => board[n] === null).length;
-        } else if (board[i] === 'X') {
-          xMoves += canXFly ? emptyCount : (ADJACENCY_LIST[i] || []).filter(n => board[n] === null).length;
+    const canOFly = oOnBoard === 3;
+    const canXFly = xOnBoard === 3;
+    const emptyCount = board.filter(c => c === null).length;
+
+    for (let i = 0; i < board.length; i++) {
+      const cell = board[i];
+      if (cell === 'O') {
+        if (canOFly) {
+          oMoves += emptyCount;
+        } else {
+          const neighbors = ADJACENCY_LIST[i] || [];
+          let freeNeighbors = 0;
+          for (const n of neighbors) {
+            if (board[n] === null) freeNeighbors++;
+          }
+          if (freeNeighbors === 0) oBlocked++;
+          oMoves += freeNeighbors;
+        }
+      } else if (cell === 'X') {
+        if (canXFly) {
+          xMoves += emptyCount;
+        } else {
+          const neighbors = ADJACENCY_LIST[i] || [];
+          let freeNeighbors = 0;
+          for (const n of neighbors) {
+            if (board[n] === null) freeNeighbors++;
+          }
+          if (freeNeighbors === 0) xBlocked++;
+          xMoves += freeNeighbors;
         }
       }
-      mobilityScore = (oMoves - xMoves) * mobilityWeight;
     }
+    blockedScore = (oBlocked - xBlocked) * weights.blocked;
+    mobilityScore = (oMoves - xMoves) * (weights.mobility ?? 0);
   }
 
   // ── 5. Positional value (placement phase only) ───────────────────────────
@@ -478,14 +461,35 @@ function scoreActionForOrdering(
 ): number {
   let score = 0;
 
-  // Simulate to detect mill formation
-  try {
-    const nextState = simulateAction(state, action, player);
-    if (nextState.millFormedThisTurn) {
-      score += 2000; // Best: form a mill (get to remove a piece)
+  let formsMill = false;
+  const board = state.board;
+  if (action.type === 'place') {
+    const pos = action.position!;
+    const lines = POSITION_MILLS[pos] || [];
+    for (const line of lines) {
+      const other0 = line[0] === pos ? line[1] : line[0];
+      const other1 = line[2] === pos ? line[1] : line[2];
+      if (board[other0] === player && board[other1] === player) {
+        formsMill = true;
+        break;
+      }
     }
-  } catch (_) {
-    // skip
+  } else if (action.type === 'move') {
+    const from = action.from!;
+    const to = action.to!;
+    const lines = POSITION_MILLS[to] || [];
+    for (const line of lines) {
+      const other0 = line[0] === to ? line[1] : line[0];
+      const other1 = line[2] === to ? line[1] : line[2];
+      if (other0 !== from && other1 !== from && board[other0] === player && board[other1] === player) {
+        formsMill = true;
+        break;
+      }
+    }
+  }
+
+  if (formsMill) {
+    score += 2000;
   }
 
   if (action.type === 'place') {
@@ -564,6 +568,13 @@ function getTTKey(state: MillGameState): string {
 
 // ─── Minimax with Alpha-Beta + TT ─────────────────────────────────────────────
 
+export class SearchTimeoutError extends Error {
+  constructor() {
+    super('Search timeout');
+    this.name = 'SearchTimeoutError';
+  }
+}
+
 function minimax(
   state: MillGameState,
   depth: number,
@@ -571,7 +582,11 @@ function minimax(
   beta: number,
   isMaximizing: boolean,
   weights: StrategyWeights,
+  deadline?: number,
 ): number {
+  if (deadline && Date.now() > deadline) {
+    throw new SearchTimeoutError();
+  }
   const alphaOrig = alpha;
   const betaOrig = beta;
 
@@ -605,7 +620,7 @@ function minimax(
       continue;
     }
 
-    const evaluation = minimax(nextState, depth - 1, alpha, beta, nextState.turn === 'O', weights);
+    const evaluation = minimax(nextState, depth - 1, alpha, beta, nextState.turn === 'O', weights, deadline);
 
     if (isMaximizing) {
       if (evaluation > bestValue) {
@@ -681,6 +696,8 @@ function iterativeDeepening(
 
   let bestAction = actions[0];
 
+  const deadline = startTime + timeLimitMs;
+
   for (let depth = 1; depth <= maxDepth; depth++) {
     // Stop before starting a new depth if 90% of budget is spent.
     // The 10% buffer allows the current root action's minimax to finish cleanly.
@@ -703,11 +720,19 @@ function iterativeDeepening(
         continue;
       }
 
-      const value = minimax(nextState, depth - 1, -Infinity, Infinity, nextState.turn === 'O', weights);
+      try {
+        const value = minimax(nextState, depth - 1, -Infinity, Infinity, nextState.turn === 'O', weights, deadline);
 
-      if (value > depthBestValue) {
-        depthBestValue = value;
-        depthBestAction = action;
+        if (value > depthBestValue) {
+          depthBestValue = value;
+          depthBestAction = action;
+        }
+      } catch (err) {
+        if (err instanceof SearchTimeoutError) {
+          depthComplete = false;
+          break;
+        }
+        throw err;
       }
     }
 

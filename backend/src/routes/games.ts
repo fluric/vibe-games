@@ -17,10 +17,10 @@ declare module 'fastify' {
 }
 
 // BOTS configuration lookup map
-const BOTS_MAP = new Map<string, { username: string; elo: number; type: string; depth?: number; weights?: StrategyWeights }>();
+const BOTS_MAP = new Map<string, { username: string; elo: number; type: string; depth?: number; weights?: StrategyWeights; timeLimitMs?: number }>();
 for (const gameBots of Object.values(aiConfig)) {
   for (const bot of Object.values(gameBots)) {
-    BOTS_MAP.set(bot.id, { username: bot.username, elo: bot.elo, type: bot.type, depth: bot.depth, weights: bot.weights });
+    BOTS_MAP.set(bot.id, { username: bot.username, elo: bot.elo, type: bot.type, depth: bot.depth, weights: bot.weights, timeLimitMs: (bot as any).timeLimitMs });
   }
 }
 
@@ -37,7 +37,7 @@ function runAiLoopIfNeeded(game: Game) {
   let aiActive = !game.state.winner;
   while (aiActive && game.state.turn === aiPiece) {
     try {
-      const rawAction = engine.getAiAction(game.state, botInfo.type, botInfo.depth || 3, botInfo.weights, 4000);
+      const rawAction = engine.getAiAction(game.state, botInfo.type, botInfo.depth || 3, botInfo.weights, botInfo.timeLimitMs || 4000);
       game.state = engine.handleMove(game.state, rawAction, aiPiece);
 
       if (game.state.winner) {

@@ -60,6 +60,12 @@ export const MILLS: number[][] = [
   [7, 15, 23],
 ];
 
+// Precomputed lookup map for which mills contain which node indices
+export const POSITION_MILLS: Record<number, number[][]> = {};
+for (let i = 0; i < 24; i++) {
+  POSITION_MILLS[i] = MILLS.filter(line => line.includes(i));
+}
+
 /**
  * Checks if two positions are adjacent on the board.
  */
@@ -86,15 +92,23 @@ export function didFormNewMill(
   boardAfter: (PlayerPiece | null)[],
   player: PlayerPiece
 ): boolean {
-  const millsAfter = getMillsForPlayer(boardAfter, player);
-  const millsBefore = getMillsForPlayer(boardBefore, player);
+  let filledPos = -1;
+  for (let i = 0; i < boardAfter.length; i++) {
+    if (boardBefore[i] !== player && boardAfter[i] === player) {
+      filledPos = i;
+      break;
+    }
+  }
 
-  // Return true if any mill is fully occupied now, but was not fully occupied before
-  return millsAfter.some(
-    (mAfter) => !millsBefore.some(
-      (mBefore) => mBefore.every((pos, idx) => pos === mAfter[idx])
-    )
-  );
+  if (filledPos === -1) return false;
+
+  const lines = POSITION_MILLS[filledPos] || [];
+  for (const line of lines) {
+    if (boardAfter[line[0]] === player && boardAfter[line[1]] === player && boardAfter[line[2]] === player) {
+      return true;
+    }
+  }
+  return false;
 }
 
 /**
@@ -116,8 +130,13 @@ export function hasValidMoves(board: (PlayerPiece | null)[], player: PlayerPiece
  * Checks if a piece is part of any active mill for that player.
  */
 export function isPieceInMill(board: (PlayerPiece | null)[], position: number, player: PlayerPiece): boolean {
-  const playerMills = getMillsForPlayer(board, player);
-  return playerMills.some((mill) => mill.includes(position));
+  const lines = POSITION_MILLS[position] || [];
+  for (const line of lines) {
+    if (board[line[0]] === player && board[line[1]] === player && board[line[2]] === player) {
+      return true;
+    }
+  }
+  return false;
 }
 
 /**
@@ -133,3 +152,4 @@ export function areAllPiecesInMills(board: (PlayerPiece | null)[], player: Playe
   }
   return true;
 }
+

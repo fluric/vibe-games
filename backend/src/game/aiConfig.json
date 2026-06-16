@@ -9,9 +9,10 @@
     "easy_cowardly": {
       "id": "00000000-0000-0000-0000-000000000017",
       "username": "Cowardly Connie (Easy)",
-      "elo": 543,
+      "elo": 17,
       "type": "minimax",
-      "depth": 2,
+      "depth": 1,
+      "timeLimitMs": 100,
       "weights": {
         "material": 100,
         "mill": 100,
@@ -22,9 +23,10 @@
     "easy_greedy": {
       "id": "00000000-0000-0000-0000-000000000018",
       "username": "Greedy Gordon (Easy)",
-      "elo": 615,
+      "elo": 154,
       "type": "minimax",
-      "depth": 2,
+      "depth": 1,
+      "timeLimitMs": 100,
       "weights": {
         "material": 500,
         "mill": 50,
@@ -35,9 +37,10 @@
     "easy_aggressive": {
       "id": "00000000-0000-0000-0000-000000000019",
       "username": "Arthur the Aggressive (Easy)",
-      "elo": 481,
+      "elo": 182,
       "type": "minimax",
-      "depth": 2,
+      "depth": 1,
+      "timeLimitMs": 100,
       "weights": {
         "material": 100,
         "mill": 400,
@@ -48,9 +51,10 @@
     "medium_aggressive": {
       "id": "00000000-0000-0000-0000-000000000002",
       "username": "Aggressive Archie (Medium)",
-      "elo": 671,
+      "elo": 395,
       "type": "minimax",
       "depth": 3,
+      "timeLimitMs": 500,
       "weights": {
         "material": 300,
         "mill": 200,
@@ -61,9 +65,10 @@
     "medium_defensive": {
       "id": "00000000-0000-0000-0000-000000000003",
       "username": "Defensive Debbie (Medium)",
-      "elo": 599,
+      "elo": 455,
       "type": "minimax",
       "depth": 3,
+      "timeLimitMs": 500,
       "weights": {
         "material": 150,
         "mill": 80,
@@ -74,9 +79,10 @@
     "medium_mobile": {
       "id": "00000000-0000-0000-0000-000000000004",
       "username": "Mobile Monty (Medium)",
-      "elo": 596,
+      "elo": 488,
       "type": "minimax",
       "depth": 3,
+      "timeLimitMs": 500,
       "weights": {
         "material": 100,
         "mill": 50,
@@ -87,9 +93,10 @@
     "hard_tactical": {
       "id": "00000000-0000-0000-0000-000000000005",
       "username": "Tactical Toby (Hard)",
-      "elo": 814,
+      "elo": 661,
       "type": "minimax",
-      "depth": 4,
+      "depth": 3,
+      "timeLimitMs": 4000,
       "weights": {
         "material": 150,
         "mill": 150,
@@ -99,10 +106,11 @@
     },
     "expert_garry": {
       "id": "00000000-0000-0000-0000-000000000006",
-      "username": "Grandmaster Garry (Expert)",
-      "elo": 749,
+      "username": "Grandmaster Garry (Legendary)",
+      "elo": 792,
       "type": "minimax",
-      "depth": 5,
+      "depth": 4,
+      "timeLimitMs": 4000,
       "weights": {
         "material": 150,
         "mill": 160,
@@ -112,10 +120,11 @@
     },
     "legendary_magnus": {
       "id": "00000000-0000-0000-0000-000000000007",
-      "username": "Champion Magnus (Legendary)",
-      "elo": 849,
+      "username": "Champion Magnus (Expert)",
+      "elo": 773,
       "type": "minimax",
-      "depth": 6,
+      "depth": 5,
+      "timeLimitMs": 4000,
       "weights": {
         "material": 150,
         "mill": 160,
@@ -126,17 +135,18 @@
     "perfect_oracle": {
       "id": "00000000-0000-0000-0000-000000000008",
       "username": "Perfect Oracle (Grandmaster)",
-      "elo": 826,
+      "elo": 913,
       "type": "minimax",
-      "depth": 6,
+      "depth": 7,
+      "timeLimitMs": 4000,
       "weights": {
-        "material": 150,
-        "mill": 160,
-        "blocked": -100,
-        "threat": 90,
-        "positional": 20,
-        "fork": 60,
-        "mobility": 8
+        "material": 400,
+        "mill": 250,
+        "blocked": -120,
+        "threat": 180,
+        "positional": 30,
+        "fork": 120,
+        "mobility": 10
       }
     }
   },
@@ -147,54 +157,106 @@
       "elo": 0,
       "type": "random"
     },
+    "easy_cowardly": {
+      "id": "00000000-0000-0000-0000-000000000020",
+      "username": "Cowardly Connie (C4 Easy)",
+      "elo": 560,
+      "type": "minimax",
+      "depth": 1,
+      "timeLimitMs": 100,
+      "weights": {
+        "centerColumn": 1,
+        "twoInARow": 5,
+        "threeInARow": 100,
+        "oppTwoInARow": 50,
+        "oppThreeInARow": 900
+      }
+    },
+    "easy_greedy": {
+      "id": "00000000-0000-0000-0000-000000000021",
+      "username": "Greedy Gordon (C4 Easy)",
+      "elo": 310,
+      "type": "minimax",
+      "depth": 1,
+      "timeLimitMs": 100,
+      "weights": {
+        "centerColumn": 2,
+        "twoInARow": 100,
+        "threeInARow": 800,
+        "oppTwoInARow": 5,
+        "oppThreeInARow": 100
+      }
+    },
+    "easy_aggressive": {
+      "id": "00000000-0000-0000-0000-000000000022",
+      "username": "Arthur the Aggressive (C4 Easy)",
+      "elo": 331,
+      "type": "minimax",
+      "depth": 1,
+      "timeLimitMs": 100,
+      "weights": {
+        "centerColumn": 10,
+        "twoInARow": 80,
+        "threeInARow": 950,
+        "oppTwoInARow": 10,
+        "oppThreeInARow": 50
+      }
+    },
     "medium_aggressive": {
       "id": "00000000-0000-0000-0000-000000000010",
-      "username": "Aggressive Archie (C4 Medium)",
-      "elo": 959,
+      "username": "Aggressive Archie (C4 Hard)",
+      "elo": 1018,
       "type": "minimax",
-      "depth": 3
+      "depth": 3,
+      "timeLimitMs": 500
     },
     "medium_defensive": {
       "id": "00000000-0000-0000-0000-000000000011",
-      "username": "Defensive Debbie (C4 Medium)",
-      "elo": 964,
+      "username": "Defensive Debbie (C4 Hard)",
+      "elo": 1019,
       "type": "minimax",
-      "depth": 3
+      "depth": 3,
+      "timeLimitMs": 500
     },
     "medium_mobile": {
       "id": "00000000-0000-0000-0000-000000000012",
-      "username": "Mobile Monty (C4 Medium)",
-      "elo": 970,
+      "username": "Mobile Monty (C4 Hard)",
+      "elo": 1018,
       "type": "minimax",
-      "depth": 3
+      "depth": 3,
+      "timeLimitMs": 500
     },
     "hard_tactical": {
       "id": "00000000-0000-0000-0000-000000000013",
-      "username": "Tactical Toby (C4 Hard)",
-      "elo": 640,
+      "username": "Tactical Toby (C4 Medium)",
+      "elo": 752,
       "type": "minimax",
-      "depth": 4
+      "depth": 4,
+      "timeLimitMs": 4000
     },
     "expert_garry": {
       "id": "00000000-0000-0000-0000-000000000014",
       "username": "Grandmaster Garry (C4 Expert)",
-      "elo": 856,
+      "elo": 1123,
       "type": "minimax",
-      "depth": 5
+      "depth": 5,
+      "timeLimitMs": 4000
     },
     "legendary_magnus": {
       "id": "00000000-0000-0000-0000-000000000015",
       "username": "Champion Magnus (C4 Legendary)",
-      "elo": 1091,
+      "elo": 1278,
       "type": "minimax",
-      "depth": 6
+      "depth": 6,
+      "timeLimitMs": 4000
     },
     "perfect_oracle": {
       "id": "00000000-0000-0000-0000-000000000016",
       "username": "Perfect Oracle (C4 Grandmaster)",
-      "elo": 1096,
+      "elo": 1183,
       "type": "minimax",
-      "depth": 6
+      "depth": 7,
+      "timeLimitMs": 4000
     }
   }
 }
