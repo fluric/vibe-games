@@ -135,7 +135,7 @@
     "perfect_oracle": {
       "id": "00000000-0000-0000-0000-000000000008",
       "username": "Perfect Oracle (Grandmaster)",
-      "elo": 1150,
+      "elo": 913,
       "type": "minimax",
       "depth": 7,
       "timeLimitMs": 4000,
