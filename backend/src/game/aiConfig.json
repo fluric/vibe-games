@@ -253,7 +253,7 @@
     "perfect_oracle": {
       "id": "00000000-0000-0000-0000-000000000016",
       "username": "Perfect Oracle (C4 Grandmaster)",
-      "elo": 1183,
+      "elo": 1320,
       "type": "minimax",
       "depth": 7,
       "timeLimitMs": 4000
