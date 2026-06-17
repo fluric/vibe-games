@@ -68,6 +68,64 @@ interface RolledBackState {
   grailCellKey: string;
 }
 
+interface AggregatedMove {
+  from: string;
+  to: string;
+  cards: HolyGrailCard[];
+  carriesGrail: boolean;
+}
+
+interface AggregatedReviewMove {
+  from: string;
+  to: string;
+  count: number;
+}
+
+function getAggregatedFriendlyMoves(moves: { from: string; to: string; cards: HolyGrailCard[]; carriesGrail?: boolean }[]): AggregatedMove[] {
+  const map = new Map<string, AggregatedMove>();
+  for (const m of moves) {
+    const key = `${m.from}->${m.to}`;
+    const existing = map.get(key);
+    if (existing) {
+      existing.cards = [...existing.cards, ...m.cards];
+      if (m.carriesGrail) existing.carriesGrail = true;
+    } else {
+      map.set(key, {
+        from: m.from,
+        to: m.to,
+        cards: [...m.cards],
+        carriesGrail: !!m.carriesGrail
+      });
+    }
+  }
+  return Array.from(map.values());
+}
+
+function getAggregatedReviewMoves(moves: TempVisualMove[]): AggregatedReviewMove[] {
+  const map = new Map<string, AggregatedReviewMove>();
+  for (const m of moves) {
+    const key = `${m.from}->${m.to}`;
+    const existing = map.get(key);
+    if (existing) {
+      existing.count += m.count;
+    } else {
+      map.set(key, {
+        from: m.from,
+        to: m.to,
+        count: m.count
+      });
+    }
+  }
+  return Array.from(map.values());
+}
+
+function getCellDefaultOwner(cell: HolyGrailCell): PlayerPiece | 'neutral' | null {
+  if (cell.cellType === 'home_base' || cell.cellType === 'urban') {
+    return cell.r < 0 ? 'X' : 'O';
+  }
+  return 'neutral';
+}
+
 function rollbackBoardAndGrail(
   board: Record<string, HolyGrailCell>,
   grailCellKey: string | undefined,
@@ -104,7 +162,7 @@ function rollbackBoardAndGrail(
       fromCell.owner = oppPiece;
 
       if (toCell.soldiers.length === 0) {
-        toCell.owner = 'neutral';
+        toCell.owner = getCellDefaultOwner(toCell);
       }
     }
   }
@@ -117,7 +175,7 @@ function rollbackBoardAndGrail(
         cell.soldiers.pop();
       }
       if (cell.soldiers.length === 0) {
-        cell.owner = 'neutral';
+        cell.owner = getCellDefaultOwner(cell);
       }
     }
   }
@@ -757,6 +815,14 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
   const isMyTurn = turn === myPiece && !winner;
   const history = useMemo(() => state.history || [], [state.history]);
 
+  const aggregatedFriendlyMoves = useMemo(() => {
+    return getAggregatedFriendlyMoves(state.movesThisTurn || []);
+  }, [state.movesThisTurn]);
+
+  const aggregatedReviewMoves = useMemo(() => {
+    return getAggregatedReviewMoves(reviewMoves);
+  }, [reviewMoves]);
+
   // Find the last index of our own end_turn action
   let lastSelfEndTurnIdx = -1;
   for (let i = history.length - 1; i >= 0; i--) {
@@ -1156,7 +1222,7 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
         if (cell.owner === myPiece && cell.soldiers.length > 0) {
           setSelectedCellKey(key);
           setMoveTargetKey(null);
-          setMoveCount(1);
+          setMoveCount(cell.soldiers.length);
         }
       } else {
         // If clicking same cell, deselect
@@ -1170,17 +1236,13 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
         if (distance === 1) {
           setMoveTargetKey(key);
           const maxCount = board[selectedCellKey]?.soldiers.length || 1;
-          if (grailCellKey === selectedCellKey) {
-            setMoveCount(maxCount);
-          } else {
-            setMoveCount(Math.min(1, maxCount));
-          }
+          setMoveCount(maxCount);
         } else {
           // Select another friendly stack
           if (cell.owner === myPiece && cell.soldiers.length > 0) {
             setSelectedCellKey(key);
             setMoveTargetKey(null);
-            setMoveCount(1);
+            setMoveCount(cell.soldiers.length);
           } else {
             setSelectedCellKey(null);
           }
@@ -1827,7 +1889,7 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
             })}
 
             {/* Movement Path Arrows */}
-            {(state.movesThisTurn || []).map((move, idx) => {
+            {aggregatedFriendlyMoves.map((move, idx) => {
               const fromCell = board[move.from];
               const toCell = board[move.to];
               if (!fromCell || !toCell) return null;
@@ -1894,7 +1956,7 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
             })}
 
             {/* Opponent Movement Path Arrows (Review Phase) */}
-            {isReviewingLastTurn && reviewMoves.map((move, idx) => {
+            {isReviewingLastTurn && aggregatedReviewMoves.map((move, idx) => {
               const fromCell = board[move.from];
               const toCell = board[move.to];
               if (!fromCell || !toCell) return null;
@@ -2027,7 +2089,7 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
 
             {/* Hovered Move Arrow Tooltip */}
             {hoveredMoveIdx !== null && (() => {
-              const move = (state.movesThisTurn || [])[hoveredMoveIdx];
+              const move = aggregatedFriendlyMoves[hoveredMoveIdx];
               if (!move) return null;
 
               const fromCell = board[move.from];

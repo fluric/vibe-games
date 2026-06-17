@@ -368,7 +368,9 @@ export function endRound(state: HolyGrailGameState): void {
     }));
 
     if (grailCell.soldiers.length === 0) {
-      grailCell.owner = null;
+      if (grailCell.cellType !== 'home_base' && grailCell.cellType !== 'urban') {
+        grailCell.owner = null;
+      }
     }
   }
 
@@ -981,7 +983,9 @@ export const HolyGrailEngine = {
 
           // Update defender cell state since combat resolved
           if (defenderStack.length === 0) {
-            cell.owner = null;
+            if (cell.cellType !== 'home_base' && cell.cellType !== 'urban') {
+              cell.owner = null;
+            }
             cell.soldiers = [];
           } else {
             cell.soldiers = defenderStack;
@@ -993,6 +997,9 @@ export const HolyGrailEngine = {
         // Resolve combat check
         if (attackerStack.length === 0) {
           state.pendingCombats.splice(combatIdx, 1);
+          if (defenderStack.length === 0 && cell.cellType !== 'home_base' && cell.cellType !== 'urban') {
+            cell.owner = null;
+          }
         } else if (defenderStack.length === 0) {
           // Attacker wins and captures cell
           cell.owner = combat.attacker;
