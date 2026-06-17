@@ -2,6 +2,7 @@ import { PlayerPiece, GameType } from '@vibe-games/shared';
 import { createInitialState as createMillState, handlePlaceAction, handleMoveAction, handleRemoveAction } from './millEngine';
 import { getAiAction as getMillAiAction } from './millAi';
 import { ConnectFourEngine } from './connectFourEngine';
+import { HolyGrailEngine } from './holyGrailEngine';
 
 export interface IGameEngine {
   createInitialState(): any;
@@ -59,4 +60,5 @@ export const ENGINES: Record<GameType, IGameEngine> = {
   mill: MillEngine,
   connect_four: ConnectFourEngine,
   tic_tac_toe: null as any, // Placeholder for future games
+  holy_grail: HolyGrailEngine,
 };

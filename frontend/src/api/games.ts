@@ -89,11 +89,12 @@ export async function joinGame(id: string): Promise<GameDto> {
 export async function submitMove(
   id: string,
   move: {
-    action: 'place' | 'move' | 'remove';
+    action: string;
     position?: number;
-    from?: number;
-    to?: number;
+    from?: string | number;
+    to?: string | number;
     column?: number;
+    [key: string]: any;
   }
 ): Promise<GameDto> {
   return request<GameDto>(`/games/${id}/move`, {
@@ -145,6 +146,6 @@ export async function logout(): Promise<{ success: boolean }> {
   });
 }
 
-export async function getLeaderboard(gameType: 'mill' | 'connect_four'): Promise<LeaderboardResponse> {
+export async function getLeaderboard(gameType: GameType): Promise<LeaderboardResponse> {
   return request<LeaderboardResponse>(`/games/leaderboard/${gameType}`);
 }

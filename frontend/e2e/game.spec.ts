@@ -198,4 +198,49 @@ test.describe('Vibe Games Matchmaking & Gameplay E2E', () => {
     const statusBanner = page.locator('h2');
     await expect(statusBanner).toContainText('Aggressive Archie (Medium) Wins!');
   });
+
+  test('should play a Grail Quest game vs AI: deploy and end deploy phase', async ({ page }) => {
+    await page.goto('/');
+
+    // Click on the Grail Quest tab
+    const grailQuestTab = page.locator('button:has-text("Grail Quest")');
+    await expect(grailQuestTab).toBeVisible();
+    await grailQuestTab.click();
+
+    // Click "Play vs AI" button
+    const playVsAiButton = page.locator('button:has-text("Play vs AI")');
+    await expect(playVsAiButton).toBeVisible();
+    await playVsAiButton.click();
+
+    // Verify navigation to GamePage
+    await expect(page).toHaveURL(/\/game\/[a-f0-9-]+/);
+
+    // Verify status banner states Deploy Phase
+    const statusBanner = page.locator('h2');
+    await expect(statusBanner).toContainText(/Your Turn: Deploy Units/i);
+
+    // Let's click the King (K) card button first
+    const kingCard = page.locator('button').filter({ hasText: 'King' }).first();
+    await expect(kingCard).toBeVisible();
+    await kingCard.click();
+
+    // The player's home base is at coordinates "0,-3".
+    const baseCell = page.getByTestId('cell-0,-3');
+    await expect(baseCell).toBeVisible();
+    await baseCell.click();
+
+    // Let's also select and deploy a Queen to the base cell
+    const queenCard = page.locator('button').filter({ hasText: 'Queen' }).first();
+    await expect(queenCard).toBeVisible();
+    await queenCard.click();
+    await baseCell.click();
+
+    // Now click the "Go to Movement" button to transit to move phase
+    const endDeployButton = page.locator('button:has-text("Go to Movement")');
+    await expect(endDeployButton).toBeVisible();
+    await endDeployButton.click();
+
+    // Verify the status banner changes to Move Phase
+    await expect(statusBanner).toContainText(/Your Turn: Move Units/i);
+  });
 });

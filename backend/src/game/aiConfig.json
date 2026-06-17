@@ -258,5 +258,29 @@
       "depth": 7,
       "timeLimitMs": 4000
     }
+  },
+  "holy_grail": {
+    "easy_random": {
+      "id": "00000000-0000-0000-0000-000000000030",
+      "username": "Random Randy (HG Easy)",
+      "elo": 0,
+      "type": "random"
+    },
+    "medium_aggressive": {
+      "id": "00000000-0000-0000-0000-000000000031",
+      "username": "Aggressive Archie (HG Medium)",
+      "elo": 1000,
+      "type": "minimax",
+      "depth": 3,
+      "timeLimitMs": 500
+    },
+    "hard_tactical": {
+      "id": "00000000-0000-0000-0000-000000000032",
+      "username": "Tactical Toby (HG Hard)",
+      "elo": 1200,
+      "type": "minimax",
+      "depth": 4,
+      "timeLimitMs": 4000
+    }
   }
 }

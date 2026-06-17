@@ -150,8 +150,108 @@ async function toUserDto(user: User | null, gameType: GameType): Promise<UserDto
   };
 }
 
-async function toGameDto(game: Game): Promise<GameDto> {
-  return {
+function obfuscateHolyGrailState(
+  state: any,
+  requestingUserId: string | undefined,
+  playerXId: string | null,
+  playerOId: string | null
+): any {
+  if (!state) return state;
+
+  const cloned = JSON.parse(JSON.stringify(state));
+
+  const isPlayerX = requestingUserId && requestingUserId === playerXId;
+  const isPlayerO = requestingUserId && requestingUserId === playerOId;
+
+  if (cloned.hands) {
+    if (!isPlayerX && cloned.hands.X) {
+      cloned.hands.X = cloned.hands.X.map((card: any) => ({ ...card, value: 0 }));
+    }
+    if (!isPlayerO && cloned.hands.O) {
+      cloned.hands.O = cloned.hands.O.map((card: any) => ({ ...card, value: 0 }));
+    }
+  }
+
+  if (cloned.board) {
+    for (const cellKey of Object.keys(cloned.board)) {
+      const cell = cloned.board[cellKey];
+      if (cell && cell.soldiers) {
+        cell.soldiers = cell.soldiers.map((card: any) => {
+          const owner = cell.owner;
+          let showValue = false;
+          if (owner === 'X' && isPlayerX) showValue = true;
+          else if (owner === 'O' && isPlayerO) showValue = true;
+          else if (card.revealed) showValue = true;
+
+          return {
+            ...card,
+            value: showValue ? card.value : 0
+          };
+        });
+      }
+    }
+  }
+
+  if (cloned.pendingCombats) {
+    cloned.pendingCombats = cloned.pendingCombats.map((combat: any) => {
+      const isAttacker = (combat.attacker === 'X' && isPlayerX) || (combat.attacker === 'O' && isPlayerO);
+      const isDefender = (combat.defender === 'X' && isPlayerX) || (combat.defender === 'O' && isPlayerO);
+
+      const res: any = { ...combat };
+
+      if (res.attackerStack) {
+        res.attackerStack = res.attackerStack.map((card: any) => {
+          const showValue = isAttacker || card.revealed;
+          return {
+            ...card,
+            value: showValue ? card.value : 0
+          };
+        });
+      }
+
+      const showAttackerTop = isAttacker || (combat.attackerTopCard && combat.attackerTopCard.revealed);
+      if (combat.attackerTopCard) {
+        res.attackerTopCard = {
+          ...combat.attackerTopCard,
+          value: showAttackerTop ? combat.attackerTopCard.value : 0
+        };
+      }
+
+      const showDefenderTop = isDefender || (combat.defenderTopCard && combat.defenderTopCard.revealed);
+      if (combat.defenderTopCard) {
+        res.defenderTopCard = {
+          ...combat.defenderTopCard,
+          value: showDefenderTop ? combat.defenderTopCard.value : 0
+        };
+      }
+
+      return res;
+    });
+  }
+
+  if (cloned.movesThisTurn) {
+    cloned.movesThisTurn = cloned.movesThisTurn.map((move: any) => {
+      const movingPlayer = cloned.turn;
+      const isMovingPlayer = (movingPlayer === 'X' && isPlayerX) || (movingPlayer === 'O' && isPlayerO);
+
+      return {
+        ...move,
+        cards: move.cards.map((card: any) => {
+          const showValue = isMovingPlayer || card.revealed;
+          return {
+            ...card,
+            value: showValue ? card.value : 0
+          };
+        })
+      };
+    });
+  }
+
+  return cloned;
+}
+
+async function toGameDto(game: Game, requestingUserId?: string): Promise<GameDto> {
+  const dto: GameDto = {
     id: game.id,
     gameType: game.gameType,
     status: game.status,
@@ -163,6 +263,12 @@ async function toGameDto(game: Game): Promise<GameDto> {
     createdAt: game.createdAt.toISOString(),
     updatedAt: game.updatedAt.toISOString(),
   };
+
+  if (game.gameType === 'holy_grail' && dto.state) {
+    dto.state = obfuscateHolyGrailState(dto.state, requestingUserId, game.playerXId, game.playerOId);
+  }
+
+  return dto;
 }
 
 async function handleGameFinished(game: Game) {
@@ -362,7 +468,7 @@ export async function gameRoutes(server: FastifyInstance) {
     }
 
     await gameRepo.save(game);
-    return reply.send(await toGameDto(game));
+    return reply.send(await toGameDto(game, request.user?.id));
   });
 
   // 2. Get Open Public Games
@@ -377,7 +483,7 @@ export async function gameRoutes(server: FastifyInstance) {
       order: { createdAt: 'DESC' },
     });
 
-    return reply.send(await Promise.all(openGames.map(toGameDto)));
+    return reply.send(await Promise.all(openGames.map(g => toGameDto(g, request.user?.id))));
   });
 
   // Get User's Active Games
@@ -398,13 +504,13 @@ export async function gameRoutes(server: FastifyInstance) {
       order: { updatedAt: 'DESC' },
     });
 
-    return reply.send(await Promise.all(myGames.map(toGameDto)));
+    return reply.send(await Promise.all(myGames.map(g => toGameDto(g, request.user?.id))));
   });
 
   // Get ELO Leaderboard for a game type
   server.get<{ Params: { gameType: GameType } }>('/leaderboard/:gameType', async (request, reply) => {
     const { gameType } = request.params;
-    if (gameType !== 'mill' && gameType !== 'connect_four') {
+    if (gameType !== 'mill' && gameType !== 'connect_four' && gameType !== 'holy_grail') {
       return reply.code(400).send({ error: 'Unsupported game type' });
     }
 
@@ -465,7 +571,7 @@ export async function gameRoutes(server: FastifyInstance) {
       return reply.code(404).send({ error: 'Game not found' });
     }
 
-    return reply.send(await toGameDto(game));
+    return reply.send(await toGameDto(game, request.user?.id));
   });
 
   // 4. Join a Game (Invite Link / Lobby list selection)
@@ -502,7 +608,7 @@ export async function gameRoutes(server: FastifyInstance) {
     game.status = 'in_progress';
 
     await gameRepo.save(game);
-    return reply.send(await toGameDto(game));
+    return reply.send(await toGameDto(game, request.user?.id));
   });
 
   // 4.5 Cancel a Game (Lobby slot cancellation by creator)
@@ -567,17 +673,18 @@ export async function gameRoutes(server: FastifyInstance) {
 
     await handleGameFinished(game);
     await gameRepo.save(game);
-    return reply.send(await toGameDto(game));
+    return reply.send(await toGameDto(game, request.user?.id));
   });
 
   // 5. Submit a Move (Perform place, move, or remove and trigger AI response)
   server.post<{
     Params: { id: string };
     Body: {
-      action: 'place' | 'move' | 'remove';
+      action: string;
       position?: number;
-      from?: number;
-      to?: number;
+      from?: number | string;
+      to?: number | string;
+      [key: string]: any;
     };
   }>('/:id/move', async (request, reply) => {
     const user = request.user;
@@ -633,6 +740,6 @@ export async function gameRoutes(server: FastifyInstance) {
     }
 
     await gameRepo.save(game);
-    return reply.send(await toGameDto(game));
+    return reply.send(await toGameDto(game, request.user?.id));
   });
 }

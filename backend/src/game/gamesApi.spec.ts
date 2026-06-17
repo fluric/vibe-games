@@ -171,16 +171,16 @@ async function runTests() {
 
   assert.strictEqual(moveRes1.statusCode, 200);
   const gameAfterMove1 = JSON.parse(moveRes1.body) as GameDto;
+  const millState = gameAfterMove1.state as MillGameState;
   
   // Player X placed at 0.
-  assert.strictEqual(gameAfterMove1.state.board[0], 'X');
+  assert.strictEqual(millState.board[0], 'X');
   // Since it was vs AI, the AI should have automatically responded in a loop
   // and passed the turn back to X.
-  assert.strictEqual(gameAfterMove1.state.turn, 'X');
+  assert.strictEqual(millState.turn, 'X');
   // AI should have placed exactly one piece on the board as 'O'.
-  const oCount = gameAfterMove1.state.board.filter((c) => c === 'O').length;
+  const oCount = millState.board.filter((c) => c === 'O').length;
   assert.strictEqual(oCount, 1);
-  const millState = gameAfterMove1.state as MillGameState;
   assert.strictEqual(millState.piecesOnBoard.O, 1);
   assert.strictEqual(millState.piecesOnBoard.X, 1);
 
@@ -197,7 +197,7 @@ async function runTests() {
   assert.strictEqual(invalidPlayerRes.statusCode, 400); // Not AI's turn (or forbidden)
 
   // Try to place on an occupied position
-  let occupiedPos = gameAfterMove1.state.board.indexOf('O');
+  let occupiedPos = millState.board.indexOf('O');
   const invalidMoveRes = await app.inject({
     method: 'POST',
     url: `/games/${aiGameId}/move`,

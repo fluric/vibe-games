@@ -5,7 +5,7 @@ import { API_VERSION, type GameDto, type UserDto, type LeaderboardEntryDto } fro
 import * as audio from '../components/AudioEffects';
 import aiConfig from '../../../backend/src/game/aiConfig.json';
 
-const typedConfig = aiConfig as unknown as Record<'mill' | 'connect_four', Record<string, { id: string; username: string; elo: number; type: string }>>;
+const typedConfig = aiConfig as unknown as Record<'mill' | 'connect_four' | 'holy_grail', Record<string, { id: string; username: string; elo: number; type: string }>>;
 
 
 const BOT_DESCRIPTIONS: Record<string, Record<string, string>> = {
@@ -34,6 +34,11 @@ const BOT_DESCRIPTIONS: Record<string, Record<string, string>> = {
     expert_garry: "Minimax Depth 5",
     legendary_magnus: "Minimax Depth 6",
     perfect_oracle: "Center Alignment Search",
+  },
+  holy_grail: {
+    easy_random: "Random Play",
+    medium_aggressive: "Positional & Combat",
+    hard_tactical: "Tactical Search"
   }
 };
 
@@ -63,6 +68,11 @@ const BOT_EMOJIS: Record<string, Record<string, string>> = {
     expert_garry: "🔥",
     legendary_magnus: "👑",
     perfect_oracle: "🌌",
+  },
+  holy_grail: {
+    easy_random: "🟢",
+    medium_aggressive: "🟡",
+    hard_tactical: "🔴"
   }
 };
 
@@ -92,6 +102,11 @@ const BOT_HELP_TEXT: Record<string, Record<string, string>> = {
     expert_garry: "Garry evaluates 5 plies deep with optimized positional heuristics. A true challenge!",
     legendary_magnus: "Magnus calculates 6 plies deep with extremely optimized weights. Legendary level!",
     perfect_oracle: "The Oracle uses deep positional evaluation and center column search for maximum control.",
+  },
+  holy_grail: {
+    easy_random: "Randy HG plays completely random moves.",
+    medium_aggressive: "Archie HG plays a positional game targeting farms and bases.",
+    hard_tactical: "Toby HG calculates moves and combat sequences."
   }
 };
 
@@ -124,9 +139,9 @@ export function LobbyPage() {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   type BotLevel = 'easy_random' | 'easy_cowardly' | 'easy_greedy' | 'easy_aggressive' | 'medium_aggressive' | 'medium_defensive' | 'medium_mobile' | 'hard_tactical' | 'expert_garry' | 'legendary_magnus' | 'perfect_oracle';
 
-  const [activeGameTab, setActiveGameTab] = useState<'mill' | 'connect_four'>(() => {
+  const [activeGameTab, setActiveGameTab] = useState<'mill' | 'connect_four' | 'holy_grail'>(() => {
     const saved = localStorage.getItem('vibe-games-active-tab');
-    return (saved === 'mill' || saved === 'connect_four') ? saved : 'mill';
+    return (saved === 'mill' || saved === 'connect_four' || saved === 'holy_grail') ? saved : 'mill';
   });
 
   const [aiLevelMill, setAiLevelMill] = useState<BotLevel>(() => {
@@ -149,14 +164,27 @@ export function LobbyPage() {
     return (saved && validLevels.includes(saved)) ? (saved as BotLevel) : 'medium_aggressive';
   });
 
+  const [aiLevelHolyGrail, setAiLevelHolyGrail] = useState<BotLevel>(() => {
+    const saved = localStorage.getItem('vibe-games-ai-level-holy_grail');
+    const validLevels = ['easy_random', 'medium_aggressive', 'hard_tactical'];
+    return (saved && validLevels.includes(saved)) ? (saved as BotLevel) : 'medium_aggressive';
+  });
+
   const [aiStartsMill, setAiStartsMill] = useState<boolean>(() => {
     return localStorage.getItem('vibe-games-ai-starts-mill') === 'true';
   });
   const [aiStartsConnectFour, setAiStartsConnectFour] = useState<boolean>(() => {
     return localStorage.getItem('vibe-games-ai-starts-connect_four') === 'true';
   });
+  const [aiStartsHolyGrail, setAiStartsHolyGrail] = useState<boolean>(() => {
+    return localStorage.getItem('vibe-games-ai-starts-holy_grail') === 'true';
+  });
 
-  const currentAiStarts = activeGameTab === 'mill' ? aiStartsMill : aiStartsConnectFour;
+  const currentAiStarts = activeGameTab === 'mill' 
+    ? aiStartsMill 
+    : activeGameTab === 'connect_four' 
+    ? aiStartsConnectFour 
+    : aiStartsHolyGrail;
 
   const [gameModeMill, setGameModeMill] = useState<'ai' | 'human'>(() => {
     const saved = localStorage.getItem('vibe-games-game-mode-mill');
@@ -166,13 +194,25 @@ export function LobbyPage() {
     const saved = localStorage.getItem('vibe-games-game-mode-connect_four');
     return saved === 'human' ? 'human' : 'ai';
   });
+  const [gameModeHolyGrail, setGameModeHolyGrail] = useState<'ai' | 'human'>(() => {
+    const saved = localStorage.getItem('vibe-games-game-mode-holy_grail');
+    return saved === 'human' ? 'human' : 'ai';
+  });
 
-  const currentGameMode = activeGameTab === 'mill' ? gameModeMill : gameModeConnectFour;
+  const currentGameMode = activeGameTab === 'mill' 
+    ? gameModeMill 
+    : activeGameTab === 'connect_four' 
+    ? gameModeConnectFour 
+    : gameModeHolyGrail;
 
   const [lobbyTab, setLobbyTab] = useState<'lobbies' | 'leaderboard'>('lobbies');
 
 
-  const currentAiLevel = activeGameTab === 'mill' ? aiLevelMill : aiLevelConnectFour;
+  const currentAiLevel = activeGameTab === 'mill' 
+    ? aiLevelMill 
+    : activeGameTab === 'connect_four' 
+    ? aiLevelConnectFour 
+    : aiLevelHolyGrail;
 
   useEffect(() => {
     localStorage.setItem('vibe-games-ai-level-mill', aiLevelMill);
@@ -181,6 +221,10 @@ export function LobbyPage() {
   useEffect(() => {
     localStorage.setItem('vibe-games-ai-level-connect_four', aiLevelConnectFour);
   }, [aiLevelConnectFour]);
+
+  useEffect(() => {
+    localStorage.setItem('vibe-games-ai-level-holy_grail', aiLevelHolyGrail);
+  }, [aiLevelHolyGrail]);
 
   useEffect(() => {
     localStorage.setItem('vibe-games-active-tab', activeGameTab);
@@ -195,12 +239,20 @@ export function LobbyPage() {
   }, [aiStartsConnectFour]);
 
   useEffect(() => {
+    localStorage.setItem('vibe-games-ai-starts-holy_grail', String(aiStartsHolyGrail));
+  }, [aiStartsHolyGrail]);
+
+  useEffect(() => {
     localStorage.setItem('vibe-games-game-mode-mill', gameModeMill);
   }, [gameModeMill]);
 
   useEffect(() => {
     localStorage.setItem('vibe-games-game-mode-connect_four', gameModeConnectFour);
   }, [gameModeConnectFour]);
+
+  useEffect(() => {
+    localStorage.setItem('vibe-games-game-mode-holy_grail', gameModeHolyGrail);
+  }, [gameModeHolyGrail]);
   const [leaderboardEntries, setLeaderboardEntries] = useState<LeaderboardEntryDto[]>([]);
   const filteredLobbies = openGames.filter((g) => g.gameType === activeGameTab);
   const [loadingLeaderboard, setLoadingLeaderboard] = useState(false);
@@ -727,6 +779,16 @@ export function LobbyPage() {
           >
             🔴 Connect Four
           </button>
+          <button
+            onClick={() => setActiveGameTab('holy_grail')}
+            className={`flex-1 py-3 text-sm rounded-xl font-bold transition-all active:scale-[0.98] ${
+              activeGameTab === 'holy_grail'
+                ? 'bg-amber-600 shadow-[0_0_15px_rgba(245,158,11,0.4)] text-white'
+                : 'text-neutral-400 hover:text-white hover:bg-neutral-800/40'
+            }`}
+          >
+            🏆 Grail Quest
+          </button>
         </div>
 
         {/* User Card & Stats */}
@@ -768,7 +830,7 @@ export function LobbyPage() {
             <div>
               <h3 className="text-lg font-bold text-white">Create a New Match</h3>
               <p className="text-sm text-neutral-400 mt-1">
-                Launch a match of {activeGameTab === 'mill' ? "Nine Men's Morris" : 'Connect Four'} immediately.
+                Launch a match of {activeGameTab === 'mill' ? "Nine Men's Morris" : activeGameTab === 'connect_four' ? 'Connect Four' : 'Grail Quest'} immediately.
               </p>
             </div>
             <div className="flex flex-col gap-4">
@@ -777,7 +839,11 @@ export function LobbyPage() {
               <div className="flex bg-neutral-950/60 border border-neutral-800/80 p-1 rounded-xl gap-1">
                 <button
                   type="button"
-                  onClick={() => activeGameTab === 'mill' ? setGameModeMill('ai') : setGameModeConnectFour('ai')}
+                  onClick={() => {
+                    if (activeGameTab === 'mill') setGameModeMill('ai');
+                    else if (activeGameTab === 'connect_four') setGameModeConnectFour('ai');
+                    else setGameModeHolyGrail('ai');
+                  }}
                   className={`flex-1 py-2 text-xs rounded-lg font-semibold transition-all ${
                     currentGameMode === 'ai'
                       ? 'bg-indigo-600 text-white shadow'
@@ -788,7 +854,11 @@ export function LobbyPage() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => activeGameTab === 'mill' ? setGameModeMill('human') : setGameModeConnectFour('human')}
+                  onClick={() => {
+                    if (activeGameTab === 'mill') setGameModeMill('human');
+                    else if (activeGameTab === 'connect_four') setGameModeConnectFour('human');
+                    else setGameModeHolyGrail('human');
+                  }}
                   className={`flex-1 py-2 text-xs rounded-lg font-semibold transition-all ${
                     currentGameMode === 'human'
                       ? 'bg-indigo-600 text-white shadow'
@@ -814,8 +884,10 @@ export function LobbyPage() {
                         const val = e.target.value as BotLevel;
                         if (activeGameTab === 'mill') {
                           setAiLevelMill(val);
-                        } else {
+                        } else if (activeGameTab === 'connect_four') {
                           setAiLevelConnectFour(val);
+                        } else {
+                          setAiLevelHolyGrail(val);
                         }
                       }}
                       className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2.5 text-xs text-neutral-100 focus:outline-none focus:border-indigo-500 transition-all font-sans"
@@ -841,7 +913,11 @@ export function LobbyPage() {
                 <div className="flex gap-2 mt-0.5">
                   <button
                     type="button"
-                    onClick={() => activeGameTab === 'mill' ? setAiStartsMill(false) : setAiStartsConnectFour(false)}
+                    onClick={() => {
+                      if (activeGameTab === 'mill') setAiStartsMill(false);
+                      else if (activeGameTab === 'connect_four') setAiStartsConnectFour(false);
+                      else setAiStartsHolyGrail(false);
+                    }}
                     className={`flex-1 py-2 text-xs rounded-xl font-semibold border transition-all ${
                       !currentAiStarts
                         ? 'bg-indigo-600/10 border-indigo-500 text-indigo-400 font-bold'
@@ -852,7 +928,11 @@ export function LobbyPage() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => activeGameTab === 'mill' ? setAiStartsMill(true) : setAiStartsConnectFour(true)}
+                    onClick={() => {
+                      if (activeGameTab === 'mill') setAiStartsMill(true);
+                      else if (activeGameTab === 'connect_four') setAiStartsConnectFour(true);
+                      else setAiStartsHolyGrail(true);
+                    }}
                     className={`flex-1 py-2 text-xs rounded-xl font-semibold border transition-all ${
                       currentAiStarts
                         ? 'bg-indigo-600/10 border-indigo-500 text-indigo-400 font-bold'

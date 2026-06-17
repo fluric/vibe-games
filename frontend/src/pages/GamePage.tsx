@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import * as api from '../api/games';
-import type { GameDto, PlayerPiece, UserDto, MillGameState } from '@vibe-games/shared';
+import type { GameDto, PlayerPiece, UserDto, MillGameState, HolyGrailGameState } from '@vibe-games/shared';
 import { MillBoard } from '../components/MillBoard';
 import { ConnectFourBoard } from '../components/ConnectFourBoard';
+import { HolyGrailBoard } from '../components/HolyGrailBoard';
 import * as audio from '../components/AudioEffects';
 
 const AI_BOT_IDS = [
@@ -176,8 +177,8 @@ export function GamePage() {
   }, [id, game?.status, game?.playerX?.id, game?.playerO?.id, fetchGame, checkingAuth]);
 
   const handleBoardAction = async (
-    action: 'place' | 'move' | 'remove',
-    params: { position?: number; from?: number; to?: number }
+    action: string,
+    params: { position?: number; from?: string | number; to?: string | number; [key: string]: any }
   ) => {
     if (!id || submittingMove) return;
     setSubmittingMove(true);
@@ -197,15 +198,15 @@ export function GamePage() {
         isAiGame,
         oldBoardExists: !!oldBoard,
         newBoardExists: !!newBoard,
-        oldBoardLen: oldBoard?.length,
-        newBoardLen: newBoard?.length,
+        oldBoardLen: Array.isArray(oldBoard) ? oldBoard.length : undefined,
+        newBoardLen: Array.isArray(newBoard) ? newBoard.length : undefined,
         playerXId: updated.playerX?.id,
         playerOId: updated.playerO?.id,
         isPlayerXBot: updated.playerX ? isBotId(updated.playerX.id) : false,
         isPlayerOBot: updated.playerO ? isBotId(updated.playerO.id) : false,
       });
 
-      if (updated.gameType === 'connect_four' && isAiGame && oldBoard && newBoard) {
+      if (updated.gameType === 'connect_four' && isAiGame && Array.isArray(oldBoard) && Array.isArray(newBoard)) {
         const newIndices: number[] = [];
         for (let i = 0; i < newBoard.length; i++) {
           if (oldBoard[i] === null && newBoard[i] !== null) {
@@ -408,6 +409,18 @@ export function GamePage() {
       } else if (game.gameType === 'connect_four') {
         bannerMessage = 'Your Turn: Drop Piece 🔴';
         bannerSub = 'Hover and click any column to drop your piece.';
+      } else if (game.gameType === 'holy_grail') {
+        const grailState = game.state as HolyGrailGameState;
+        if (grailState.phase === 'react') {
+          bannerMessage = 'Your Turn: React to Attack! ⚔️';
+          bannerSub = 'Select a contested cell (red outline) to fight or retreat.';
+        } else if (grailState.phase === 'deploy') {
+          bannerMessage = 'Your Turn: Deploy Units 🛖';
+          bannerSub = 'Deploy cards from your hand onto your Urban housing cells or Home Base.';
+        } else if (grailState.phase === 'move') {
+          bannerMessage = 'Your Turn: Move Units 🛡️';
+          bannerSub = 'Move stacks to adjacent cells. Stacks with Kings can transport the Grail 🏆.';
+        }
       }
     } else {
       bannerMessage = `Opponent's Turn (${game.state.turn})`;
@@ -418,7 +431,7 @@ export function GamePage() {
   }
 
   return (
-    <div className="min-h-screen bg-neutral-950 text-neutral-100 font-sans flex flex-col items-center p-6 md:p-12 relative overflow-hidden">
+    <div className="min-h-screen bg-neutral-950 text-neutral-100 font-sans flex flex-col items-center p-6 md:p-12 relative overflow-x-hidden">
       {/* Background neon elements */}
       <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-blue-500/5 blur-[120px] pointer-events-none" />
       <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-rose-500/5 blur-[120px] pointer-events-none" />
@@ -479,142 +492,242 @@ export function GamePage() {
         </div>
 
         {/* Game Layout Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-center mt-2">
-          
-          {/* Player X Stats (Left Column) */}
-          <div className="col-span-12 md:col-span-6 xl:col-span-3 order-1 xl:order-none flex flex-col gap-4">
-            <div data-testid="player-x-card" className={`p-5 rounded-2xl border transition-all ${
-              game.status === 'in_progress' && game.state.turn === 'X'
-                ? 'bg-blue-500/10 border-blue-500/30'
-                : 'bg-neutral-900/40 border-neutral-800'
-            }`}>
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-bold tracking-widest text-blue-400 uppercase">Player X</span>
-                <span className="w-2.5 h-2.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.6)]" />
-              </div>
-              <div className="flex items-center gap-3 mt-3">
-                {game.playerX && isBotId(game.playerX.id) ? (
-                  <div className="w-10 h-10 rounded-full bg-neutral-800 border border-neutral-700 flex items-center justify-center text-lg shadow-md">
-                    🤖
+        {game.gameType === 'holy_grail' ? (
+          <div className="flex flex-col gap-6 w-full items-center mt-2">
+            {/* Horizontal Player Stats Row */}
+            <div className="flex flex-col sm:flex-row gap-6 w-full max-w-4xl justify-center items-stretch">
+              
+              {/* Player X Stats */}
+              <div className="flex-1">
+                <div data-testid="player-x-card" className={`p-4 rounded-2xl border h-full transition-all flex flex-col justify-between ${
+                  game.status === 'in_progress' && game.state.turn === 'X'
+                    ? 'bg-blue-500/10 border-blue-500/30'
+                    : 'bg-neutral-900/40 border-neutral-800'
+                }`}>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-bold tracking-widest text-blue-400 uppercase">Player X</span>
+                    <span className="w-2.5 h-2.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.6)]" />
                   </div>
-                ) : game.playerX?.avatarUrl ? (
-                  <img
-                    src={game.playerX.avatarUrl}
-                    alt={game.playerX.username}
-                    className="w-10 h-10 rounded-full border border-neutral-800 object-cover shadow-md"
-                  />
-                ) : (
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-extrabold text-xs shadow-md">
-                    {(game.playerX?.username || 'W').substring(0, 2).toUpperCase()}
-                  </div>
-                )}
-                <div className="flex flex-col min-w-0">
-                  <h3 className="text-sm font-bold text-white truncate">
-                    {game.playerX?.username || 'Waiting...'}
-                  </h3>
-                  <span className="text-[9px] text-neutral-500">
-                    {game.gameType === 'mill' ? 'Morris Rating' : 'C4 Rating'}: {game.playerX?.elo ?? 1200}
-                  </span>
-                </div>
-              </div>
-              {game.gameType === 'mill' && (
-                <div className="border-t border-neutral-800/80 pt-3 mt-3 flex flex-col gap-1.5 text-xs text-neutral-400">
-                  <div className="flex justify-between">
-                    <span>Placements Left:</span>
-                    <span className="font-bold text-white">{xRem}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Active Pieces:</span>
-                    <span className="font-bold text-white">{xPlaced}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Pieces Lost:</span>
-                    <span className="font-bold text-rose-500">{xCaptured}</span>
+                  <div className="flex items-center gap-3 mt-2">
+                    {game.playerX && isBotId(game.playerX.id) ? (
+                      <div className="w-9 h-9 rounded-full bg-neutral-800 border border-neutral-700 flex items-center justify-center text-base shadow-md">
+                        🤖
+                      </div>
+                    ) : game.playerX?.avatarUrl ? (
+                      <img
+                        src={game.playerX.avatarUrl}
+                        alt={game.playerX.username}
+                        className="w-9 h-9 rounded-full border border-neutral-800 object-cover shadow-md"
+                      />
+                    ) : (
+                      <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-extrabold text-xs shadow-md">
+                        {(game.playerX?.username || 'W').substring(0, 2).toUpperCase()}
+                      </div>
+                    )}
+                    <div className="flex flex-col min-w-0">
+                      <h3 className="text-sm font-bold text-white truncate">
+                        {game.playerX?.username || 'Waiting...'}
+                      </h3>
+                      <span className="text-[9px] text-neutral-500">
+                        Grail Rating: {game.playerX?.elo ?? 1200}
+                      </span>
+                    </div>
                   </div>
                 </div>
-              )}
-            </div>
-          </div>
+              </div>
 
-          {/* Interactive SVG Game Canvas (Middle Column) */}
-          <div className="col-span-12 xl:col-span-6 order-3 xl:order-none flex flex-col items-center justify-center">
-            {game.gameType === 'mill' ? (
-              <MillBoard
-                board={game.state.board}
-                turn={game.state.turn}
-                phase={(game.state as MillGameState).phase}
-                millFormedThisTurn={(game.state as MillGameState).millFormedThisTurn}
-                currentPlayerPiece={myPiece}
-                disabled={game.status !== 'in_progress' || !isMyTurn}
-                onAction={handleBoardAction}
-              />
-            ) : (
-              <ConnectFourBoard
-                board={game.state.board}
-                turn={game.state.turn}
-                currentPlayerPiece={myPiece}
+              {/* Player O Stats */}
+              <div className="flex-1">
+                <div data-testid="player-o-card" className={`p-4 rounded-2xl border h-full transition-all flex flex-col justify-between ${
+                  game.status === 'in_progress' && game.state.turn === 'O'
+                    ? 'bg-rose-500/10 border-rose-500/30'
+                    : 'bg-neutral-900/40 border-neutral-800'
+                }`}>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-bold tracking-widest text-rose-400 uppercase">Player O</span>
+                    <span className="w-2.5 h-2.5 rounded-full bg-rose-500 shadow-[0_0_8px_rgba(239,68,68,0.6)]" />
+                  </div>
+                  <div className="flex items-center gap-3 mt-2">
+                    {game.playerO && isBotId(game.playerO.id) ? (
+                      <div className="w-9 h-9 rounded-full bg-neutral-800 border border-neutral-700 flex items-center justify-center text-base shadow-md">
+                        🤖
+                      </div>
+                    ) : game.playerO?.avatarUrl ? (
+                      <img
+                        src={game.playerO.avatarUrl}
+                        alt={game.playerO.username}
+                        className="w-9 h-9 rounded-full border border-neutral-800 object-cover shadow-md"
+                      />
+                    ) : (
+                      <div className="w-9 h-9 rounded-full bg-gradient-to-br from-rose-500 to-amber-600 flex items-center justify-center text-white font-extrabold text-xs shadow-md">
+                        {(game.playerO?.username || 'W').substring(0, 2).toUpperCase()}
+                      </div>
+                    )}
+                    <div className="flex flex-col min-w-0">
+                      <h3 className="text-sm font-bold text-white truncate">
+                        {game.playerO?.username || 'Waiting...'}
+                      </h3>
+                      <span className="text-[9px] text-neutral-500">
+                        {game.playerO ? `Grail Rating: ${game.playerO.elo ?? 1200}` : 'Waiting...'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+            {/* Board Component */}
+            <div className="w-full flex justify-center mt-4">
+              <HolyGrailBoard
+                state={game.state as any}
+                myPiece={myPiece}
                 disabled={game.status !== 'in_progress' || !isMyTurn || submittingMove}
-                onAction={(act) => handleBoardAction('place', { position: act.column })}
+                submittingMove={submittingMove}
+                onAction={async (act) => {
+                  await handleBoardAction(act.type, act);
+                }}
               />
-            )}
-          </div>
-
-          {/* Player O Stats (Right Column) */}
-          <div className="col-span-12 md:col-span-6 xl:col-span-3 order-2 xl:order-none flex flex-col gap-4">
-            <div data-testid="player-o-card" className={`p-5 rounded-2xl border transition-all ${
-              game.status === 'in_progress' && game.state.turn === 'O'
-                ? 'bg-rose-500/10 border-rose-500/30'
-                : 'bg-neutral-900/40 border-neutral-800'
-            }`}>
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-bold tracking-widest text-rose-400 uppercase">Player O</span>
-                <span className="w-2.5 h-2.5 rounded-full bg-rose-500 shadow-[0_0_8px_rgba(239,68,68,0.6)]" />
-              </div>
-              <div className="flex items-center gap-3 mt-3">
-                {game.playerO && isBotId(game.playerO.id) ? (
-                  <div className="w-10 h-10 rounded-full bg-neutral-800 border border-neutral-700 flex items-center justify-center text-lg shadow-md">
-                    🤖
-                  </div>
-                ) : game.playerO?.avatarUrl ? (
-                  <img
-                    src={game.playerO.avatarUrl}
-                    alt={game.playerO.username}
-                    className="w-10 h-10 rounded-full border border-neutral-800 object-cover shadow-md"
-                  />
-                ) : (
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-rose-500 to-amber-600 flex items-center justify-center text-white font-extrabold text-xs shadow-md">
-                    {(game.playerO?.username || 'W').substring(0, 2).toUpperCase()}
-                  </div>
-                )}
-                <div className="flex flex-col min-w-0">
-                  <h3 className="text-sm font-bold text-white truncate">
-                    {game.playerO?.username || 'Waiting...'}
-                  </h3>
-                  <span className="text-[9px] text-neutral-500">
-                    {game.playerO ? `${game.gameType === 'mill' ? 'Morris Rating' : 'C4 Rating'}: ${game.playerO.elo ?? 1200}` : 'Waiting...'}
-                  </span>
-                </div>
-              </div>
-              {game.gameType === 'mill' && (
-                <div className="border-t border-neutral-800/80 pt-3 mt-3 flex flex-col gap-1.5 text-xs text-neutral-400">
-                  <div className="flex justify-between">
-                    <span>Placements Left:</span>
-                    <span className="font-bold text-white">{oRem}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Active Pieces:</span>
-                    <span className="font-bold text-white">{oPlaced}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Pieces Lost:</span>
-                    <span className="font-bold text-rose-500">{oCaptured}</span>
-                  </div>
-                </div>
-              )}
             </div>
           </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-center mt-2">
+            
+            {/* Player X Stats (Left Column) */}
+            <div className="col-span-12 md:col-span-6 xl:col-span-3 order-1 xl:order-none flex flex-col gap-4">
+              <div data-testid="player-x-card" className={`p-5 rounded-2xl border transition-all ${
+                game.status === 'in_progress' && game.state.turn === 'X'
+                  ? 'bg-blue-500/10 border-blue-500/30'
+                  : 'bg-neutral-900/40 border-neutral-800'
+              }`}>
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-bold tracking-widest text-blue-400 uppercase">Player X</span>
+                  <span className="w-2.5 h-2.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.6)]" />
+                </div>
+                <div className="flex items-center gap-3 mt-3">
+                  {game.playerX && isBotId(game.playerX.id) ? (
+                    <div className="w-10 h-10 rounded-full bg-neutral-800 border border-neutral-700 flex items-center justify-center text-lg shadow-md">
+                      🤖
+                    </div>
+                  ) : game.playerX?.avatarUrl ? (
+                    <img
+                      src={game.playerX.avatarUrl}
+                      alt={game.playerX.username}
+                      className="w-10 h-10 rounded-full border border-neutral-800 object-cover shadow-md"
+                    />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-extrabold text-xs shadow-md">
+                      {(game.playerX?.username || 'W').substring(0, 2).toUpperCase()}
+                    </div>
+                  )}
+                  <div className="flex flex-col min-w-0">
+                    <h3 className="text-sm font-bold text-white truncate">
+                      {game.playerX?.username || 'Waiting...'}
+                    </h3>
+                    <span className="text-[9px] text-neutral-500">
+                      {game.gameType === 'mill' ? 'Morris Rating' : 'C4 Rating'}: {game.playerX?.elo ?? 1200}
+                    </span>
+                  </div>
+                </div>
+                {game.gameType === 'mill' && (
+                  <div className="border-t border-neutral-800/80 pt-3 mt-3 flex flex-col gap-1.5 text-xs text-neutral-400">
+                    <div className="flex justify-between">
+                      <span>Placements Left:</span>
+                      <span className="font-bold text-white">{xRem}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Active Pieces:</span>
+                      <span className="font-bold text-white">{xPlaced}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Pieces Lost:</span>
+                      <span className="font-bold text-rose-500">{xCaptured}</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
 
-        </div>
+            {/* Interactive SVG Game Canvas (Middle Column) */}
+            <div className="col-span-12 xl:col-span-6 order-3 xl:order-none flex flex-col items-center justify-center">
+              {game.gameType === 'mill' ? (
+                <MillBoard
+                  board={game.state.board as (PlayerPiece | null)[]}
+                  turn={game.state.turn}
+                  phase={(game.state as MillGameState).phase}
+                  millFormedThisTurn={(game.state as MillGameState).millFormedThisTurn}
+                  currentPlayerPiece={myPiece}
+                  disabled={game.status !== 'in_progress' || !isMyTurn}
+                  onAction={handleBoardAction}
+                />
+              ) : (
+                <ConnectFourBoard
+                  board={game.state.board as (PlayerPiece | null)[]}
+                  turn={game.state.turn}
+                  currentPlayerPiece={myPiece}
+                  disabled={game.status !== 'in_progress' || !isMyTurn || submittingMove}
+                  onAction={(act) => handleBoardAction('place', { position: act.column })}
+                />
+              )}
+            </div>
+
+            {/* Player O Stats (Right Column) */}
+            <div className="col-span-12 md:col-span-6 xl:col-span-3 order-2 xl:order-none flex flex-col gap-4">
+              <div data-testid="player-o-card" className={`p-5 rounded-2xl border transition-all ${
+                game.status === 'in_progress' && game.state.turn === 'O'
+                  ? 'bg-rose-500/10 border-rose-500/30'
+                  : 'bg-neutral-900/40 border-neutral-800'
+              }`}>
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-bold tracking-widest text-rose-400 uppercase">Player O</span>
+                  <span className="w-2.5 h-2.5 rounded-full bg-rose-500 shadow-[0_0_8px_rgba(239,68,68,0.6)]" />
+                </div>
+                <div className="flex items-center gap-3 mt-3">
+                  {game.playerO && isBotId(game.playerO.id) ? (
+                    <div className="w-10 h-10 rounded-full bg-neutral-800 border border-neutral-700 flex items-center justify-center text-lg shadow-md">
+                      🤖
+                    </div>
+                  ) : game.playerO?.avatarUrl ? (
+                    <img
+                      src={game.playerO.avatarUrl}
+                      alt={game.playerO.username}
+                      className="w-10 h-10 rounded-full border border-neutral-800 object-cover shadow-md"
+                    />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-rose-500 to-amber-600 flex items-center justify-center text-white font-extrabold text-xs shadow-md">
+                      {(game.playerO?.username || 'W').substring(0, 2).toUpperCase()}
+                    </div>
+                  )}
+                  <div className="flex flex-col min-w-0">
+                    <h3 className="text-sm font-bold text-white truncate">
+                      {game.playerO?.username || 'Waiting...'}
+                    </h3>
+                    <span className="text-[9px] text-neutral-500">
+                      {game.playerO ? `${game.gameType === 'mill' ? 'Morris Rating' : 'C4 Rating'}: ${game.playerO.elo ?? 1200}` : 'Waiting...'}
+                    </span>
+                  </div>
+                </div>
+                {game.gameType === 'mill' && (
+                  <div className="border-t border-neutral-800/80 pt-3 mt-3 flex flex-col gap-1.5 text-xs text-neutral-400">
+                    <div className="flex justify-between">
+                      <span>Placements Left:</span>
+                      <span className="font-bold text-white">{oRem}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Active Pieces:</span>
+                      <span className="font-bold text-white">{oPlaced}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Pieces Lost:</span>
+                      <span className="font-bold text-rose-500">{oCaptured}</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+          </div>
+        )}
 
         {/* Invite link and sharing dashboard for waiting lobby */}
         {game.status === 'waiting' && (
