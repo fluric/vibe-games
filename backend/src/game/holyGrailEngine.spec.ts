@@ -617,6 +617,36 @@ async function runTests() {
   assert.strictEqual(sEmptyRefill.board['0,-2'].soldiers.length, 1);
   assert.strictEqual(sEmptyRefill.board['0,-2'].owner, 'X');
 
+  // 13. Radioactivity Combat Auto-Resolution Test
+  console.log('👉 Testing: Radioactivity Combat Auto-Resolution');
+  let sRadio = HolyGrailEngine.createInitialState();
+  sRadio.board['0,0'].soldiers = [{ value: 5, revealed: false }];
+  sRadio.board['0,0'].owner = 'O';
+  sRadio.grailCellKey = '0,0';
+
+  sRadio.phase = 'move';
+  sRadio.turn = 'X';
+  
+  sRadio.board['0,-1'].soldiers = [{ value: 10, revealed: false }];
+  sRadio.board['0,-1'].owner = 'X';
+  sRadio = HolyGrailEngine.handleMove(sRadio, { type: 'move', from: '0,-1', to: '0,0', count: 1 }, 'X');
+
+  assert.strictEqual(sRadio.pendingCombats.length, 1);
+  assert.strictEqual(sRadio.pendingCombats[0].cellKey, '0,0');
+  assert.strictEqual(sRadio.pendingCombats[0].attacker, 'X');
+  assert.strictEqual(sRadio.pendingCombats[0].defender, 'O');
+
+  sRadio.roundTurnsCompleted = 1;
+  sRadio = HolyGrailEngine.handleMove(sRadio, { type: 'end_turn' }, 'X');
+
+  assert.strictEqual(sRadio.pendingCombats.length, 0);
+  assert.strictEqual(sRadio.board['0,0'].owner, 'X');
+  assert.strictEqual(sRadio.board['0,0'].soldiers.length, 1);
+  assert.strictEqual(sRadio.board['0,0'].soldiers[0].value, 10);
+  
+  assert.ok((sRadio.history || []).some(log => typeof log === 'string' && log.includes('radioactivity')));
+  assert.ok((sRadio.history || []).some(log => typeof log === 'string' && log.includes('resolved') && log.includes('radioactivity')));
+
   console.log('✅ All Holy Grail Engine tests passed successfully!');
 }
 

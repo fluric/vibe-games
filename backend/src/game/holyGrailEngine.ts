@@ -372,6 +372,27 @@ export function endRound(state: HolyGrailGameState): void {
         grailCell.owner = null;
       }
     }
+
+    const combatIdx = state.pendingCombats.findIndex(c => c.cellKey === (state.grailCellKey || '0,0'));
+    if (combatIdx !== -1) {
+      const combat = state.pendingCombats[combatIdx];
+      if (grailCell.soldiers.length === 0) {
+        // Defender has no units left! Attacker captures the cell automatically
+        grailCell.owner = combat.attacker;
+        grailCell.soldiers = combat.attackerStack || [];
+        
+        state.pendingCombats.splice(combatIdx, 1);
+        
+        // Clear moving cards from movesThisTurn so they don't get merged at end_turn
+        state.movesThisTurn = (state.movesThisTurn || []).filter(m => m.to !== combat.cellKey);
+
+        state.history.push(`⚔️ Combat at ${cellName} resolved: Defender (${combat.defender}) has no units left due to radioactivity. Attacker (${combat.attacker}) captures the cell with ${combat.attackerStack?.length || 0} unit(s).`);
+      } else {
+        // Just update the pending combat defender counts
+        combat.defenderRemainingCount = grailCell.soldiers.length;
+        combat.defenderTopCard = grailCell.soldiers[0] || null;
+      }
+    }
   }
 
   // 3. Check Game Ending conditions

@@ -1197,9 +1197,14 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
   }, [phase, isMyTurn, activeHand.length, isBoardLocked, submittingMove, endDeploy]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
-  // If active combat is resolved, close modal
+  /* eslint-disable react-hooks/set-state-in-effect */
+  // If active combat is resolved or phase is not react, close modal
   useEffect(() => {
     if (activeCombatCellKey) {
+      if (phase !== 'react') {
+        setActiveCombatCellKey(null);
+        return;
+      }
       const exists = pendingCombats.some(c => c.cellKey === activeCombatCellKey);
       if (!exists) {
         const timer = setTimeout(() => {
@@ -1208,7 +1213,8 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
         return () => clearTimeout(timer);
       }
     }
-  }, [pendingCombats, activeCombatCellKey]);
+  }, [pendingCombats, activeCombatCellKey, phase]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   // Determine distance between two cell keys
   const getCellDistance = (key1: string, key2: string) => {
@@ -2325,7 +2331,7 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
         )}
 
         {/* Combat Reaction Modal Overlay / Panel */}
-        {activeCombatCellKey !== null && (
+        {phase === 'react' && activeCombatCellKey !== null && (
           <div className="fixed inset-0 bg-neutral-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
             {(() => {
               const combat = displayedCombat;
@@ -2358,7 +2364,24 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
                 const isGrailCenter = q === 0 && r === 0;
                 const cellName = isGrailCenter ? 'Grail Center' : cellKey;
 
-                return state.history.filter(log => {
+                // Slice history starting from the last end_turn action to isolate current turn's combat logs
+                const lastEndTurnIdx = [...state.history].reverse().findIndex(log => {
+                  if (typeof log === 'string' && log.trim().startsWith('{')) {
+                    try {
+                      const parsed = JSON.parse(log);
+                      return parsed.type === 'end_turn';
+                    } catch {
+                      return false;
+                    }
+                  }
+                  return false;
+                });
+
+                const currentCombatHistory = lastEndTurnIdx !== -1 
+                  ? state.history.slice(state.history.length - lastEndTurnIdx) 
+                  : state.history;
+
+                return currentCombatHistory.filter(log => {
                   if (typeof log === 'string') {
                     if (log.trim().startsWith('{')) return false;
                     return log.includes(cellName) && (
