@@ -857,7 +857,7 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
   // Cache is now updated at the end of our turn inside the endTurn handler to capture finalized user positions.
 
   // Determine displaying board state
-  const getDisplayedState = (): { board: Record<string, HolyGrailCell>; grailCellKey: string } => {
+  const { board, grailCellKey } = useMemo((): { board: Record<string, HolyGrailCell>; grailCellKey: string } => {
     const defaultState = {
       board: stateBoard,
       grailCellKey: stateGrailCellKey || '0,0'
@@ -886,9 +886,7 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
     // Fallback: Rollback using history
     const oppPiece = myPiece === 'X' ? 'O' : 'X';
     return rollbackBoardAndGrail(stateBoard, stateGrailCellKey, reviewDeploys, reviewMoves, oppPiece);
-  };
-
-  const { board, grailCellKey } = getDisplayedState();
+  }, [stateBoard, stateGrailCellKey, isReviewingLastTurn, gameId, reviewDeploys, reviewMoves, myPiece]);
 
   /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
@@ -1038,11 +1036,11 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
   /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (!activeCombatCellKey) {
-      setDisplayedCombat(null);
-      setDisplayedAttackerVal(undefined);
-      setDisplayedDefenderVal(undefined);
-      setDisplayedDefenderVal2(undefined);
-      setDisplayedDefenderStack([]);
+      if (displayedCombat !== null) setDisplayedCombat(null);
+      if (displayedAttackerVal !== undefined) setDisplayedAttackerVal(undefined);
+      if (displayedDefenderVal !== undefined) setDisplayedDefenderVal(undefined);
+      if (displayedDefenderVal2 !== undefined) setDisplayedDefenderVal2(undefined);
+      if (displayedDefenderStack.length > 0) setDisplayedDefenderStack([]);
       lastActiveCombatCellKeyRef.current = null;
       return;
     }
@@ -1058,7 +1056,7 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
       setDisplayedDefenderStack(defSoldiers);
       lastActiveCombatCellKeyRef.current = activeCombatCellKey;
     }
-  }, [activeCombatCellKey, currentPropCombat, board]);
+  }, [activeCombatCellKey, currentPropCombat, board, displayedCombat, displayedAttackerVal, displayedDefenderVal, displayedDefenderVal2, displayedDefenderStack]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
   /* eslint-disable react-hooks/set-state-in-effect */

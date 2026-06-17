@@ -1454,6 +1454,8 @@ export const HolyGrailEngine = {
               for (let count = 1; count <= usableCount; count++) {
                 const isGrailMove = state.grailCellKey === key;
                 if (isGrailMove) {
+                  // Must move all soldiers from the Grail cell together when carrying the Grail
+                  if (count !== cell.soldiers.length) continue;
                   const movingCards = cell.soldiers.slice(0, count);
                   const hasKing = movingCards.some(c => c.value === 13);
                   if (!hasKing) continue;
