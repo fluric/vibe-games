@@ -1277,7 +1277,7 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
       };
 
       const reassembleCellStackFrontend = (
-        moves: any[],
+        moves: { from: string; to: string; cards: HolyGrailCard[]; carriesGrail?: boolean }[],
         cellKey: string,
         baseSoldiers: HolyGrailCard[]
       ): HolyGrailCard[] => {
