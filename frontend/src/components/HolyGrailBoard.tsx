@@ -1293,7 +1293,7 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
             {/* Info Icon & Hover Tooltip */}
             <div className="relative group/info cursor-help flex items-center justify-center w-5 h-5 rounded-full bg-indigo-900/60 border border-indigo-500/30 text-indigo-300 hover:bg-indigo-600 hover:text-white hover:border-indigo-400 font-bold transition-all shadow-sm shadow-indigo-500/10">
               ℹ️
-              <div className="absolute left-full ml-2 top-1/2 -translate-y-1/2 hidden group-hover/info:block w-64 bg-neutral-950 border border-neutral-800 p-3.5 rounded-xl shadow-2xl z-50 pointer-events-none text-xs leading-relaxed text-neutral-350 font-normal normal-case">
+              <div className="absolute right-0 top-full mt-2 xl:left-full xl:right-auto xl:top-1/2 xl:-translate-y-1/2 xl:mt-0 xl:ml-2 hidden group-hover/info:block w-64 bg-neutral-950 border border-neutral-800 p-3.5 rounded-xl shadow-2xl z-50 pointer-events-none text-xs leading-relaxed text-neutral-350 font-normal normal-case">
                 {isReviewingLastTurn ? (
                   <span>
                     <strong>Review Mode:</strong> Opponent turn completed. Take your time to review the logs and board state (opponent deployments/moves shown as overlays) before starting your action phase.
