@@ -683,7 +683,7 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
   };
 
   return (
-    <div className="flex flex-col xl:flex-row gap-6 w-full max-w-6xl items-center justify-center p-4">
+    <div className="flex flex-col xl:flex-row gap-6 w-full max-w-6xl items-start justify-center p-4">
       <style>{`
         @keyframes cardFlip {
           0% { transform: rotateY(0deg) scale(1); }
@@ -718,53 +718,66 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
           </div>
         )}
 
-        <div className="border-t border-neutral-800 pt-3">
-          <div className="text-xs font-semibold text-neutral-500 uppercase tracking-widest">Phase</div>
+        <div className="border-t border-neutral-800 pt-3 relative">
+          <div className="flex items-center justify-between">
+            <div className="text-xs font-semibold text-neutral-500 uppercase tracking-widest">Phase</div>
+            
+            {/* Info Icon & Hover Tooltip */}
+            <div className="relative group/info cursor-help flex items-center justify-center w-5 h-5 rounded-full bg-neutral-800 hover:bg-neutral-700 text-[10px] text-neutral-450 hover:text-white font-bold transition-all">
+              ℹ️
+              <div className="absolute left-full ml-2 top-1/2 -translate-y-1/2 hidden group-hover/info:block w-64 bg-neutral-950/95 border border-neutral-800 p-3.5 rounded-xl shadow-2xl z-30 pointer-events-none text-xs leading-relaxed text-neutral-350 font-normal normal-case">
+                {phase === 'deploy' && (
+                  <span>
+                    Deploy cards from your hand onto your 🛖 <strong>Urban housing cells</strong>. 
+                    <br/><br/>
+                    Your valid cells are highlighted in purple. 
+                    <br/><br/>
+                    <strong>To place:</strong> Click a highlighted housing cell, then click a card in your hand. Or click a card first, then click a highlighted cell.
+                  </span>
+                )}
+                {phase === 'move' && (
+                  <span>Select one of your stacks, then click an adjacent hex to move units. Stacks with Kings can carry the Grail 🏆.</span>
+                )}
+                {phase === 'react' && (
+                  <span>You are under attack! Click the contested cells (highlighted in red ⚔️) to fight or retreat.</span>
+                )}
+              </div>
+            </div>
+          </div>
           <div className="text-white font-semibold text-lg capitalize mt-0.5">{phase} Phase</div>
         </div>
 
-        {/* Phase instructions */}
-        <div className="text-sm text-neutral-400 bg-neutral-950/40 border border-neutral-800/40 p-3 rounded-lg mt-1">
-          {phase === 'deploy' && (
-            <span>
-              Deploy cards from your hand onto your 🛖 <strong>Urban housing cells</strong>. 
-              <br/><br/>
-              Your valid cells are highlighted in purple. 
-              <br/><br/>
-              <strong>To place:</strong> Click a highlighted housing cell, then click a card in your hand. Or click a card first, then click a highlighted cell.
-            </span>
-          )}
-          {phase === 'move' && (
-            <span>Select one of your stacks, then click an adjacent hex to move units. Stacks with Kings can carry the Grail 🏆.</span>
-          )}
-          {phase === 'react' && (
-            <span>You are under attack! Click the contested cells (highlighted in red ⚔️) to fight or retreat.</span>
-          )}
-        </div>
-
         {/* Turn Actions */}
-        {isMyTurn && (
-          <div className="flex flex-col gap-2 mt-2">
-            {phase === 'deploy' && (
+        <div className="flex flex-col gap-2 mt-2 h-[42px] justify-center">
+          {isMyTurn ? (
+            phase === 'deploy' ? (
               <button
                 onClick={endDeploy}
                 disabled={submittingMove || disabled}
-                className="w-full py-2.5 rounded-xl font-semibold bg-indigo-600 text-white hover:bg-indigo-500 disabled:opacity-40 shadow-lg shadow-indigo-600/20 transition-all duration-200"
+                className="w-full py-2.5 rounded-xl font-semibold bg-indigo-650 text-white hover:bg-indigo-500 disabled:opacity-40 shadow-lg shadow-indigo-650/20 transition-all duration-200"
               >
                 Go to Movement
               </button>
-            )}
-            {phase === 'move' && (
+            ) : phase === 'move' ? (
               <button
                 onClick={endTurn}
                 disabled={submittingMove || disabled}
-                className="w-full py-2.5 rounded-xl font-semibold bg-emerald-600 text-white hover:bg-emerald-500 disabled:opacity-40 shadow-lg shadow-emerald-600/20 transition-all duration-200"
+                className="w-full py-2.5 rounded-xl font-semibold bg-emerald-650 text-white hover:bg-emerald-500 disabled:opacity-40 shadow-lg shadow-emerald-650/20 transition-all duration-200"
               >
                 End Turn
               </button>
-            )}
-          </div>
-        )}
+            ) : (
+              <div className="text-center text-xs text-neutral-500 italic py-2">Reacting to combat...</div>
+            )
+          ) : (
+            <button
+              disabled
+              className="w-full py-2.5 rounded-xl font-semibold bg-neutral-900 text-neutral-500 cursor-not-allowed border border-neutral-800/60"
+            >
+              Opponent Turn
+            </button>
+          )}
+        </div>
 
         {/* Battle Log */}
         <div className="border-t border-neutral-800 pt-3 flex flex-col flex-1 w-full">
