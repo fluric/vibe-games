@@ -275,6 +275,29 @@ export function LobbyPage() {
     return !!(window as Window & { google?: GoogleIdentity }).google?.accounts?.id;
   });
 
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [editNameVal, setEditNameVal] = useState('');
+
+  const handleSaveName = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const clean = editNameVal.trim();
+    if (!clean || clean.length < 3 || clean.length > 30) {
+      alert('Username must be between 3 and 30 characters');
+      return;
+    }
+    try {
+      audio.playPlaceSound();
+      const res = await api.updateUsername(clean);
+      if (res.user) {
+        setCurrentUser(res.user);
+      }
+      setIsEditingName(false);
+    } catch (err) {
+      audio.playErrorSound();
+      alert(err instanceof Error ? err.message : 'Failed to update username');
+    }
+  };
+
   const userId = currentUser?.id || '';
   const username = currentUser?.username || 'Guest';
 
@@ -737,6 +760,38 @@ export function LobbyPage() {
             </p>
           </div>
           <div className="flex items-center gap-3">
+            {currentUser && (
+              <div className="flex items-center gap-2 bg-neutral-900/50 border border-neutral-800/85 px-3 py-1.5 rounded-xl text-xs w-fit">
+                <span className="text-neutral-500 font-medium">Player:</span>
+                {isEditingName ? (
+                  <form onSubmit={handleSaveName} className="flex items-center gap-1.5">
+                    <input
+                      type="text"
+                      value={editNameVal}
+                      onChange={(e) => setEditNameVal(e.target.value)}
+                      className="bg-neutral-950 border border-neutral-800 rounded px-2 py-0.5 text-xs text-white focus:outline-none focus:border-neutral-700 w-32"
+                      autoFocus
+                      required
+                    />
+                    <button type="submit" className="text-emerald-400 hover:text-emerald-300 font-bold px-1 cursor-pointer">✓</button>
+                    <button type="button" onClick={() => setIsEditingName(false)} className="text-rose-400 hover:text-rose-300 font-bold px-1 cursor-pointer">✕</button>
+                  </form>
+                ) : (
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-bold text-white">{username}</span>
+                    <button
+                      onClick={() => {
+                        setEditNameVal(username);
+                        setIsEditingName(true);
+                      }}
+                      className="text-indigo-400 hover:text-indigo-300 text-[11px] underline ml-1 cursor-pointer"
+                    >
+                      Edit Name
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
             <Link
               to="/status"
               className="text-xs px-3.5 py-2 rounded-lg bg-neutral-900 border border-neutral-800 hover:border-neutral-700 text-neutral-300 font-medium transition-all"

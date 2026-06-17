@@ -189,6 +189,7 @@ export function GamePage() {
 
   const handleBoardAction = async (
     action: string,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     params: { position?: number; from?: string | number; to?: string | number; [key: string]: any }
   ) => {
     if (!id || submittingMove) return;
@@ -613,7 +614,7 @@ export function GamePage() {
             {/* Board Component */}
             <div className="w-full flex justify-center mt-4">
               <HolyGrailBoard
-                state={game.state as any}
+                state={game.state as HolyGrailGameState}
                 myPiece={myPiece}
                 disabled={game.status !== 'in_progress' || !isMyTurn || submittingMove}
                 submittingMove={submittingMove}

@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { Link, useParams } from 'react-router-dom';
 import type { 
   HolyGrailGameState, 
   HolyGrailCell, 
@@ -7,6 +7,7 @@ import type {
   PendingCombat,
   HolyGrailCard
 } from '@vibe-games/shared';
+import * as audio from './AudioEffects';
 
 const HEX_SIZE = 45;
 const WIDTH = 560;
@@ -52,6 +53,80 @@ function parseCardLabel(label: string): number {
   return isNaN(num) ? 0 : num;
 }
 
+export interface TempVisualMove {
+  from: string;
+  to: string;
+  count: number;
+}
+export interface TempVisualDeploy {
+  cellKey: string;
+  count: number;
+}
+interface RolledBackState {
+  board: Record<string, HolyGrailCell>;
+  grailCellKey: string;
+}
+
+function rollbackBoardAndGrail(
+  board: Record<string, HolyGrailCell>,
+  grailCellKey: string | undefined,
+  reviewDeploys: TempVisualDeploy[],
+  reviewMoves: TempVisualMove[],
+  oppPiece: PlayerPiece
+): RolledBackState {
+  const rolledBoard: Record<string, HolyGrailCell> = JSON.parse(JSON.stringify(board));
+  let rolledGrailKey = grailCellKey || '0,0';
+
+  // 1. Rollback moves in reverse order
+  for (let i = reviewMoves.length - 1; i >= 0; i--) {
+    const move = reviewMoves[i];
+    const fromCell = rolledBoard[move.from];
+    const toCell = rolledBoard[move.to];
+    if (fromCell && toCell) {
+      if (rolledGrailKey === move.to) {
+        rolledGrailKey = move.from;
+      }
+
+      const countToTake = Math.min(move.count, toCell.soldiers.length);
+      
+      const taken: HolyGrailCard[] = [];
+      for (let c = 0; c < countToTake; c++) {
+        const popped = toCell.soldiers.pop();
+        if (popped) taken.push(popped);
+      }
+
+      while (taken.length < move.count) {
+        taken.push({ value: 10, revealed: false });
+      }
+
+      fromCell.soldiers.push(...taken);
+      fromCell.owner = oppPiece;
+
+      if (toCell.soldiers.length === 0) {
+        toCell.owner = 'neutral';
+      }
+    }
+  }
+
+  // 2. Rollback deploys
+  for (const deploy of reviewDeploys) {
+    const cell = rolledBoard[deploy.cellKey];
+    if (cell) {
+      for (let c = 0; c < deploy.count; c++) {
+        cell.soldiers.pop();
+      }
+      if (cell.soldiers.length === 0) {
+        cell.owner = 'neutral';
+      }
+    }
+  }
+
+  return {
+    board: rolledBoard,
+    grailCellKey: rolledGrailKey
+  };
+}
+
 function formatCardString(cardStr: string): string {
   if (!cardStr) return '?';
   if (cardStr.includes(',')) {
@@ -73,7 +148,7 @@ function parseCombatText(log: string) {
   const defenderPiece = defMatch ? defMatch[1] : '';
   let defenderCard = defMatch ? defMatch[2].trim() : '';
   if (defenderCard.startsWith('[')) {
-    defenderCard = defenderCard.replace(/[\[\]]/g, '');
+    defenderCard = defenderCard.replace(/\[|\]/g, '');
   }
 
   let winnerText = '';
@@ -306,7 +381,7 @@ function getGroupedHistory(history: string[]): GroupedLog[] {
             retreatTo: action.retreatTo
           }
         });
-      } catch (e) {
+      } catch {
         grouped.push({
           key: `raw-err-${grouped.length}`,
           isJson: false,
@@ -320,7 +395,7 @@ function getGroupedHistory(history: string[]): GroupedLog[] {
     const isRetreatLog = raw.includes('🏃') || raw.toLowerCase().includes('retreat');
 
     if (isCombatLog || isRetreatLog) {
-      let logCell = '';
+      let logCell: string;
       if (isCombatLog) {
         const info = parseCombatText(raw);
         logCell = info.cell;
@@ -360,8 +435,8 @@ function getGroupedHistory(history: string[]): GroupedLog[] {
 function renderGroupedHistoryEntry(grouped: GroupedLog) {
   if (grouped.combatSummary) {
     const summary = grouped.combatSummary;
-    const attColor = summary.attacker === 'X' ? 'text-rose-400' : 'text-amber-400';
-    const defColor = summary.defender === 'X' ? 'text-rose-400' : 'text-amber-400';
+    const attColor = summary.attacker === 'X' ? 'text-blue-400' : 'text-rose-400';
+    const defColor = summary.defender === 'X' ? 'text-blue-400' : 'text-rose-400';
     const xLostCards = summary.attacker === 'X' ? summary.attackerDestroyedCards : summary.defenderDestroyedCards;
     const oLostCards = summary.attacker === 'O' ? summary.attackerDestroyedCards : summary.defenderDestroyedCards;
 
@@ -429,7 +504,7 @@ function renderGroupedHistoryEntry(grouped: GroupedLog) {
           {summary.outcome === 'defender_retreated' ? (
             <>
               <span className={`${defColor} font-bold`}>({summary.defender})</span>
-              <span className="text-amber-450 font-bold">🏃</span>
+              <span className="text-amber-500 font-bold">🏃</span>
               <span className="text-neutral-400 font-semibold">{summary.retreatTo}</span>
             </>
           ) : summary.outcome === 'attacker_captured' ? (
@@ -447,9 +522,9 @@ function renderGroupedHistoryEntry(grouped: GroupedLog) {
         
         <div className="flex items-center gap-1.5 pl-6 text-xs text-neutral-400 select-none leading-relaxed mt-0.5">
           <span>💀</span>
-          <span className="text-rose-400 font-bold">{formatDestroyedList(xLostCards)}</span>
+          <span className="text-blue-400 font-bold">{formatDestroyedList(xLostCards)}</span>
           <span className="text-neutral-500">vs</span>
-          <span className="text-amber-400 font-bold">{formatDestroyedList(oLostCards)}</span>
+          <span className="text-rose-400 font-bold">{formatDestroyedList(oLostCards)}</span>
         </div>
       </div>
     );
@@ -457,7 +532,7 @@ function renderGroupedHistoryEntry(grouped: GroupedLog) {
 
   if (grouped.isJson && grouped.action) {
     const action = grouped.action;
-    const playerColor = action.player === 'X' ? 'text-rose-400' : action.player === 'O' ? 'text-amber-400' : 'text-neutral-400';
+    const playerColor = action.player === 'X' ? 'text-blue-400' : action.player === 'O' ? 'text-rose-400' : 'text-neutral-400';
 
     if (action.type === 'deploy' || action.type === 'deploy_all') {
       return (
@@ -514,8 +589,8 @@ function renderGroupedHistoryEntry(grouped: GroupedLog) {
   if (isCombat) {
     const info = parseCombatText(rawLog);
     if (info.cell) {
-      const attColor = info.attackerPiece === 'X' ? 'text-rose-400' : 'text-amber-400';
-      const defColor = info.defenderPiece === 'X' ? 'text-rose-400' : 'text-amber-400';
+      const attColor = info.attackerPiece === 'X' ? 'text-blue-400' : 'text-rose-400';
+      const defColor = info.defenderPiece === 'X' ? 'text-blue-400' : 'text-rose-400';
       const winnerColor = info.winnerText === 'Attacker' ? attColor : info.winnerText === 'Defender' ? defColor : 'text-neutral-400';
 
       return (
@@ -550,13 +625,13 @@ function renderGroupedHistoryEntry(grouped: GroupedLog) {
   if (isRetreat) {
     const info = parseRetreatText(rawLog);
     if (info.cell) {
-      const defColor = info.defenderPiece === 'X' ? 'text-rose-400' : 'text-amber-400';
-      const attColor = info.attackerPiece === 'X' ? 'text-rose-400' : 'text-amber-400';
+      const defColor = info.defenderPiece === 'X' ? 'text-blue-400' : 'text-rose-400';
+      const attColor = info.attackerPiece === 'X' ? 'text-blue-400' : 'text-rose-400';
 
       return (
         <div key={grouped.key} className="text-xs text-neutral-300 py-1 border-b border-neutral-800/40 leading-relaxed font-mono flex items-center gap-1.5 flex-wrap">
           <span className={`${defColor} font-bold`}>({info.defenderPiece})</span>
-          <span className="text-amber-400 font-bold">🏃</span>
+          <span className="text-amber-500 font-bold">🏃</span>
           <span className="text-neutral-500">retreat to</span>
           <span className="text-neutral-400 font-semibold">{info.retreatTo}</span>
           <span className="text-neutral-500">|</span>
@@ -580,6 +655,7 @@ interface HolyGrailBoardProps {
   myPiece: PlayerPiece | null;
   disabled: boolean;
   submittingMove: boolean;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onAction: (action: any) => Promise<void>;
 }
 
@@ -590,7 +666,182 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
   submittingMove,
   onAction
 }) => {
-  const { board, hands, phase, turn, winner, pendingCombats, grailCellKey = '0,0' } = state;
+  const { board: stateBoard, hands, phase, turn, winner, pendingCombats, grailCellKey: stateGrailCellKey = '0,0' } = state;
+
+  const { id: gameId } = useParams<{ id: string }>();
+
+  const [isReviewingLastTurn, setIsReviewingLastTurn] = useState<boolean>(false);
+  const [reviewMoves, setReviewMoves] = useState<TempVisualMove[]>([]);
+  const [reviewDeploys, setReviewDeploys] = useState<TempVisualDeploy[]>([]);
+  const [lastReviewedEndTurnIdx, setLastReviewedEndTurnIdx] = useState<number>(-1);
+
+  const isMyTurn = turn === myPiece && !winner;
+  const history = useMemo(() => state.history || [], [state.history]);
+
+  // Find the last index of our own end_turn action
+  let lastSelfEndTurnIdx = -1;
+  for (let i = history.length - 1; i >= 0; i--) {
+    const log = history[i];
+    if (typeof log === 'string' && log.trim().startsWith('{')) {
+      try {
+        const action = JSON.parse(log);
+        if (action.player === myPiece && (action.type === 'end_turn' || action.action === 'end_turn')) {
+          lastSelfEndTurnIdx = i;
+          break;
+        }
+      } catch {
+        // ignore
+      }
+    }
+  }
+
+  // Save the pre-opponent board state to sessionStorage for perfect review rollback
+  useEffect(() => {
+    if (isMyTurn && !isReviewingLastTurn && lastSelfEndTurnIdx === lastReviewedEndTurnIdx && !state.winner) {
+      const cacheData = {
+        board: stateBoard,
+        grailCellKey: stateGrailCellKey
+      };
+      try {
+        sessionStorage.setItem(`pre-board-${gameId || 'default'}`, JSON.stringify(cacheData));
+      } catch {
+        // ignore
+      }
+    }
+  }, [isMyTurn, isReviewingLastTurn, lastSelfEndTurnIdx, lastReviewedEndTurnIdx, stateBoard, stateGrailCellKey, state.winner, gameId]);
+
+  // Determine displaying board state
+  const getDisplayedState = (): { board: Record<string, HolyGrailCell>; grailCellKey: string } => {
+    const defaultState = {
+      board: stateBoard,
+      grailCellKey: stateGrailCellKey || '0,0'
+    };
+
+    if (!isReviewingLastTurn) {
+      return defaultState;
+    }
+
+    // Attempt to load from sessionStorage
+    try {
+      const cached = sessionStorage.getItem(`pre-board-${gameId || 'default'}`);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (parsed && parsed.board) {
+          return {
+            board: parsed.board,
+            grailCellKey: parsed.grailCellKey || '0,0'
+          };
+        }
+      }
+    } catch {
+      // ignore
+    }
+
+    // Fallback: Rollback using history
+    const oppPiece = myPiece === 'X' ? 'O' : 'X';
+    return rollbackBoardAndGrail(stateBoard, stateGrailCellKey, reviewDeploys, reviewMoves, oppPiece);
+  };
+
+  const { board, grailCellKey } = getDisplayedState();
+
+  /* eslint-disable react-hooks/set-state-in-effect */
+  useEffect(() => {
+    if (!state.winner) {
+      if (isMyTurn) {
+        // Check if we are in the middle of our turn (already took deploy/move actions in current turn)
+        let isMiddleOfTurn = false;
+        for (let i = history.length - 1; i >= 0; i--) {
+          const log = history[i];
+          if (typeof log === 'string' && log.trim().startsWith('{')) {
+            try {
+              const action = JSON.parse(log);
+              if (action.player) {
+                if (action.player === myPiece) {
+                  if (action.type !== 'end_turn' && action.action !== 'end_turn') {
+                    isMiddleOfTurn = true;
+                  }
+                }
+                break; // Found the latest JSON action, stop searching
+              }
+            } catch {
+              // ignore
+            }
+          }
+        }
+
+        if (isMiddleOfTurn) {
+          setLastReviewedEndTurnIdx(lastSelfEndTurnIdx);
+          setIsReviewingLastTurn(false);
+          setReviewMoves([]);
+          setReviewDeploys([]);
+          return;
+        }
+
+        if (lastSelfEndTurnIdx > lastReviewedEndTurnIdx) {
+          // Check if there are any opponent JSON actions after our last end_turn
+          const sliceStart = lastSelfEndTurnIdx + 1;
+          let hasOppAction = false;
+          const opponentMoves: TempVisualMove[] = [];
+          const opponentDeploys: TempVisualDeploy[] = [];
+
+          for (let i = sliceStart; i < history.length; i++) {
+            const log = history[i];
+            if (typeof log === 'string' && log.trim().startsWith('{')) {
+              try {
+                const action = JSON.parse(log);
+                if (action.player && action.player !== myPiece) {
+                  hasOppAction = true;
+                  const type = action.type || action.action;
+                  if (type === 'move' && action.from && action.to) {
+                    opponentMoves.push({
+                      from: action.from,
+                      to: action.to,
+                      count: action.count || 1
+                    });
+                  } else if ((type === 'deploy' || type === 'deploy_all') && action.cellKey) {
+                    const existing = opponentDeploys.find(d => d.cellKey === action.cellKey);
+                    const count = action.count !== undefined ? action.count : 1;
+                    if (existing) {
+                      existing.count += count;
+                    } else {
+                      opponentDeploys.push({
+                        cellKey: action.cellKey,
+                        count
+                      });
+                    }
+                  }
+                }
+              } catch {
+                // ignore
+              }
+            }
+          }
+
+          if (hasOppAction) {
+            setIsReviewingLastTurn(true);
+            setReviewMoves(opponentMoves);
+            setReviewDeploys(opponentDeploys);
+          } else {
+            setIsReviewingLastTurn(false);
+            setReviewMoves([]);
+            setReviewDeploys([]);
+            setLastReviewedEndTurnIdx(lastSelfEndTurnIdx);
+          }
+        } else {
+          setIsReviewingLastTurn(false);
+          setReviewMoves([]);
+          setReviewDeploys([]);
+        }
+      } else {
+        setIsReviewingLastTurn(false);
+        setReviewMoves([]);
+        setReviewDeploys([]);
+      }
+    }
+  }, [isMyTurn, history, myPiece, state.winner, lastSelfEndTurnIdx, lastReviewedEndTurnIdx]);
+  /* eslint-enable react-hooks/set-state-in-effect */
+
+  const isBoardLocked = disabled || isReviewingLastTurn;
 
   const [selectedCellKey, setSelectedCellKey] = useState<string | null>(null);
   const [moveTargetKey, setMoveTargetKey] = useState<string | null>(null);
@@ -613,12 +864,13 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
   const prevHistoryLenRef = useRef<number>(state.history?.length || 0);
   const isTransitioningRef = useRef<boolean>(false);
   const lastActiveCombatCellKeyRef = useRef<string | null>(null);
-  const swapTimerRef = useRef<any>(null);
-  const endTransitionTimerRef = useRef<any>(null);
-  const resetDelayTimerRef = useRef<any>(null);
+  const swapTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const endTransitionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const resetDelayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const currentPropCombat = pendingCombats.find(c => c.cellKey === activeCombatCellKey) || null;
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (!activeCombatCellKey) {
       setDisplayedCombat(null);
@@ -642,7 +894,9 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
       lastActiveCombatCellKeyRef.current = activeCombatCellKey;
     }
   }, [activeCombatCellKey, currentPropCombat, board]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     const history = state.history || [];
     const prevHistoryLen = prevHistoryLenRef.current;
@@ -666,7 +920,7 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
           const attackerRevealTimer = setTimeout(() => {
             const parsedAtt = parseCardLabel(duel.attackerCard);
             
-            let parsedDef = 0;
+            let parsedDef: number;
             let parsedDef2: number | undefined = undefined;
 
             if (duel.defenderCard.includes(',')) {
@@ -727,7 +981,8 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
         }
       }
     }
-  }, [state.history?.length, activeCombatCellKey, currentPropCombat, board]);
+  }, [state.history, activeCombatCellKey, currentPropCombat, board, displayedAttackerVal]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const logContainerRef = useRef<HTMLDivElement>(null);
 
@@ -740,15 +995,26 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
     }
   }, [state.history?.length]);
 
-  const isMyTurn = turn === myPiece && !winner;
   const activeHand = myPiece ? (hands[myPiece] || []) : [];
 
+  const endDeploy = useCallback(async () => {
+    try {
+      await onAction({ type: 'end_deploy' });
+      setSelectedCellKey(null);
+      setSelectedHandCardIndex(null);
+    } catch (e) {
+      console.error(e);
+    }
+  }, [onAction]);
+
+  /* eslint-disable react-hooks/set-state-in-effect */
   // Auto-advance deploy phase if hand is empty
   useEffect(() => {
-    if (phase === 'deploy' && isMyTurn && activeHand.length === 0 && !disabled && !submittingMove) {
+    if (phase === 'deploy' && isMyTurn && activeHand.length === 0 && !isBoardLocked && !submittingMove) {
       endDeploy();
     }
-  }, [phase, isMyTurn, activeHand.length, disabled, submittingMove]);
+  }, [phase, isMyTurn, activeHand.length, isBoardLocked, submittingMove, endDeploy]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   // If active combat is resolved, close modal
   useEffect(() => {
@@ -780,7 +1046,7 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
   };
 
   const handleCellClick = (key: string) => {
-    if (disabled || !isMyTurn) return;
+    if (isBoardLocked || !isMyTurn) return;
     const cell = board[key];
 
     // ── React Phase Action ──
@@ -854,7 +1120,7 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
   };
 
   const handleHandCardClick = (idx: number) => {
-    if (disabled || !isMyTurn || phase !== 'deploy') return;
+    if (isBoardLocked || !isMyTurn || phase !== 'deploy') return;
     if (selectedCellKey) {
       // Instantly deploy!
       const card = activeHand[idx];
@@ -915,16 +1181,6 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
     }
   };
 
-  const endDeploy = async () => {
-    try {
-      await onAction({ type: 'end_deploy' });
-      setSelectedCellKey(null);
-      setSelectedHandCardIndex(null);
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
   const endTurn = async () => {
     try {
       await onAction({ type: 'end_turn' });
@@ -952,33 +1208,33 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
     }
     if (isSelected) {
       return myPiece === 'X'
-        ? 'fill-rose-900/60 stroke-rose-400 stroke-[2.5]'
-        : 'fill-amber-900/60 stroke-amber-400 stroke-[2.5]';
+        ? 'fill-blue-900/60 stroke-blue-400 stroke-[2.5]'
+        : 'fill-rose-900/60 stroke-rose-400 stroke-[2.5]';
     }
     if (isSelectableDeployCell) {
       if (myPiece === 'X') {
         if (selectedHandCardIndex !== null) {
-          return 'fill-rose-950/60 stroke-rose-400 stroke-[2] animate-pulse';
+          return 'fill-blue-950/60 stroke-blue-400 stroke-[2] animate-pulse';
         }
-        return 'fill-rose-900/40 stroke-rose-500 stroke-[1.5]';
+        return 'fill-blue-900/40 stroke-blue-500 stroke-[1.5]';
       } else {
         if (selectedHandCardIndex !== null) {
-          return 'fill-amber-950/60 stroke-amber-400 stroke-[2] animate-pulse';
+          return 'fill-rose-950/60 stroke-rose-400 stroke-[2] animate-pulse';
         }
-        return 'fill-amber-900/30 stroke-amber-500 stroke-[1.5]';
+        return 'fill-rose-900/30 stroke-rose-500 stroke-[1.5]';
       }
     }
 
     switch (cell.cellType) {
       case 'home_base':
         return cell.r < 0 
-          ? 'fill-rose-950/80 stroke-rose-500 stroke-[2]' 
-          : 'fill-amber-900/40 stroke-amber-500 stroke-[2]';
+          ? 'fill-blue-950/80 stroke-blue-500 stroke-[2]' 
+          : 'fill-rose-900/40 stroke-rose-500 stroke-[2]';
       case 'urban':
         return cell.owner === 'X' && cell.soldiers.length > 0
-          ? 'fill-rose-950/50 stroke-rose-500/80 stroke-2'
+          ? 'fill-blue-950/50 stroke-blue-500/80 stroke-2'
           : cell.owner === 'O' && cell.soldiers.length > 0
-          ? 'fill-amber-950/50 stroke-amber-500/80 stroke-2'
+          ? 'fill-rose-950/50 stroke-rose-500/80 stroke-2'
           : 'fill-neutral-900 stroke-neutral-800';
       case 'farm_land':
         return 'fill-emerald-950/40 stroke-emerald-600/50 stroke-[1.5]';
@@ -1008,7 +1264,7 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
         <div>
           <div className="text-xs font-semibold text-neutral-500 uppercase tracking-widest">Active Turn</div>
           <div className="flex items-center gap-2 mt-1">
-            <span className={`w-3 h-3 rounded-full ${turn === 'X' ? 'bg-rose-500' : 'bg-amber-500'}`} />
+            <span className={`w-3 h-3 rounded-full ${turn === 'X' ? 'bg-blue-500' : 'bg-rose-500'}`} />
             <span className="font-bold text-lg text-white">Player {turn}</span>
             {isMyTurn && (
               <span className="text-xs px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 font-medium">Your Turn</span>
@@ -1051,25 +1307,40 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
               </div>
             </div>
           </div>
-          <div className="text-white font-semibold text-lg capitalize mt-0.5">{phase} Phase</div>
+          <div className="text-white font-semibold text-lg capitalize mt-0.5">
+            {isReviewingLastTurn ? 'Reviewing Log' : `${phase} Phase`}
+          </div>
         </div>
 
         {/* Turn Actions */}
         <div className="flex flex-col gap-2 mt-2 h-[42px] justify-center">
-          {isMyTurn ? (
+          {isReviewingLastTurn ? (
+            <button
+              onClick={() => {
+                audio.playPlaceSound();
+                setIsReviewingLastTurn(false);
+                setReviewMoves([]);
+                setReviewDeploys([]);
+                setLastReviewedEndTurnIdx(lastSelfEndTurnIdx);
+              }}
+              className="w-full py-2.5 rounded-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-500 hover:to-indigo-500 shadow-lg shadow-indigo-500/20 transition-all duration-200 animate-pulse cursor-pointer"
+            >
+              Start My Turn
+            </button>
+          ) : isMyTurn ? (
             phase === 'deploy' ? (
               <button
                 onClick={endDeploy}
-                disabled={submittingMove || disabled}
-                className="w-full py-2.5 rounded-xl font-semibold bg-indigo-600 text-white hover:bg-indigo-500 disabled:opacity-40 shadow-lg shadow-indigo-600/20 transition-all duration-200"
+                disabled={submittingMove || isBoardLocked}
+                className="w-full py-2.5 rounded-xl font-semibold bg-indigo-600 text-white hover:bg-indigo-500 disabled:opacity-40 shadow-lg shadow-indigo-600/20 transition-all duration-200 cursor-pointer"
               >
                 Go to Movement
               </button>
             ) : phase === 'move' ? (
               <button
                 onClick={endTurn}
-                disabled={submittingMove || disabled}
-                className="w-full py-2.5 rounded-xl font-semibold bg-emerald-600 text-white hover:bg-emerald-500 disabled:opacity-40 shadow-lg shadow-emerald-600/20 transition-all duration-200"
+                disabled={submittingMove || isBoardLocked}
+                className="w-full py-2.5 rounded-xl font-semibold bg-emerald-600 text-white hover:bg-emerald-500 disabled:opacity-40 shadow-lg shadow-emerald-600/20 transition-all duration-200 cursor-pointer"
               >
                 End Turn
               </button>
@@ -1168,6 +1439,28 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
               >
                 <path d="M 0 1.5 L 8 5 L 0 8.5 z" className="fill-indigo-400" />
               </marker>
+              <marker 
+                id="arrow-blue" 
+                viewBox="0 0 10 10" 
+                refX="4" 
+                refY="5" 
+                markerWidth="5" 
+                markerHeight="5" 
+                orient="auto-start-reverse"
+              >
+                <path d="M 0 1.5 L 8 5 L 0 8.5 z" className="fill-blue-500" />
+              </marker>
+              <marker 
+                id="arrow-rose" 
+                viewBox="0 0 10 10" 
+                refX="4" 
+                refY="5" 
+                markerWidth="5" 
+                markerHeight="5" 
+                orient="auto-start-reverse"
+              >
+                <path d="M 0 1.5 L 8 5 L 0 8.5 z" className="fill-rose-500" />
+              </marker>
             </defs>
 
             {/* Grid Cells */}
@@ -1218,7 +1511,7 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
                     <text x={cx} y={cy - 4} textAnchor="middle" className="text-base opacity-75 select-none fill-emerald-400">🌾</text>
                   )}
                   {cell.cellType === 'home_base' && !hasSoldiers && (
-                    <text x={cx} y={cy - 4} textAnchor="middle" className="text-base opacity-75 select-none fill-rose-400">🏰</text>
+                    <text x={cx} y={cy - 4} textAnchor="middle" className={`text-base opacity-75 select-none ${cell.r < 0 ? 'fill-blue-400' : 'fill-rose-400'}`}>🏰</text>
                   )}
                   {cell.cellType === 'urban' && !hasSoldiers && (
                     <text x={cx} y={cy - 4} textAnchor="middle" className="text-base opacity-75 select-none fill-indigo-400">🛖</text>
@@ -1273,9 +1566,9 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
                         rx="4" 
                         className={`stroke-2 ${
                           cell.owner === 'X' 
-                            ? 'fill-rose-950 stroke-rose-500' 
+                            ? 'fill-blue-950 stroke-blue-500' 
                             : cell.owner === 'O'
-                            ? 'fill-amber-950 stroke-amber-500'
+                            ? 'fill-rose-950 stroke-rose-500'
                             : 'fill-neutral-900 stroke-neutral-600'
                         }`} 
                       />
@@ -1286,9 +1579,9 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
                         textAnchor="middle" 
                         className={`text-base font-black ${
                           cell.owner === 'X' 
-                            ? 'fill-rose-200' 
+                            ? 'fill-blue-200' 
                             : cell.owner === 'O'
-                            ? 'fill-amber-200'
+                            ? 'fill-rose-200'
                             : 'fill-neutral-300'
                         }`}
                       >
@@ -1341,6 +1634,35 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
                       </text>
                     </g>
                   )}
+
+                  {/* Opponent Deploy Indicator Overlay (Review Phase) */}
+                  {isReviewingLastTurn && (() => {
+                    const deploy = reviewDeploys.find(d => d.cellKey === cellKey);
+                    if (!deploy) return null;
+                    const oppPiece = myPiece === 'X' ? 'O' : 'X';
+                    const oppFill = oppPiece === 'X' ? 'fill-blue-950 stroke-blue-500' : 'fill-rose-950 stroke-rose-500';
+                    const oppText = oppPiece === 'X' ? 'fill-blue-200' : 'fill-rose-200';
+                    const oppPulse = oppPiece === 'X' ? 'stroke-blue-500/40' : 'stroke-rose-500/40';
+                    return (
+                      <g transform={`translate(${cx}, ${cy + (hasSoldiers ? 22 : 0)})`} className="pointer-events-none">
+                        <circle 
+                          r="10" 
+                          className={`${oppFill} stroke-2`} 
+                        />
+                        <text 
+                          textAnchor="middle" 
+                          y="3.5" 
+                          className={`text-[9px] font-bold ${oppText} font-mono`}
+                        >
+                          +{deploy.count}
+                        </text>
+                        <circle 
+                          r="14" 
+                          className={`fill-none stroke-2 animate-ping ${oppPulse}`} 
+                        />
+                      </g>
+                    );
+                  })()}
                 </g>
               );
             })}
@@ -1412,6 +1734,65 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
               );
             })}
 
+            {/* Opponent Movement Path Arrows (Review Phase) */}
+            {isReviewingLastTurn && reviewMoves.map((move, idx) => {
+              const fromCell = board[move.from];
+              const toCell = board[move.to];
+              if (!fromCell || !toCell) return null;
+
+              const { cx: cx1, cy: cy1 } = getHexCenter(fromCell.q, fromCell.r);
+              const { cx: cx2, cy: cy2 } = getHexCenter(toCell.q, toCell.r);
+
+              const dx = cx2 - cx1;
+              const dy = cy2 - cy1;
+              const len = Math.sqrt(dx * dx + dy * dy);
+              if (len === 0) return null;
+
+              const startX = cx1 + dx * (22 / len);
+              const startY = cy1 + dy * (22 / len);
+              const endX = cx2 - dx * (26 / len);
+              const endY = cy2 - dy * (26 / len);
+
+              const midX = (cx1 + cx2) / 2;
+              const midY = (cy1 + cy2) / 2;
+
+              const oppPiece = myPiece === 'X' ? 'O' : 'X';
+              const oppColorClass = oppPiece === 'X' ? 'stroke-blue-500/90' : 'stroke-rose-500/90';
+              const oppFillClass = oppPiece === 'X' ? 'fill-blue-950 stroke-blue-400' : 'fill-rose-950 stroke-rose-400';
+              const oppTextClass = oppPiece === 'X' ? 'fill-blue-200' : 'fill-rose-200';
+              const markerId = oppPiece === 'X' ? 'arrow-blue' : 'arrow-rose';
+
+              return (
+                <g key={`review-move-arrow-${idx}`}>
+                  {/* Dashed line */}
+                  <line
+                    x1={startX}
+                    y1={startY}
+                    x2={endX}
+                    y2={endY}
+                    className={`${oppColorClass} stroke-[3] [stroke-dasharray:4,3]`}
+                    markerEnd={`url(#${markerId})`}
+                  />
+
+                  {/* Move count badge */}
+                  <circle
+                    cx={midX}
+                    cy={midY}
+                    r="8"
+                    className={`${oppFillClass} stroke-[1.5]`}
+                  />
+                  <text
+                    x={midX}
+                    y={midY + 3}
+                    textAnchor="middle"
+                    className={`text-[9px] font-black ${oppTextClass} select-none font-mono`}
+                  >
+                    {move.count}
+                  </text>
+                </g>
+              );
+            })}
+
             {/* Hovered Cell Stack Tooltip */}
             {hoveredCellKey && (() => {
               const cell = board[hoveredCellKey];
@@ -1453,9 +1834,9 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
                           rx="3"
                           className={`${
                             cell.owner === 'X'
-                              ? 'fill-rose-950/40 stroke-rose-500/30'
+                              ? 'fill-blue-950/40 stroke-blue-500/30'
                               : cell.owner === 'O'
-                              ? 'fill-amber-950/40 stroke-amber-500/30'
+                              ? 'fill-rose-950/40 stroke-rose-500/30'
                               : 'fill-neutral-900 stroke-neutral-800'
                           } stroke`}
                         />
@@ -1465,9 +1846,9 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
                           className={`text-[9px] font-bold ${
                             isCardValueVisible
                               ? cell.owner === 'X'
-                                ? 'fill-rose-200'
+                                ? 'fill-blue-200'
                                 : cell.owner === 'O'
-                                ? 'fill-amber-200'
+                                ? 'fill-rose-200'
                                 : 'fill-neutral-200'
                               : 'fill-neutral-500 font-normal italic'
                           }`}
@@ -1572,7 +1953,7 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
                           console.error(e);
                         }
                       }}
-                      disabled={disabled || submittingMove}
+                      disabled={isBoardLocked || submittingMove}
                       className="px-2 py-1 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded text-[10px] transition-all cursor-pointer shadow-md hover:scale-105 active:scale-95"
                     >
                       Deploy All to {selectedCellKey}
@@ -1630,18 +2011,18 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
 
       {/* ── Active Actions Panels (Right Column) ── */}
       <div className="w-full xl:w-80 flex flex-col gap-4">
-        {/* Placeholder panel when deploying */}
-        {isMyTurn && phase === 'deploy' && (
-          <div className="bg-neutral-900/80 border border-neutral-800 p-4 rounded-2xl backdrop-blur-md hidden xl:block">
-            <h3 className="text-sm font-semibold text-neutral-400 mb-2 uppercase tracking-wider">Deploy Mode</h3>
+        {/* Review Banner for Space-saving / context when reviewing */}
+        {isReviewingLastTurn && (
+          <div className="bg-neutral-900/80 border border-neutral-800 p-4 rounded-2xl backdrop-blur-md animate-pulse">
+            <h3 className="text-sm font-semibold text-neutral-300 mb-2 uppercase tracking-wider">Review Mode</h3>
             <p className="text-xs text-neutral-500 leading-relaxed">
-              Use the horizontal card hand under the board to easily pick and place cards.
+              Opponent turn completed. Take your time to review the logs and board state before starting your action phase.
             </p>
           </div>
         )}
 
         {/* Move sliders / controllers */}
-        {isMyTurn && phase === 'move' && selectedCellKey && (
+        {isMyTurn && phase === 'move' && selectedCellKey && !isReviewingLastTurn && (
           <div className="bg-neutral-900/80 border border-neutral-800 p-4 rounded-2xl backdrop-blur-md">
             <h3 className="text-sm font-semibold text-neutral-400 mb-1 uppercase tracking-wider">Move Soldiers</h3>
             <div className="text-xs text-neutral-500 mb-3">Origin: {selectedCellKey}</div>
@@ -1672,7 +2053,7 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
 
                 <button
                   onClick={executeMove}
-                  disabled={submittingMove || disabled}
+                  disabled={submittingMove || isBoardLocked}
                   className="w-full py-2.5 rounded-xl bg-indigo-600 text-white font-semibold hover:bg-indigo-500 disabled:opacity-40 transition-all"
                 >
                   Move to {moveTargetKey}
@@ -1723,8 +2104,8 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
 
                 if (isCombat) {
                   const info = parseCombatText(rawLog);
-                  const attColor = info.attackerPiece === 'X' ? 'text-rose-400' : 'text-amber-400';
-                  const defColor = info.defenderPiece === 'X' ? 'text-rose-400' : 'text-amber-400';
+                  const attColor = info.attackerPiece === 'X' ? 'text-blue-400' : 'text-rose-400';
+                  const defColor = info.defenderPiece === 'X' ? 'text-blue-400' : 'text-rose-400';
                   const winnerColor = info.winnerText === 'Attacker' ? attColor : info.winnerText === 'Defender' ? defColor : 'text-neutral-400';
 
                   return (
@@ -1755,12 +2136,12 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
 
                 if (isRetreat) {
                   const info = parseRetreatText(rawLog);
-                  const defColor = info.defenderPiece === 'X' ? 'text-rose-400' : 'text-amber-400';
+                  const defColor = info.defenderPiece === 'X' ? 'text-blue-400' : 'text-rose-400';
 
                   return (
                     <div key={idx} className="text-[11px] text-neutral-300 py-1 border-b border-neutral-800/40 leading-normal font-mono flex items-center gap-1.5 flex-wrap">
                       <span className={`${defColor} font-bold`}>({info.defenderPiece})</span>
-                      <span className="text-amber-400 font-bold">🏃</span>
+                      <span className="text-amber-500 font-bold">🏃</span>
                       <span className="text-neutral-500 font-semibold">retreat to</span>
                       <span className="text-neutral-400 font-semibold">{info.retreatTo}</span>
                     </div>
@@ -1794,8 +2175,8 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
                   <div className="flex items-center justify-around bg-neutral-950 p-5 rounded-2xl border border-neutral-800 mb-4">
                     {/* Attacker side */}
                     <div className="flex flex-col items-center gap-1">
-                      <span className="text-[10px] font-semibold text-rose-400 uppercase tracking-widest">Attacker</span>
-                      <div className={`w-16 h-22 border-2 border-rose-500 bg-rose-950/20 rounded-xl flex items-center justify-center text-2xl font-black text-rose-100 relative shadow-[0_0_15px_rgba(239,68,68,0.1)] ${
+                      <span className="text-[10px] font-semibold text-blue-400 uppercase tracking-widest">Attacker</span>
+                      <div className={`w-16 h-22 border-2 border-blue-500 bg-blue-950/20 rounded-xl flex items-center justify-center text-2xl font-black text-blue-100 relative shadow-[0_0_15px_rgba(59,130,246,0.1)] ${
                         (isRevealingAttacker || isTransitioningNext) ? 'animate-card-flip' : ''
                       }`}>
                         {displayedAttackerVal !== undefined ? formatCardValue(displayedAttackerVal) : '?'}
@@ -1815,8 +2196,8 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
                               className={`w-7 h-10 border rounded flex items-center justify-center text-[10px] font-bold shrink-0 cursor-help transition-all relative ${
                                 isKnown
                                   ? combat.attacker === 'X'
-                                    ? 'bg-rose-950/60 border-rose-500/50 text-rose-200 hover:border-rose-455'
-                                    : 'bg-amber-950/60 border-amber-500/50 text-amber-200 hover:border-amber-455'
+                                    ? 'bg-blue-950/60 border-blue-500/50 text-blue-200 hover:border-blue-400'
+                                    : 'bg-rose-950/60 border-rose-500/50 text-rose-200 hover:border-rose-400'
                                   : 'bg-neutral-900 border-neutral-800 text-neutral-500 font-normal italic hover:border-neutral-700'
                               }`}
                             >
@@ -1834,11 +2215,11 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
  
                     {/* Defender side */}
                     <div className="flex flex-col items-center gap-1">
-                      <span className="text-[10px] font-semibold text-amber-400 uppercase tracking-widest font-mono">Defender</span>
+                      <span className="text-[10px] font-semibold text-rose-400 uppercase tracking-widest font-mono">Defender</span>
                       
                       <div className="flex gap-2">
                         {/* Card 1 */}
-                        <div className={`w-16 h-22 border-2 border-amber-500 bg-amber-950/20 rounded-xl flex items-center justify-center text-2xl font-black text-amber-100 relative shadow-[0_0_15px_rgba(245,158,11,0.1)] ${
+                        <div className={`w-16 h-22 border-2 border-rose-500 bg-rose-950/20 rounded-xl flex items-center justify-center text-2xl font-black text-rose-100 relative shadow-[0_0_15px_rgba(239,68,68,0.1)] ${
                           isTransitioningNext ? 'animate-card-flip' : ''
                         }`}>
                           {displayedDefenderVal !== undefined ? formatCardValue(displayedDefenderVal) : '?'}
@@ -1847,7 +2228,7 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
                         
                         {/* Card 2 (only if Hill Combat second card exists) */}
                         {displayedDefenderVal2 !== undefined && (
-                          <div className={`w-16 h-22 border-2 border-amber-500/80 bg-amber-950/20 rounded-xl flex items-center justify-center text-2xl font-black text-amber-100/90 relative shadow-[0_0_15px_rgba(245,158,11,0.1)] ${
+                          <div className={`w-16 h-22 border-2 border-rose-500/80 bg-rose-950/20 rounded-xl flex items-center justify-center text-2xl font-black text-rose-100/90 relative shadow-[0_0_15px_rgba(239,68,68,0.1)] ${
                             isTransitioningNext ? 'animate-card-flip' : ''
                           }`}>
                             {formatCardValue(displayedDefenderVal2)}
@@ -1870,8 +2251,8 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
                               className={`w-7 h-10 border rounded flex items-center justify-center text-[10px] font-bold shrink-0 cursor-help transition-all relative ${
                                 isKnown
                                   ? combat.defender === 'X'
-                                    ? 'bg-rose-950/60 border-rose-500/50 text-rose-200 hover:border-rose-455'
-                                    : 'bg-amber-950/60 border-amber-500/50 text-amber-200 hover:border-amber-455'
+                                    ? 'bg-blue-950/60 border-blue-500/50 text-blue-200 hover:border-blue-400'
+                                    : 'bg-rose-950/60 border-rose-500/50 text-rose-200 hover:border-rose-400'
                                   : 'bg-neutral-900 border-neutral-800 text-neutral-500 font-normal italic hover:border-neutral-700'
                               }`}
                             >
@@ -1921,7 +2302,9 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
                               onClick={() => setRetreatTargetKey(key)}
                               className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
                                 retreatTargetKey === key
-                                  ? 'bg-amber-950 border-amber-400 text-amber-300 shadow'
+                                  ? myPiece === 'X'
+                                    ? 'bg-blue-950 border-blue-400 text-blue-300 shadow'
+                                    : 'bg-rose-950 border-rose-400 text-rose-300 shadow'
                                   : 'bg-neutral-950 border-neutral-800 text-neutral-400 hover:border-neutral-700 hover:text-white'
                               }`}
                             >
@@ -1935,7 +2318,11 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
                         <button
                           onClick={() => executeRetreatReact(combat)}
                           disabled={submittingMove || disabled}
-                          className="w-full mt-2.5 py-2 rounded-xl bg-neutral-950 border border-amber-600/40 text-amber-400 font-semibold hover:bg-amber-950/70 transition-all hover:scale-[1.01] active:scale-95"
+                          className={`w-full mt-2.5 py-2 rounded-xl bg-neutral-950 border font-semibold transition-all hover:scale-[1.01] active:scale-95 ${
+                            myPiece === 'X'
+                              ? 'border-blue-600/40 text-blue-400 hover:bg-blue-950/70'
+                              : 'border-rose-600/40 text-rose-400 hover:bg-rose-950/70'
+                          }`}
                         >
                           Execute Retreat to {retreatTargetKey}
                         </button>

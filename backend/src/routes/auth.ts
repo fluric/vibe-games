@@ -184,6 +184,53 @@ export async function authRoutes(server: FastifyInstance) {
     return reply.send({ success: true });
   });
 
+  // Update current user username.
+  server.put<{
+    Body: { username: string };
+  }>('/me', async (request, reply) => {
+    const authHeader = request.headers.authorization;
+    let sessionToken: string | undefined;
+
+    if (authHeader?.startsWith('Bearer ')) {
+      sessionToken = authHeader.slice(7);
+    } else {
+      sessionToken = request.cookies.session;
+    }
+
+    if (!sessionToken) {
+      return reply.code(401).send({ error: 'Unauthorized' });
+    }
+
+    try {
+      const decoded = jwt.verify(sessionToken, JWT_SECRET) as { userId: string };
+      const userRepo = AppDataSource.getRepository(User);
+      const user = await userRepo.findOneBy({ id: decoded.userId });
+
+      if (!user) {
+        return reply.code(404).send({ error: 'User not found' });
+      }
+
+      const { username } = request.body;
+      const cleanUsername = username?.trim();
+      if (!cleanUsername || cleanUsername.length < 3 || cleanUsername.length > 30) {
+        return reply.code(400).send({ error: 'Username must be between 3 and 30 characters' });
+      }
+
+      // Check if username is already taken by someone else
+      const existing = await userRepo.findOneBy({ username: cleanUsername });
+      if (existing && existing.id !== user.id) {
+        return reply.code(400).send({ error: 'Username is already taken' });
+      }
+
+      user.username = cleanUsername;
+      await userRepo.save(user);
+
+      return reply.send({ user: await toUserDto(user) } satisfies AuthStatusResponse);
+    } catch (err) {
+      return reply.code(401).send({ error: 'Invalid session token' });
+    }
+  });
+
   // Get current user session.
   // Accepts token via:
   //   1. Authorization: Bearer <token>  — primary (for Safari ITP / cross-domain)

@@ -94,6 +94,7 @@ export async function submitMove(
     from?: string | number;
     to?: string | number;
     column?: number;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     [key: string]: any;
   }
 ): Promise<GameDto> {
@@ -149,3 +150,11 @@ export async function logout(): Promise<{ success: boolean }> {
 export async function getLeaderboard(gameType: GameType): Promise<LeaderboardResponse> {
   return request<LeaderboardResponse>(`/games/leaderboard/${gameType}`);
 }
+
+export async function updateUsername(username: string): Promise<AuthStatusResponse> {
+  return request<AuthStatusResponse>('/auth/me', {
+    method: 'PUT',
+    body: JSON.stringify({ username }),
+  });
+}
+
