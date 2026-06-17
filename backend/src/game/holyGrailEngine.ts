@@ -1028,7 +1028,7 @@ export const HolyGrailEngine = {
 
         const cellName = getCellType(cell.q, cell.r) === 'grail_center' ? 'Grail Center' : `${cell.q},${cell.r}`;
         if (!state.history) state.history = [];
-        state.history.push(`🏃 Retreat at ${cellName}: Defender (${combat.defender}) retreated to ${destKey}. Attacker (${combat.attacker}) captures ${cellName} with ${attackerStack.length} unit(s).`);
+        state.history.push(`🏃 Retreat at ${cellName}: Defender (${combat.defender}) retreated to ${destKey} with ${defenderStack.length} unit(s). Attacker (${combat.attacker}) captures ${cellName} with ${attackerStack.length} unit(s).`);
 
         // Resolve combat
         state.pendingCombats.splice(combatIdx, 1);

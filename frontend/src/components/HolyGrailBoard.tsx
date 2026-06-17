@@ -58,6 +58,8 @@ export interface TempVisualMove {
   from: string;
   to: string;
   count: number;
+  player?: PlayerPiece;
+  isRetreat?: boolean;
 }
 export interface TempVisualDeploy {
   cellKey: string;
@@ -79,6 +81,8 @@ interface AggregatedReviewMove {
   from: string;
   to: string;
   count: number;
+  player?: PlayerPiece;
+  isRetreat?: boolean;
 }
 
 function getAggregatedFriendlyMoves(moves: { from: string; to: string; cards: HolyGrailCard[]; carriesGrail?: boolean }[]): AggregatedMove[] {
@@ -112,7 +116,9 @@ function getAggregatedReviewMoves(moves: TempVisualMove[]): AggregatedReviewMove
       map.set(key, {
         from: m.from,
         to: m.to,
-        count: m.count
+        count: m.count,
+        player: m.player,
+        isRetreat: m.isRetreat
       });
     }
   }
@@ -158,8 +164,12 @@ function rollbackBoardAndGrail(
         taken.push({ value: 10, revealed: false });
       }
 
-      fromCell.soldiers.push(...taken);
-      fromCell.owner = oppPiece;
+      if (move.isRetreat) {
+        fromCell.soldiers.unshift(...taken);
+      } else {
+        fromCell.soldiers.push(...taken);
+      }
+      fromCell.owner = move.player || oppPiece;
 
       if (toCell.soldiers.length === 0) {
         toCell.owner = getCellDefaultOwner(toCell);
@@ -238,16 +248,20 @@ function parseCombatText(log: string) {
 
 function parseRetreatText(log: string) {
   const cellMatch = log.match(/\bat\s+([^:]+):/);
-  const cell = cellMatch ? cellMatch[1].trim() : '';
+  let cell = cellMatch ? cellMatch[1].trim() : '';
+  if (cell === 'Grail Center') cell = '0,0';
 
   const defMatch = log.match(/Defender\s+\(([XO])\)\s+retreated\s+to\s+([^\s.]+)/);
   const defenderPiece = defMatch ? defMatch[1] : '';
   const retreatTo = defMatch ? defMatch[2] : '';
 
+  const countMatch = log.match(/retreated\s+to\s+[^\s]+\s+with\s+(\d+)\s+unit/);
+  const defenderCount = countMatch ? parseInt(countMatch[1], 10) : 0;
+
   const attMatch = log.match(/Attacker\s+\(([XO])\)\s+captures/);
   const attackerPiece = attMatch ? attMatch[1] : '';
 
-  return { cell, defenderPiece, retreatTo, attackerPiece };
+  return { cell, defenderPiece, retreatTo, attackerPiece, defenderCount };
 }
 
 function parseRadioactiveText(log: string) {
@@ -918,33 +932,52 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
 
           for (let i = sliceStart; i < history.length; i++) {
             const log = history[i];
-            if (typeof log === 'string' && log.trim().startsWith('{')) {
-              try {
-                const action = JSON.parse(log);
-                if (action.player && action.player !== myPiece) {
-                  hasOppAction = true;
-                  const type = action.type || action.action;
-                  if (type === 'move' && action.from && action.to) {
-                    opponentMoves.push({
-                      from: action.from,
-                      to: action.to,
-                      count: action.count || 1
-                    });
-                  } else if ((type === 'deploy' || type === 'deploy_all') && action.cellKey) {
-                    const existing = opponentDeploys.find(d => d.cellKey === action.cellKey);
-                    const count = action.count !== undefined ? action.count : 1;
-                    if (existing) {
-                      existing.count += count;
-                    } else {
-                      opponentDeploys.push({
-                        cellKey: action.cellKey,
-                        count
+            if (typeof log === 'string') {
+              if (log.trim().startsWith('{')) {
+                try {
+                  const action = JSON.parse(log);
+                  if (action.player && action.player !== myPiece) {
+                    hasOppAction = true;
+                    const type = action.type || action.action;
+                    if (type === 'move' && action.from && action.to) {
+                      opponentMoves.push({
+                        from: action.from,
+                        to: action.to,
+                        count: action.count || 1,
+                        player: action.player
                       });
+                    } else if ((type === 'deploy' || type === 'deploy_all') && action.cellKey) {
+                      const existing = opponentDeploys.find(d => d.cellKey === action.cellKey);
+                      const count = action.count !== undefined ? action.count : 1;
+                      if (existing) {
+                        existing.count += count;
+                      } else {
+                        opponentDeploys.push({
+                          cellKey: action.cellKey,
+                          count
+                        });
+                      }
                     }
                   }
+                } catch {
+                  // ignore
                 }
-              } catch {
-                // ignore
+              } else {
+                // Parse text retreat log
+                const isRetreat = log.includes('🏃') || log.toLowerCase().includes('retreat');
+                if (isRetreat) {
+                  const info = parseRetreatText(log);
+                  if (info.cell && info.retreatTo && info.defenderPiece && info.defenderCount > 0) {
+                    hasOppAction = true;
+                    opponentMoves.push({
+                      from: info.cell,
+                      to: info.retreatTo,
+                      count: info.defenderCount,
+                      player: info.defenderPiece as PlayerPiece,
+                      isRetreat: true
+                    });
+                  }
+                }
               }
             }
           }
@@ -1977,11 +2010,11 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
               const midX = (cx1 + cx2) / 2;
               const midY = (cy1 + cy2) / 2;
 
-              const oppPiece = myPiece === 'X' ? 'O' : 'X';
-              const oppColorClass = oppPiece === 'X' ? 'stroke-blue-500/90' : 'stroke-rose-500/90';
-              const oppFillClass = oppPiece === 'X' ? 'fill-blue-950 stroke-blue-400' : 'fill-rose-950 stroke-rose-400';
-              const oppTextClass = oppPiece === 'X' ? 'fill-blue-200' : 'fill-rose-200';
-              const markerId = oppPiece === 'X' ? 'arrow-blue' : 'arrow-rose';
+              const playerPiece = move.player || (myPiece === 'X' ? 'O' : 'X');
+              const colorClass = playerPiece === 'X' ? 'stroke-blue-500/90' : 'stroke-rose-500/90';
+              const fillClass = playerPiece === 'X' ? 'fill-blue-950 stroke-blue-400' : 'fill-rose-950 stroke-rose-400';
+              const textClass = playerPiece === 'X' ? 'fill-blue-200' : 'fill-rose-200';
+              const markerId = playerPiece === 'X' ? 'arrow-blue' : 'arrow-rose';
 
               return (
                 <g key={`review-move-arrow-${idx}`}>
@@ -1991,7 +2024,7 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
                     y1={startY}
                     x2={endX}
                     y2={endY}
-                    className={`${oppColorClass} stroke-[3] [stroke-dasharray:4,3]`}
+                    className={`${colorClass} stroke-[3] [stroke-dasharray:4,3]`}
                     markerEnd={`url(#${markerId})`}
                   />
 
@@ -2000,13 +2033,13 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
                     cx={midX}
                     cy={midY}
                     r="8"
-                    className={`${oppFillClass} stroke-[1.5]`}
+                    className={`${fillClass} stroke-[1.5]`}
                   />
                   <text
                     x={midX}
                     y={midY + 3}
                     textAnchor="middle"
-                    className={`text-[9px] font-black ${oppTextClass} select-none font-mono`}
+                    className={`text-[9px] font-black ${textClass} select-none font-mono`}
                   >
                     {move.count}
                   </text>
