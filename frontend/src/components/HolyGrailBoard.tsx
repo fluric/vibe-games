@@ -209,7 +209,7 @@ function parseCombatText(log: string) {
   const cellMatch = log.match(/\bat\s+([^:]+):/);
   const cell = cellMatch ? cellMatch[1].trim() : '';
   
-  const attMatch = log.match(/Attacker\s+\(([XO])\)'s\s+([^\s]+)\s+vs/);
+  const attMatch = log.match(/Attacker\s+\(([XO])\)'s\s+(.*?)\s+vs/);
   const attackerPiece = attMatch ? attMatch[1] : '';
   const attackerCard = attMatch ? attMatch[2].trim() : '';
   
@@ -1022,6 +1022,7 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
   const [displayedDefenderStack, setDisplayedDefenderStack] = useState<HolyGrailCard[]>([]);
   
   const [isRevealingAttacker, setIsRevealingAttacker] = useState(false);
+  const [isRevealingDefender, setIsRevealingDefender] = useState(false);
   const [isTransitioningNext, setIsTransitioningNext] = useState(false);
   
   const prevHistoryLenRef = useRef<number>(state.history?.length || 0);
@@ -1041,6 +1042,8 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
       if (displayedDefenderVal !== undefined) setDisplayedDefenderVal(undefined);
       if (displayedDefenderVal2 !== undefined) setDisplayedDefenderVal2(undefined);
       if (displayedDefenderStack.length > 0) setDisplayedDefenderStack([]);
+      setIsRevealingAttacker(false);
+      setIsRevealingDefender(false);
       lastActiveCombatCellKeyRef.current = null;
       return;
     }
@@ -1073,14 +1076,25 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
           isTransitioningRef.current = true;
           
           const wasAttackerKnown = displayedAttackerVal !== undefined && displayedAttackerVal > 0;
+          const wasDefenderKnown = displayedDefenderVal !== undefined && displayedDefenderVal > 0;
 
           if (!wasAttackerKnown) {
             // STAGE 1: Spin card to reveal attacker value
             setIsRevealingAttacker(true);
             setDisplayedAttackerVal(0);
           }
+          if (!wasDefenderKnown) {
+            // STAGE 1: Spin card to reveal defender value
+            setIsRevealingDefender(true);
+            setDisplayedDefenderVal(0);
+            if (displayedDefenderVal2 !== undefined) {
+              setDisplayedDefenderVal2(0);
+            }
+          }
 
-          const attackerRevealTimer = setTimeout(() => {
+          const shouldDelay = !wasAttackerKnown || !wasDefenderKnown;
+
+          const revealTimer = setTimeout(() => {
             const parsedAtt = parseCardLabel(duel.attackerCard);
             
             let parsedDef: number;
@@ -1097,12 +1111,15 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
             setDisplayedAttackerVal(parsedAtt);
             setDisplayedDefenderVal(parsedDef);
             setDisplayedDefenderVal2(parsedDef2);
-          }, wasAttackerKnown ? 0 : 200);
+          }, shouldDelay ? 200 : 0);
 
-          // STAGE 2: Spin both cards face down, and swap to the new state
+          // STAGE 2: Spin cards face down, and swap to the new state
           const transitionTimer = setTimeout(() => {
             if (!wasAttackerKnown) {
               setIsRevealingAttacker(false);
+            }
+            if (!wasDefenderKnown) {
+              setIsRevealingDefender(false);
             }
 
             // Wait for transition classes to reset, then trigger flip to next soldier
@@ -1131,11 +1148,11 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
               } else {
                 isTransitioningRef.current = false;
               }
-            }, wasAttackerKnown ? 0 : 50);
+            }, shouldDelay ? 50 : 0);
           }, 1400);
 
           return () => {
-            clearTimeout(attackerRevealTimer);
+            clearTimeout(revealTimer);
             clearTimeout(transitionTimer);
             if (resetDelayTimerRef.current) clearTimeout(resetDelayTimerRef.current);
             if (swapTimerRef.current) clearTimeout(swapTimerRef.current);
@@ -1144,7 +1161,8 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
         }
       }
     }
-  }, [state.history, activeCombatCellKey, currentPropCombat, board, displayedAttackerVal]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.history?.length, activeCombatCellKey]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
   const logContainerRef = useRef<HTMLDivElement>(null);
@@ -2315,6 +2333,24 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
               const isHill = board[combat.cellKey]?.cellType === 'hill';
               const adjacentFriendly = getAdjacentFriendlyCells(combat.cellKey);
 
+              const isAttackerX = combat.attacker === 'X';
+              const isDefenderX = combat.defender === 'X';
+
+              const attLabelColor = isAttackerX ? 'text-blue-400' : 'text-rose-400';
+              const attCardClass = isAttackerX 
+                ? 'border-blue-500 bg-blue-950/20 text-blue-100 shadow-[0_0_15px_rgba(59,130,246,0.1)]' 
+                : 'border-rose-500 bg-rose-950/20 text-rose-100 shadow-[0_0_15px_rgba(239,68,68,0.1)]';
+
+              const defLabelColor = isDefenderX ? 'text-blue-400' : 'text-rose-400';
+              const defCardClass = isDefenderX
+                ? 'border-blue-500 bg-blue-950/20 text-blue-100 shadow-[0_0_15px_rgba(59,130,246,0.1)]'
+                : 'border-rose-500 bg-rose-950/20 text-rose-100 shadow-[0_0_15px_rgba(239,68,68,0.1)]';
+              const defCardClass2 = isDefenderX
+                ? 'border-blue-500/80 bg-blue-950/20 text-blue-100/90 shadow-[0_0_15px_rgba(59,130,246,0.1)]'
+                : 'border-rose-500/80 bg-rose-950/20 text-rose-100/90 shadow-[0_0_15px_rgba(239,68,68,0.1)]';
+
+              const isAnimating = isRevealingAttacker || isRevealingDefender || isTransitioningNext;
+
               // Helper to get specific logs for this cell
               const getCombatLogsForCell = (cellKey: string) => {
                 if (!state.history) return [];
@@ -2400,7 +2436,8 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
                 <div className="bg-neutral-900 border border-neutral-800 p-6 rounded-3xl max-w-lg w-full shadow-2xl relative">
                   <button 
                     onClick={() => setActiveCombatCellKey(null)}
-                    className="absolute top-4 right-4 text-neutral-400 hover:text-white text-xl"
+                    disabled={isAnimating}
+                    className="absolute top-4 right-4 text-neutral-400 hover:text-white text-xl disabled:opacity-30 disabled:pointer-events-none"
                   >
                     ✕
                   </button>
@@ -2414,8 +2451,8 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
                   <div className="flex items-center justify-around bg-neutral-950 p-5 rounded-2xl border border-neutral-800 mb-4">
                     {/* Attacker side */}
                     <div className="flex flex-col items-center gap-1">
-                      <span className="text-[10px] font-semibold text-blue-400 uppercase tracking-widest">Attacker</span>
-                      <div className={`w-16 h-22 border-2 border-blue-500 bg-blue-950/20 rounded-xl flex items-center justify-center text-2xl font-black text-blue-100 relative shadow-[0_0_15px_rgba(59,130,246,0.1)] ${
+                      <span className={`text-[10px] font-semibold ${attLabelColor} uppercase tracking-widest`}>Attacker</span>
+                      <div className={`w-16 h-22 border-2 ${attCardClass} rounded-xl flex items-center justify-center text-2xl font-black relative ${
                         (isRevealingAttacker || isTransitioningNext) ? 'animate-card-flip' : ''
                       }`}>
                         {displayedAttackerVal !== undefined ? formatCardValue(displayedAttackerVal) : '?'}
@@ -2454,12 +2491,12 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
  
                     {/* Defender side */}
                     <div className="flex flex-col items-center gap-1">
-                      <span className="text-[10px] font-semibold text-rose-400 uppercase tracking-widest font-mono">Defender</span>
+                      <span className={`text-[10px] font-semibold ${defLabelColor} uppercase tracking-widest font-mono`}>Defender</span>
                       
                       <div className="flex gap-2">
                         {/* Card 1 */}
-                        <div className={`w-16 h-22 border-2 border-rose-500 bg-rose-950/20 rounded-xl flex items-center justify-center text-2xl font-black text-rose-100 relative shadow-[0_0_15px_rgba(239,68,68,0.1)] ${
-                          isTransitioningNext ? 'animate-card-flip' : ''
+                        <div className={`w-16 h-22 border-2 ${defCardClass} rounded-xl flex items-center justify-center text-2xl font-black relative ${
+                          (isRevealingDefender || isTransitioningNext) ? 'animate-card-flip' : ''
                         }`}>
                           {displayedDefenderVal !== undefined ? formatCardValue(displayedDefenderVal) : '?'}
                           {displayedDefenderVal === 13 && <span className="absolute -top-3 text-sm">👑</span>}
@@ -2467,8 +2504,8 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
                         
                         {/* Card 2 (only if Hill Combat second card exists) */}
                         {displayedDefenderVal2 !== undefined && (
-                          <div className={`w-16 h-22 border-2 border-rose-500/80 bg-rose-950/20 rounded-xl flex items-center justify-center text-2xl font-black text-rose-100/90 relative shadow-[0_0_15px_rgba(239,68,68,0.1)] ${
-                            isTransitioningNext ? 'animate-card-flip' : ''
+                          <div className={`w-16 h-22 border-2 ${defCardClass2} rounded-xl flex items-center justify-center text-2xl font-black relative ${
+                            (isRevealingDefender || isTransitioningNext) ? 'animate-card-flip' : ''
                           }`}>
                             {formatCardValue(displayedDefenderVal2)}
                             {displayedDefenderVal2 === 13 && <span className="absolute -top-3 text-sm">👑</span>}
@@ -2522,7 +2559,7 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
                   <div className="flex flex-col gap-2.5">
                     <button
                       onClick={() => executeFightReact(combat)}
-                      disabled={submittingMove || disabled}
+                      disabled={submittingMove || disabled || isAnimating}
                       className="w-full py-3 rounded-xl bg-red-600 hover:bg-red-500 font-bold text-white shadow-lg shadow-red-700/20 transition-all duration-200 hover:scale-[1.01] active:scale-95"
                     >
                       Duel Top Cards!
@@ -2538,6 +2575,7 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
                           {adjacentFriendly.map(key => (
                             <button
                               key={key}
+                              disabled={isAnimating}
                               onClick={() => setRetreatTargetKey(key)}
                               className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
                                 retreatTargetKey === key
@@ -2556,7 +2594,7 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
                       {retreatTargetKey && (
                         <button
                           onClick={() => executeRetreatReact(combat)}
-                          disabled={submittingMove || disabled}
+                          disabled={submittingMove || disabled || isAnimating}
                           className={`w-full mt-2.5 py-2 rounded-xl bg-neutral-950 border font-semibold transition-all hover:scale-[1.01] active:scale-95 ${
                             myPiece === 'X'
                               ? 'border-blue-600/40 text-blue-400 hover:bg-blue-950/70'

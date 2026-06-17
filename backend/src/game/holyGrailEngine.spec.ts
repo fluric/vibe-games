@@ -592,6 +592,31 @@ async function runTests() {
   assert.strictEqual(sMergeDeath.board['0,-1'].soldiers.length, 0); // Destination empty
   assert.strictEqual(sMergeDeath.board['0,-1'].owner, null);
 
+  // 12. Neutral Soldiers / Empty-Refill Cell Owner Retention Bug Test
+  console.log('👉 Testing: Empty-Refill Cell Owner Retention (preventing neutral soldiers)');
+  let sEmptyRefill = HolyGrailEngine.createInitialState();
+  sEmptyRefill.board['0,-3'].soldiers = [{ value: 10, revealed: false }, { value: 9, revealed: false }];
+  sEmptyRefill.board['0,-2'].soldiers = [{ value: 8, revealed: false }, { value: 7, revealed: false }];
+  sEmptyRefill.board['0,-2'].owner = 'X';
+  
+  sEmptyRefill = HolyGrailEngine.handleMove(sEmptyRefill, { type: 'end_deploy' }, 'X');
+  
+  sEmptyRefill = HolyGrailEngine.handleMove(sEmptyRefill, { type: 'move', from: '0,-2', to: '0,-1', count: 1 }, 'X');
+  assert.strictEqual(sEmptyRefill.board['0,-2'].soldiers.length, 1);
+  assert.strictEqual(sEmptyRefill.board['0,-2'].owner, 'X');
+  
+  sEmptyRefill = HolyGrailEngine.handleMove(sEmptyRefill, { type: 'move', from: '0,-3', to: '0,-2', count: 1 }, 'X');
+  assert.strictEqual(sEmptyRefill.board['0,-3'].soldiers.length, 1);
+  
+  sEmptyRefill = HolyGrailEngine.handleMove(sEmptyRefill, { type: 'move', from: '0,-2', to: '0,-1', count: 1 }, 'X');
+  assert.strictEqual(sEmptyRefill.board['0,-2'].soldiers.length, 0);
+  assert.strictEqual(sEmptyRefill.board['0,-2'].owner, null);
+  
+  sEmptyRefill = HolyGrailEngine.handleMove(sEmptyRefill, { type: 'end_turn' }, 'X');
+  
+  assert.strictEqual(sEmptyRefill.board['0,-2'].soldiers.length, 1);
+  assert.strictEqual(sEmptyRefill.board['0,-2'].owner, 'X');
+
   console.log('✅ All Holy Grail Engine tests passed successfully!');
 }
 

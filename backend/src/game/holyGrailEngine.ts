@@ -1244,6 +1244,7 @@ export const HolyGrailEngine = {
         const toCell = state.board[toKey];
         if (toCell) {
           toCell.soldiers = reassembleCellStack(state, toKey, toCell.soldiers);
+          toCell.owner = player;
         }
       }
 
