@@ -247,6 +247,29 @@ function obfuscateHolyGrailState(
     });
   }
 
+  if (cloned.history) {
+    cloned.history = cloned.history.map((log: string) => {
+      if (log.trim().startsWith('{')) {
+        try {
+          const action = JSON.parse(log);
+          if (action.type === 'deploy' || action.action === 'deploy') {
+            const isOpponent = (action.player === 'X' && !isPlayerX) || (action.player === 'O' && !isPlayerO);
+            if (isOpponent) {
+              return JSON.stringify({
+                ...action,
+                cardValue: 0,
+                count: 1
+              });
+            }
+          }
+        } catch (e) {
+          // ignore
+        }
+      }
+      return log;
+    });
+  }
+
   return cloned;
 }
 

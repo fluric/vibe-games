@@ -4,7 +4,8 @@ import type {
   HolyGrailGameState, 
   HolyGrailCell, 
   PlayerPiece, 
-  PendingCombat 
+  PendingCombat,
+  HolyGrailCard
 } from '@vibe-games/shared';
 
 const HEX_SIZE = 45;
@@ -51,8 +52,17 @@ function parseCardLabel(label: string): number {
   return isNaN(num) ? 0 : num;
 }
 
+function formatCardString(cardStr: string): string {
+  if (!cardStr) return '?';
+  if (cardStr.includes(',')) {
+    return '[' + cardStr.split(',').map(s => formatCardValue(parseCardLabel(s.trim()))).join(', ') + ']';
+  }
+  return formatCardValue(parseCardLabel(cardStr));
+}
+
+
 function parseCombatText(log: string) {
-  const cellMatch = log.match(/at\s+([^:]+):/);
+  const cellMatch = log.match(/\bat\s+([^:]+):/);
   const cell = cellMatch ? cellMatch[1].trim() : '';
   
   const attMatch = log.match(/Attacker\s+\(([XO])\)'s\s+([^\s]+)\s+vs/);
@@ -93,7 +103,7 @@ function parseCombatText(log: string) {
 }
 
 function parseRetreatText(log: string) {
-  const cellMatch = log.match(/at\s+([^:]+):/);
+  const cellMatch = log.match(/\bat\s+([^:]+):/);
   const cell = cellMatch ? cellMatch[1].trim() : '';
 
   const defMatch = log.match(/Defender\s+\(([XO])\)\s+retreated\s+to\s+([^\s.]+)/);
@@ -120,78 +130,331 @@ interface GroupedLog {
     reactType?: string;
     retreatTo?: string;
   };
+  combatSummary?: {
+    cell: string;
+    attacker: string;
+    defender: string;
+    attackerLostCount: number;
+    defenderLostCount: number;
+    attackerDestroyedCards: string[];
+    defenderDestroyedCards: string[];
+    outcome: 'attacker_captured' | 'defender_held' | 'defender_retreated';
+    retreatTo?: string;
+    rawLogs: string[];
+  };
+}
+
+interface CombatSummary {
+  cell: string;
+  attacker: string;
+  defender: string;
+  attackerLostCount: number;
+  defenderLostCount: number;
+  attackerDestroyedCards: string[];
+  defenderDestroyedCards: string[];
+  outcome: 'attacker_captured' | 'defender_held' | 'defender_retreated';
+  retreatTo?: string;
+  rawLogs: string[];
+}
+
+function parseCombatSummary(logs: string[]): CombatSummary | null {
+  if (logs.length === 0) return null;
+
+  let cell = '';
+  let attacker = '';
+  let defender = '';
+  let attackerLostCount = 0;
+  let defenderLostCount = 0;
+  const attackerDestroyedCards: string[] = [];
+  const defenderDestroyedCards: string[] = [];
+  let outcome: 'attacker_captured' | 'defender_held' | 'defender_retreated' = 'defender_held';
+  let retreatTo = '';
+
+  for (const log of logs) {
+    const isRetreat = log.includes('🏃') || log.toLowerCase().includes('retreat');
+    if (isRetreat) {
+      const info = parseRetreatText(log);
+      if (info.cell) {
+        cell = info.cell;
+        defender = info.defenderPiece;
+        attacker = info.attackerPiece;
+        retreatTo = info.retreatTo;
+        outcome = 'defender_retreated';
+      }
+    } else {
+      const info = parseCombatText(log);
+      if (info.cell) {
+        cell = info.cell;
+        attacker = info.attackerPiece;
+        defender = info.defenderPiece;
+        
+        if (info.winnerText === 'Attacker') {
+          defenderLostCount++;
+          defenderDestroyedCards.push(info.defenderCard);
+          outcome = 'attacker_captured';
+        } else if (info.winnerText === 'Defender') {
+          attackerLostCount++;
+          attackerDestroyedCards.push(info.attackerCard);
+          outcome = 'defender_held';
+        } else if (info.winnerText === 'Draw') {
+          attackerLostCount++;
+          defenderLostCount++;
+          attackerDestroyedCards.push(info.attackerCard);
+          defenderDestroyedCards.push(info.defenderCard);
+          outcome = 'defender_held';
+        }
+      }
+    }
+  }
+
+  if (!cell) return null;
+
+  return {
+    cell,
+    attacker,
+    defender,
+    attackerLostCount,
+    defenderLostCount,
+    attackerDestroyedCards,
+    defenderDestroyedCards,
+    outcome,
+    retreatTo,
+    rawLogs: logs
+  };
 }
 
 function getGroupedHistory(history: string[]): GroupedLog[] {
   if (!history || history.length === 0) return [];
 
   const grouped: GroupedLog[] = [];
+  let currentCombatLogs: string[] = [];
+  let currentCombatCell: string | null = null;
+
+  const flushCombat = () => {
+    if (currentCombatLogs.length > 0) {
+      const summary = parseCombatSummary(currentCombatLogs);
+      if (summary) {
+        grouped.push({
+          key: `combat-summary-${grouped.length}`,
+          isJson: false,
+          combatSummary: summary
+        });
+      } else {
+        currentCombatLogs.forEach((log, index) => {
+          grouped.push({
+            key: `combat-fallback-${grouped.length}-${index}`,
+            isJson: false,
+            rawLog: log
+          });
+        });
+      }
+      currentCombatLogs = [];
+      currentCombatCell = null;
+    }
+  };
 
   for (let i = 0; i < history.length; i++) {
     const raw = history[i];
-    if (!raw.trim().startsWith('{')) {
-      grouped.push({
-        key: `raw-${i}`,
-        isJson: false,
-        rawLog: raw
-      });
+    const isJson = raw.trim().startsWith('{');
+
+    if (isJson) {
+      try {
+        const action = JSON.parse(raw);
+        const type = action.type || action.action;
+
+        if (type === 'react') {
+          continue;
+        }
+
+        flushCombat();
+
+
+        // Merge consecutive deploys on same cell, or consecutive moves between same cells
+        const last = grouped[grouped.length - 1];
+        if (last && last.isJson && last.action) {
+          const lastType = last.action.type;
+          const lastPlayer = last.action.player;
+
+          const isBothDeploy = (type === 'deploy' || type === 'deploy_all') && 
+                              (lastType === 'deploy' || lastType === 'deploy_all');
+          const isBothMove = (type === 'move' && lastType === 'move');
+
+          if (isBothDeploy && lastPlayer === action.player && last.action.cellKey === action.cellKey) {
+            const currentCount = action.count !== undefined ? action.count : 1;
+            last.action.count += currentCount;
+            continue;
+          }
+
+          if (isBothMove && lastPlayer === action.player && last.action.from === action.from && last.action.to === action.to) {
+            const currentCount = action.count !== undefined ? action.count : 1;
+            last.action.count += currentCount;
+            continue;
+          }
+        }
+
+        grouped.push({
+          key: `action-${grouped.length}`,
+          isJson: true,
+          action: {
+            type,
+            player: action.player,
+            count: action.count !== undefined ? action.count : 1,
+            cellKey: action.cellKey,
+            from: action.from,
+            to: action.to,
+            reactType: action.reactType,
+            retreatTo: action.retreatTo
+          }
+        });
+      } catch (e) {
+        grouped.push({
+          key: `raw-err-${grouped.length}`,
+          isJson: false,
+          rawLog: raw
+        });
+      }
       continue;
     }
 
-    try {
-      const action = JSON.parse(raw);
-      const type = action.type || action.action;
+    const isCombatLog = raw.includes('⚔️') || raw.toLowerCase().includes('combat') || raw.toLowerCase().includes('vs');
+    const isRetreatLog = raw.includes('🏃') || raw.toLowerCase().includes('retreat');
 
-      // Merge consecutive deploys on same cell, or consecutive moves between same cells
-      const last = grouped[grouped.length - 1];
-      if (last && last.isJson && last.action) {
-        const lastType = last.action.type;
-        const lastPlayer = last.action.player;
-
-        const isBothDeploy = (type === 'deploy' || type === 'deploy_all') && 
-                            (lastType === 'deploy' || lastType === 'deploy_all');
-        const isBothMove = (type === 'move' && lastType === 'move');
-
-        if (isBothDeploy && lastPlayer === action.player && last.action.cellKey === action.cellKey) {
-          const currentCount = action.count !== undefined ? action.count : 1;
-          last.action.count += currentCount;
-          continue;
-        }
-
-        if (isBothMove && lastPlayer === action.player && last.action.from === action.from && last.action.to === action.to) {
-          const currentCount = action.count !== undefined ? action.count : 1;
-          last.action.count += currentCount;
-          continue;
-        }
+    if (isCombatLog || isRetreatLog) {
+      let logCell = '';
+      if (isCombatLog) {
+        const info = parseCombatText(raw);
+        logCell = info.cell;
+      } else {
+        const info = parseRetreatText(raw);
+        logCell = info.cell;
       }
 
-      grouped.push({
-        key: `action-${i}`,
-        isJson: true,
-        action: {
-          type,
-          player: action.player,
-          count: action.count !== undefined ? action.count : 1,
-          cellKey: action.cellKey,
-          from: action.from,
-          to: action.to,
-          reactType: action.reactType,
-          retreatTo: action.retreatTo
+      if (logCell) {
+        if (currentCombatCell && currentCombatCell !== logCell) {
+          flushCombat();
         }
-      });
-    } catch (e) {
+        currentCombatCell = logCell;
+        currentCombatLogs.push(raw);
+      } else {
+        flushCombat();
+        grouped.push({
+          key: `raw-text-${grouped.length}`,
+          isJson: false,
+          rawLog: raw
+        });
+      }
+    } else {
+      flushCombat();
       grouped.push({
-        key: `raw-err-${i}`,
+        key: `raw-text-${grouped.length}`,
         isJson: false,
         rawLog: raw
       });
     }
   }
 
+  flushCombat();
   return grouped;
 }
 
 function renderGroupedHistoryEntry(grouped: GroupedLog) {
+  if (grouped.combatSummary) {
+    const summary = grouped.combatSummary;
+    const attColor = summary.attacker === 'X' ? 'text-rose-400' : 'text-amber-400';
+    const defColor = summary.defender === 'X' ? 'text-rose-400' : 'text-amber-400';
+    const xLostCards = summary.attacker === 'X' ? summary.attackerDestroyedCards : summary.defenderDestroyedCards;
+    const oLostCards = summary.attacker === 'O' ? summary.attackerDestroyedCards : summary.defenderDestroyedCards;
+
+    const formatDestroyedList = (cards: string[]) => {
+      return '[' + cards.map(c => formatCardValue(parseCardLabel(c))).join(',') + ']';
+    };
+
+    const tooltipText = [
+      `Combat at ${summary.cell}`,
+      `---------------------`,
+      `Player (${summary.attacker}) Destroyed: ${summary.attackerDestroyedCards.length > 0 ? summary.attackerDestroyedCards.join(', ') : 'None'}`,
+      `Player (${summary.defender}) Destroyed: ${summary.defenderDestroyedCards.length > 0 ? summary.defenderDestroyedCards.join(', ') : 'None'}`,
+      `Outcome: ${
+        summary.outcome === 'defender_retreated' 
+          ? `Player (${summary.defender}) retreated to ${summary.retreatTo}` 
+          : summary.outcome === 'attacker_captured' 
+          ? `Player (${summary.attacker}) captured the cell` 
+          : `Player (${summary.defender}) defended the cell`
+      }`,
+      `\nDuel History:`,
+      ...summary.rawLogs.map(rawLog => {
+        const isCombat = rawLog.includes('⚔️') || rawLog.toLowerCase().includes('combat') || rawLog.toLowerCase().includes('vs');
+        const isRetreat = rawLog.includes('🏃') || rawLog.toLowerCase().includes('retreat');
+        if (isCombat) {
+          const info = parseCombatText(rawLog);
+          const attCardFormatted = formatCardString(info.attackerCard);
+          const defCardFormatted = formatCardString(info.defenderCard);
+          
+          if (info.winnerText === 'Draw') {
+            return ` • ${attCardFormatted} (${info.attackerPiece}) vs ${defCardFormatted} (${info.defenderPiece}) -> Draw`;
+          } else {
+            const isAttackerWinner = info.winnerText === 'Attacker';
+            const winnerPiece = isAttackerWinner ? info.attackerPiece : info.defenderPiece;
+            const originalCard = isAttackerWinner 
+              ? info.attackerCard 
+              : (info.defenderCard.includes(',') ? info.defenderCard.split(',')[0].trim() : info.defenderCard);
+            const winnerCard = info.degradedVal ? formatCardString(info.degradedVal) : formatCardString(originalCard);
+            return ` • ${attCardFormatted} (${info.attackerPiece}) vs ${defCardFormatted} (${info.defenderPiece}) -> ${winnerCard} (${winnerPiece})`;
+          }
+        }
+        if (isRetreat) {
+          const info = parseRetreatText(rawLog);
+          return ` • Defender (${info.defenderPiece}) retreated to ${info.retreatTo}`;
+        }
+        return ` • ${rawLog}`;
+      })
+    ].join('\n');
+
+    return (
+      <div 
+        key={grouped.key} 
+        title={tooltipText}
+        className="text-xs text-neutral-300 py-1 border-b border-neutral-800/40 leading-relaxed font-mono flex flex-col items-start cursor-help hover:bg-neutral-800/30 px-1 rounded transition-colors"
+      >
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <span className={`${attColor} font-bold`}>({summary.attacker})</span>
+          <span className="text-red-400 font-bold">⚔️</span>
+          <span className="text-neutral-400 font-semibold">{summary.cell}</span>
+          <span className="text-neutral-500">vs</span>
+          <span className={`${defColor} font-bold`}>({summary.defender})</span>
+          <span className="text-neutral-500">:</span>
+        </div>
+
+        <div className="flex items-center gap-1.5 pl-6 flex-wrap mt-0.5">
+          {summary.outcome === 'defender_retreated' ? (
+            <>
+              <span className={`${defColor} font-bold`}>({summary.defender})</span>
+              <span className="text-amber-450 font-bold">🏃</span>
+              <span className="text-neutral-400 font-semibold">{summary.retreatTo}</span>
+            </>
+          ) : summary.outcome === 'attacker_captured' ? (
+            <>
+              <span className={`${attColor} font-bold`}>({summary.attacker})</span>
+              <span className="text-indigo-400 font-bold">📥</span>
+            </>
+          ) : (
+            <>
+              <span className={`${defColor} font-bold`}>({summary.defender})</span>
+              <span className="text-emerald-400 font-bold">🛡️</span>
+            </>
+          )}
+        </div>
+        
+        <div className="flex items-center gap-1.5 pl-6 text-xs text-neutral-400 select-none leading-relaxed mt-0.5">
+          <span>💀</span>
+          <span className="text-rose-400 font-bold">{formatDestroyedList(xLostCards)}</span>
+          <span className="text-neutral-500">vs</span>
+          <span className="text-amber-400 font-bold">{formatDestroyedList(oLostCards)}</span>
+        </div>
+      </div>
+    );
+  }
+
   if (grouped.isJson && grouped.action) {
     const action = grouped.action;
     const playerColor = action.player === 'X' ? 'text-rose-400' : action.player === 'O' ? 'text-amber-400' : 'text-neutral-400';
@@ -213,7 +476,6 @@ function renderGroupedHistoryEntry(grouped: GroupedLog) {
           <span className={`${playerColor} font-bold`}>({action.player})</span>
           <span className="text-emerald-450 font-bold">🏃</span>
           <span className="font-bold text-white">{action.count}</span>
-          <span className="text-neutral-500">from</span>
           <span className="text-neutral-400 font-semibold">{action.from} ➡️ {action.to}</span>
         </div>
       );
@@ -239,7 +501,7 @@ function renderGroupedHistoryEntry(grouped: GroupedLog) {
         <div key={grouped.key} className="text-xs text-neutral-300 py-1 border-b border-neutral-800/40 leading-relaxed font-mono flex items-center gap-1.5">
           <span className={`${playerColor} font-bold`}>({action.player})</span>
           <span className="text-amber-400 font-bold">🛡️</span>
-          <span>{action.reactType === 'retreat' ? `Retreated to ${action.retreatTo}` : `Fought at ${action.cellKey}`}</span>
+          <span>{action.reactType === 'retreat' ? `Retreated to ${action.retreatTo}` : `Defended at ${action.cellKey}`}</span>
         </div>
       );
     }
@@ -342,27 +604,44 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
   const [displayedCombat, setDisplayedCombat] = useState<PendingCombat | null>(null);
   const [displayedAttackerVal, setDisplayedAttackerVal] = useState<number | undefined>(undefined);
   const [displayedDefenderVal, setDisplayedDefenderVal] = useState<number | undefined>(undefined);
+  const [displayedDefenderVal2, setDisplayedDefenderVal2] = useState<number | undefined>(undefined);
+  const [displayedDefenderStack, setDisplayedDefenderStack] = useState<HolyGrailCard[]>([]);
   
   const [isRevealingAttacker, setIsRevealingAttacker] = useState(false);
   const [isTransitioningNext, setIsTransitioningNext] = useState(false);
   
   const prevHistoryLenRef = useRef<number>(state.history?.length || 0);
   const isTransitioningRef = useRef<boolean>(false);
+  const lastActiveCombatCellKeyRef = useRef<string | null>(null);
+  const swapTimerRef = useRef<any>(null);
+  const endTransitionTimerRef = useRef<any>(null);
+  const resetDelayTimerRef = useRef<any>(null);
 
   const currentPropCombat = pendingCombats.find(c => c.cellKey === activeCombatCellKey) || null;
 
   useEffect(() => {
-    if (!isTransitioningRef.current) {
-      setDisplayedCombat(currentPropCombat);
-      if (currentPropCombat) {
-        setDisplayedAttackerVal(currentPropCombat.attackerTopCard?.value);
-        setDisplayedDefenderVal(currentPropCombat.defenderTopCard?.value);
-      } else {
-        setDisplayedAttackerVal(undefined);
-        setDisplayedDefenderVal(undefined);
-      }
+    if (!activeCombatCellKey) {
+      setDisplayedCombat(null);
+      setDisplayedAttackerVal(undefined);
+      setDisplayedDefenderVal(undefined);
+      setDisplayedDefenderVal2(undefined);
+      setDisplayedDefenderStack([]);
+      lastActiveCombatCellKeyRef.current = null;
+      return;
     }
-  }, [currentPropCombat, activeCombatCellKey]);
+
+    if (lastActiveCombatCellKeyRef.current !== activeCombatCellKey && currentPropCombat) {
+      const isHill = board[currentPropCombat.cellKey]?.cellType === 'hill';
+      const defSoldiers = board[currentPropCombat.cellKey]?.soldiers || [];
+      const hasSecondDefenderCard = isHill && defSoldiers.length >= 2;
+      setDisplayedCombat(currentPropCombat);
+      setDisplayedAttackerVal(currentPropCombat.attackerTopCard?.value || 0);
+      setDisplayedDefenderVal(currentPropCombat.defenderTopCard?.value || 0);
+      setDisplayedDefenderVal2(hasSecondDefenderCard ? (defSoldiers[1]?.value || 0) : undefined);
+      setDisplayedDefenderStack(defSoldiers);
+      lastActiveCombatCellKeyRef.current = activeCombatCellKey;
+    }
+  }, [activeCombatCellKey, currentPropCombat, board]);
 
   useEffect(() => {
     const history = state.history || [];
@@ -375,59 +654,80 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
         const duel = parseCombatText(lastLog);
         if (duel) {
           isTransitioningRef.current = true;
-          // STAGE 1: Spin card to reveal attacker value
-          setIsRevealingAttacker(true);
-          setDisplayedAttackerVal(0); // Spin face-down
+          
+          const wasAttackerKnown = displayedAttackerVal !== undefined && displayedAttackerVal > 0;
+
+          if (!wasAttackerKnown) {
+            // STAGE 1: Spin card to reveal attacker value
+            setIsRevealingAttacker(true);
+            setDisplayedAttackerVal(0);
+          }
 
           const attackerRevealTimer = setTimeout(() => {
             const parsedAtt = parseCardLabel(duel.attackerCard);
-            const parsedDef = parseCardLabel(duel.defenderCard);
+            
+            let parsedDef = 0;
+            let parsedDef2: number | undefined = undefined;
+
+            if (duel.defenderCard.includes(',')) {
+              const parts = duel.defenderCard.split(',');
+              parsedDef = parseCardLabel(parts[0].trim());
+              parsedDef2 = parseCardLabel(parts[1].trim());
+            } else {
+              parsedDef = parseCardLabel(duel.defenderCard);
+            }
+
             setDisplayedAttackerVal(parsedAtt);
             setDisplayedDefenderVal(parsedDef);
-          }, 200);
+            setDisplayedDefenderVal2(parsedDef2);
+          }, wasAttackerKnown ? 0 : 200);
 
           // STAGE 2: Spin both cards face down, and swap to the new state
           const transitionTimer = setTimeout(() => {
-            setIsTransitioningNext(true);
-            setIsRevealingAttacker(false);
-            
-            if (duel.attackerPiece !== myPiece) {
-              setDisplayedAttackerVal(0);
-            }
-            if (duel.defenderPiece !== myPiece) {
-              setDisplayedDefenderVal(0);
+            if (!wasAttackerKnown) {
+              setIsRevealingAttacker(false);
             }
 
-            const swapTimer = setTimeout(() => {
-              setDisplayedCombat(currentPropCombat);
+            // Wait for transition classes to reset, then trigger flip to next soldier
+            resetDelayTimerRef.current = setTimeout(() => {
               if (currentPropCombat) {
-                setDisplayedAttackerVal(currentPropCombat.attackerTopCard?.value);
-                setDisplayedDefenderVal(currentPropCombat.defenderTopCard?.value);
+                setIsTransitioningNext(true);
+                
+                const nextAttVal = currentPropCombat.attackerTopCard?.value || 0;
+                const nextDefVal = currentPropCombat.defenderTopCard?.value || 0;
+                const nextDefStack = board[currentPropCombat.cellKey]?.soldiers || [];
+                const isHillNext = board[currentPropCombat.cellKey]?.cellType === 'hill';
+                const nextDefVal2 = (isHillNext && nextDefStack.length >= 2) ? (nextDefStack[1]?.value || 0) : undefined;
+
+                swapTimerRef.current = setTimeout(() => {
+                  setDisplayedCombat(currentPropCombat);
+                  setDisplayedAttackerVal(nextAttVal);
+                  setDisplayedDefenderVal(nextDefVal);
+                  setDisplayedDefenderVal2(nextDefVal2);
+                  setDisplayedDefenderStack(nextDefStack);
+                }, 200);
+
+                endTransitionTimerRef.current = setTimeout(() => {
+                  setIsTransitioningNext(false);
+                  isTransitioningRef.current = false;
+                }, 400);
               } else {
-                setDisplayedAttackerVal(undefined);
-                setDisplayedDefenderVal(undefined);
+                isTransitioningRef.current = false;
               }
-            }, 200);
-
-            const endTransitionTimer = setTimeout(() => {
-              setIsTransitioningNext(false);
-              isTransitioningRef.current = false;
-            }, 400);
-
-            return () => {
-              clearTimeout(swapTimer);
-              clearTimeout(endTransitionTimer);
-            };
+            }, wasAttackerKnown ? 0 : 50);
           }, 1400);
 
           return () => {
             clearTimeout(attackerRevealTimer);
             clearTimeout(transitionTimer);
+            if (resetDelayTimerRef.current) clearTimeout(resetDelayTimerRef.current);
+            if (swapTimerRef.current) clearTimeout(swapTimerRef.current);
+            if (endTransitionTimerRef.current) clearTimeout(endTransitionTimerRef.current);
           };
         }
       }
     }
-  }, [state.history?.length, activeCombatCellKey, currentPropCombat]);
+  }, [state.history?.length, activeCombatCellKey, currentPropCombat, board]);
 
   const logContainerRef = useRef<HTMLDivElement>(null);
 
@@ -723,7 +1023,7 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
             <div className="text-xs font-semibold text-neutral-500 uppercase tracking-widest">Phase</div>
             
             {/* Info Icon & Hover Tooltip */}
-            <div className="relative group/info cursor-help flex items-center justify-center w-5 h-5 rounded-full bg-indigo-900/60 border border-indigo-500/30 text-indigo-300 hover:bg-indigo-650 hover:text-white hover:border-indigo-400 font-bold transition-all shadow-sm shadow-indigo-500/10">
+            <div className="relative group/info cursor-help flex items-center justify-center w-5 h-5 rounded-full bg-indigo-900/60 border border-indigo-500/30 text-indigo-300 hover:bg-indigo-600 hover:text-white hover:border-indigo-400 font-bold transition-all shadow-sm shadow-indigo-500/10">
               ℹ️
               <div className="absolute left-full ml-2 top-1/2 -translate-y-1/2 hidden group-hover/info:block w-64 bg-neutral-950 border border-neutral-800 p-3.5 rounded-xl shadow-2xl z-50 pointer-events-none text-xs leading-relaxed text-neutral-350 font-normal normal-case">
                 {phase === 'deploy' && (
@@ -754,7 +1054,7 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
               <button
                 onClick={endDeploy}
                 disabled={submittingMove || disabled}
-                className="w-full py-2.5 rounded-xl font-semibold bg-indigo-650 text-white hover:bg-indigo-500 disabled:opacity-40 shadow-lg shadow-indigo-650/20 transition-all duration-200"
+                className="w-full py-2.5 rounded-xl font-semibold bg-indigo-600 text-white hover:bg-indigo-500 disabled:opacity-40 shadow-lg shadow-indigo-600/20 transition-all duration-200"
               >
                 Go to Movement
               </button>
@@ -762,7 +1062,7 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
               <button
                 onClick={endTurn}
                 disabled={submittingMove || disabled}
-                className="w-full py-2.5 rounded-xl font-semibold bg-emerald-650 text-white hover:bg-emerald-500 disabled:opacity-40 shadow-lg shadow-emerald-650/20 transition-all duration-200"
+                className="w-full py-2.5 rounded-xl font-semibold bg-emerald-600 text-white hover:bg-emerald-500 disabled:opacity-40 shadow-lg shadow-emerald-600/20 transition-all duration-200"
               >
                 End Turn
               </button>
@@ -1009,6 +1309,12 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
                       {topCard.value === 11 && (
                         <text y="-4" textAnchor="middle" className="text-[9px] fill-blue-400">🛡️</text>
                       )}
+                      {cell.owner === myPiece && topCard.revealed && (
+                        <text x="9" y="-4" textAnchor="middle" className="text-[8px]">
+                          <title>Visible to opponent</title>
+                          👁️
+                        </text>
+                      )}
                     </g>
                   )}
 
@@ -1106,7 +1412,7 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
               
               const { cx, cy } = getHexCenter(cell.q, cell.r);
               
-              const tooltipWidth = 140;
+              const tooltipWidth = 145;
               const tooltipHeight = 36 + cell.soldiers.length * 20;
               const tooltipX = Math.max(10, Math.min(cx + 30, WIDTH - tooltipWidth - 10));
               const tooltipY = Math.max(10, Math.min(cy - 90, HEIGHT - tooltipHeight - 10));
@@ -1130,6 +1436,7 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
 
                   {cell.soldiers.map((card, idx) => {
                     const isCardValueVisible = card.value > 0;
+                    const isMyOwnRevealed = cell.owner === myPiece && card.revealed;
                     
                     return (
                       <g key={idx} transform={`translate(10, ${22 + idx * 20})`}>
@@ -1162,6 +1469,7 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
                             ? `${formatCardValue(card.value)} (${card.value === 13 ? 'King' : card.value === 12 ? 'Queen' : card.value === 11 ? 'Jack' : 'Sol'})`
                             : 'Hidden (?)'}
                           {card.moved && ' (Moved)'}
+                          {isMyOwnRevealed && ' 👁️'}
                         </text>
                       </g>
                     );
@@ -1238,7 +1546,7 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
         </div>
 
         {/* Hand View at the bottom of the board canvas (Spacious card-game style) */}
-        <div className="w-full max-w-[560px] bg-neutral-900/80 border border-neutral-800/80 p-5 rounded-2xl backdrop-blur-md flex flex-col items-center gap-4 shadow-xl min-h-[162px] h-[162px] justify-center">
+        <div className="w-full max-w-[560px] bg-neutral-900/80 border border-neutral-800/80 px-5 py-3 rounded-2xl backdrop-blur-md flex flex-col items-center gap-3 shadow-xl min-h-[195px] h-[195px] justify-center">
           {isMyTurn && phase === 'deploy' ? (
             <>
               <div className="flex justify-between items-center w-full text-xs font-semibold text-neutral-400 px-1">
@@ -1258,7 +1566,7 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
                         }
                       }}
                       disabled={disabled || submittingMove}
-                      className="px-2 py-1 bg-indigo-650 hover:bg-indigo-500 text-white font-bold rounded text-[10px] transition-all cursor-pointer shadow-md hover:scale-105 active:scale-95"
+                      className="px-2 py-1 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded text-[10px] transition-all cursor-pointer shadow-md hover:scale-105 active:scale-95"
                     >
                       Deploy All to {selectedCellKey}
                     </button>
@@ -1269,7 +1577,7 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
               {activeHand.length === 0 ? (
                 <div className="text-center py-6 text-neutral-600 text-sm italic">Empty hand</div>
               ) : (
-                <div className="flex flex-wrap justify-center gap-4 w-full">
+                <div className="flex flex-nowrap overflow-x-auto justify-start gap-3 w-full pb-1.5 scrollbar-thin">
                   {activeHand.map((card, idx) => (
                     <button
                       key={idx}
@@ -1402,6 +1710,63 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
                 });
               };
 
+              const renderCombatLogEntry = (rawLog: string, idx: number) => {
+                const isCombat = rawLog.includes('⚔️') || rawLog.toLowerCase().includes('combat') || rawLog.toLowerCase().includes('vs');
+                const isRetreat = rawLog.includes('🏃') || rawLog.toLowerCase().includes('retreat');
+
+                if (isCombat) {
+                  const info = parseCombatText(rawLog);
+                  const attColor = info.attackerPiece === 'X' ? 'text-rose-400' : 'text-amber-400';
+                  const defColor = info.defenderPiece === 'X' ? 'text-rose-400' : 'text-amber-400';
+                  const winnerColor = info.winnerText === 'Attacker' ? attColor : info.winnerText === 'Defender' ? defColor : 'text-neutral-400';
+
+                  return (
+                    <div key={idx} className="text-[11px] py-1 border-b border-neutral-800/40 leading-normal text-neutral-300 font-mono flex items-center gap-1.5 flex-wrap">
+                      <span className={`${attColor} font-bold`}>({info.attackerPiece})</span>
+                      <span className="text-red-400 font-bold">⚔️</span>
+                      <span className={`${defColor} font-bold`}>({info.defenderPiece})</span>
+                      <span className="text-neutral-500">:</span>
+                      <span className="text-white font-bold">{info.attackerCard}</span>
+                      <span className="text-neutral-500">vs</span>
+                      <span className="text-white font-bold">{info.defenderCard}</span>
+                      <span className="text-neutral-400 font-semibold">➡️</span>
+                      {info.winnerText === 'Draw' ? (
+                        <span className="text-neutral-500 font-bold">💀 Draw</span>
+                      ) : (
+                        <>
+                          <span className={`${winnerColor} font-bold`}>
+                            ({info.winnerText === 'Attacker' ? info.attackerPiece : info.defenderPiece})
+                          </span>
+                          {info.degradedVal && (
+                            <span className="text-neutral-400 font-semibold">[{info.degradedVal}]</span>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  );
+                }
+
+                if (isRetreat) {
+                  const info = parseRetreatText(rawLog);
+                  const defColor = info.defenderPiece === 'X' ? 'text-rose-400' : 'text-amber-400';
+
+                  return (
+                    <div key={idx} className="text-[11px] text-neutral-300 py-1 border-b border-neutral-800/40 leading-normal font-mono flex items-center gap-1.5 flex-wrap">
+                      <span className={`${defColor} font-bold`}>({info.defenderPiece})</span>
+                      <span className="text-amber-400 font-bold">🏃</span>
+                      <span className="text-neutral-500 font-semibold">retreat to</span>
+                      <span className="text-neutral-400 font-semibold">{info.retreatTo}</span>
+                    </div>
+                  );
+                }
+
+                return (
+                  <div key={idx} className="text-[11px] text-neutral-300 py-1 border-b border-neutral-800/40 leading-normal">
+                    {rawLog}
+                  </div>
+                );
+              };
+
               const combatLogs = getCombatLogsForCell(combat.cellKey);
 
               return (
@@ -1435,11 +1800,12 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
                       <div className="flex gap-1 mt-1.5 max-w-[140px] overflow-x-auto justify-center">
                         {combat.attackerStack?.slice(1).map((card, cardIdx) => {
                           const isKnown = card.value > 0;
+                          const isMyOwnRevealed = combat.attacker === myPiece && card.revealed;
                           return (
                             <div 
                               key={cardIdx} 
-                              title={isKnown ? `${formatCardValue(card.value)} (${card.value === 13 ? 'King' : card.value === 12 ? 'Queen' : card.value === 11 ? 'Jack' : 'Sol'})` : 'Hidden Opponent Soldier'}
-                              className={`w-7 h-10 border rounded flex items-center justify-center text-[10px] font-bold shrink-0 cursor-help transition-all ${
+                              title={isKnown ? `${formatCardValue(card.value)} (${card.value === 13 ? 'King' : card.value === 12 ? 'Queen' : card.value === 11 ? 'Jack' : 'Sol'})${isMyOwnRevealed ? ' - Visible to opponent' : ''}` : 'Hidden Opponent Soldier'}
+                              className={`w-7 h-10 border rounded flex items-center justify-center text-[10px] font-bold shrink-0 cursor-help transition-all relative ${
                                 isKnown
                                   ? combat.attacker === 'X'
                                     ? 'bg-rose-950/60 border-rose-500/50 text-rose-200 hover:border-rose-455'
@@ -1448,6 +1814,9 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
                               }`}
                             >
                               {isKnown ? formatCardValue(card.value) : '?'}
+                              {isMyOwnRevealed && (
+                                <span className="absolute -top-1.5 -right-1.5 text-[8px] bg-neutral-950 border border-neutral-800 rounded-full px-0.5" title="Visible to opponent">👁️</span>
+                              )}
                             </div>
                           );
                         })}
@@ -1459,23 +1828,39 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
                     {/* Defender side */}
                     <div className="flex flex-col items-center gap-1">
                       <span className="text-[10px] font-semibold text-amber-400 uppercase tracking-widest font-mono">Defender</span>
-                      <div className={`w-16 h-22 border-2 border-amber-500 bg-amber-950/20 rounded-xl flex items-center justify-center text-2xl font-black text-amber-100 relative shadow-[0_0_15px_rgba(245,158,11,0.1)] ${
-                        isTransitioningNext ? 'animate-card-flip' : ''
-                      }`}>
-                        {displayedDefenderVal !== undefined ? formatCardValue(displayedDefenderVal) : '?'}
-                        {displayedDefenderVal === 13 && <span className="absolute -top-3 text-sm">👑</span>}
+                      
+                      <div className="flex gap-2">
+                        {/* Card 1 */}
+                        <div className={`w-16 h-22 border-2 border-amber-500 bg-amber-950/20 rounded-xl flex items-center justify-center text-2xl font-black text-amber-100 relative shadow-[0_0_15px_rgba(245,158,11,0.1)] ${
+                          isTransitioningNext ? 'animate-card-flip' : ''
+                        }`}>
+                          {displayedDefenderVal !== undefined ? formatCardValue(displayedDefenderVal) : '?'}
+                          {displayedDefenderVal === 13 && <span className="absolute -top-3 text-sm">👑</span>}
+                        </div>
+                        
+                        {/* Card 2 (only if Hill Combat second card exists) */}
+                        {displayedDefenderVal2 !== undefined && (
+                          <div className={`w-16 h-22 border-2 border-amber-500/80 bg-amber-950/20 rounded-xl flex items-center justify-center text-2xl font-black text-amber-100/90 relative shadow-[0_0_15px_rgba(245,158,11,0.1)] ${
+                            isTransitioningNext ? 'animate-card-flip' : ''
+                          }`}>
+                            {formatCardValue(displayedDefenderVal2)}
+                            {displayedDefenderVal2 === 13 && <span className="absolute -top-3 text-sm">👑</span>}
+                          </div>
+                        )}
                       </div>
+                      
                       <span className="text-xs text-neutral-500">{combat.defenderRemainingCount} left</span>
 
                       {/* Remaining Defender Stack Preview */}
                       <div className="flex gap-1 mt-1.5 max-w-[140px] overflow-x-auto justify-center">
-                        {board[combat.cellKey]?.soldiers.slice(1).map((card, cardIdx) => {
+                        {displayedDefenderStack.slice(displayedDefenderVal2 !== undefined ? 2 : 1).map((card, cardIdx) => {
                           const isKnown = card.value > 0;
+                          const isMyOwnRevealed = combat.defender === myPiece && card.revealed;
                           return (
                             <div 
                               key={cardIdx} 
-                              title={isKnown ? `${formatCardValue(card.value)} (${card.value === 13 ? 'King' : card.value === 12 ? 'Queen' : card.value === 11 ? 'Jack' : 'Sol'})` : 'Hidden Opponent Soldier'}
-                              className={`w-7 h-10 border rounded flex items-center justify-center text-[10px] font-bold shrink-0 cursor-help transition-all ${
+                              title={isKnown ? `${formatCardValue(card.value)} (${card.value === 13 ? 'King' : card.value === 12 ? 'Queen' : card.value === 11 ? 'Jack' : 'Sol'})${isMyOwnRevealed ? ' - Visible to opponent' : ''}` : 'Hidden Opponent Soldier'}
+                              className={`w-7 h-10 border rounded flex items-center justify-center text-[10px] font-bold shrink-0 cursor-help transition-all relative ${
                                 isKnown
                                   ? combat.defender === 'X'
                                     ? 'bg-rose-950/60 border-rose-500/50 text-rose-200 hover:border-rose-455'
@@ -1484,6 +1869,9 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
                               }`}
                             >
                               {isKnown ? formatCardValue(card.value) : '?'}
+                              {isMyOwnRevealed && (
+                                <span className="absolute -top-1.5 -right-1.5 text-[8px] bg-neutral-950 border border-neutral-800 rounded-full px-0.5" title="Visible to opponent">👁️</span>
+                              )}
                             </div>
                           );
                         })}
@@ -1496,11 +1884,7 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
                     <div className="text-[10px] font-semibold text-neutral-400 mb-1 uppercase tracking-wide">Combat Log</div>
                     <div className="max-h-24 overflow-y-auto bg-neutral-950 border border-neutral-800/80 rounded-xl p-2.5 flex flex-col gap-1 shadow-inner scrollbar-thin">
                       {combatLogs.length > 0 ? (
-                        combatLogs.map((log, idx) => (
-                          <div key={idx} className="text-[11px] text-neutral-300 border-b border-neutral-900/60 pb-1 last:border-b-0 leading-normal">
-                            {log}
-                          </div>
-                        ))
+                        combatLogs.map((log, idx) => renderCombatLogEntry(log, idx))
                       ) : (
                         <div className="text-[10px] text-neutral-600 italic text-center py-2">No duels resolved yet in this combat.</div>
                       )}
@@ -1512,7 +1896,7 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
                     <button
                       onClick={() => executeFightReact(combat)}
                       disabled={submittingMove || disabled}
-                      className="w-full py-3 rounded-xl bg-red-650 hover:bg-red-500 font-bold text-white shadow-lg shadow-red-700/20 transition-all duration-200 hover:scale-[1.01] active:scale-95"
+                      className="w-full py-3 rounded-xl bg-red-600 hover:bg-red-500 font-bold text-white shadow-lg shadow-red-700/20 transition-all duration-200 hover:scale-[1.01] active:scale-95"
                     >
                       Duel Top Cards!
                     </button>
