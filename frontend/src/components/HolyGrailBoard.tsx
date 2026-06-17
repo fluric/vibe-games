@@ -106,138 +106,209 @@ function parseRetreatText(log: string) {
   return { cell, defenderPiece, retreatTo, attackerPiece };
 }
 
-function renderHistoryEntry(log: string, idx: number) {
-  if (log.trim().startsWith('{')) {
-    try {
-      const action = JSON.parse(log);
-      const playerColor = action.player === 'X' ? 'text-rose-400' : action.player === 'O' ? 'text-amber-400' : 'text-neutral-400';
+interface GroupedLog {
+  key: string;
+  isJson: boolean;
+  rawLog?: string;
+  action?: {
+    type: string;
+    player: string;
+    count: number;
+    cellKey?: string;
+    from?: string;
+    to?: string;
+    reactType?: string;
+    retreatTo?: string;
+  };
+}
 
-      if (action.type === 'deploy' || action.action === 'deploy') {
-        return (
-          <div key={idx} className="text-xs text-neutral-300 py-1 border-b border-neutral-800/40 leading-relaxed font-mono flex items-center gap-1.5">
-            <span className={`${playerColor} font-bold`}>({action.player})</span>
-            <span className="text-indigo-400 font-bold">📥</span>
-            <span className="font-bold text-white">{action.count || 1}</span>
-            <span className="text-neutral-500">at</span>
-            <span className="text-neutral-400 font-semibold">{action.cellKey}</span>
-          </div>
-        );
+function getGroupedHistory(history: string[]): GroupedLog[] {
+  if (!history || history.length === 0) return [];
+
+  const grouped: GroupedLog[] = [];
+
+  for (let i = 0; i < history.length; i++) {
+    const raw = history[i];
+    if (!raw.trim().startsWith('{')) {
+      grouped.push({
+        key: `raw-${i}`,
+        isJson: false,
+        rawLog: raw
+      });
+      continue;
+    }
+
+    try {
+      const action = JSON.parse(raw);
+      const type = action.type || action.action;
+
+      // Merge consecutive deploys on same cell, or consecutive moves between same cells
+      const last = grouped[grouped.length - 1];
+      if (last && last.isJson && last.action) {
+        const lastType = last.action.type;
+        const lastPlayer = last.action.player;
+
+        const isBothDeploy = (type === 'deploy' || type === 'deploy_all') && 
+                            (lastType === 'deploy' || lastType === 'deploy_all');
+        const isBothMove = (type === 'move' && lastType === 'move');
+
+        if (isBothDeploy && lastPlayer === action.player && last.action.cellKey === action.cellKey) {
+          const currentCount = action.count !== undefined ? action.count : 1;
+          last.action.count += currentCount;
+          continue;
+        }
+
+        if (isBothMove && lastPlayer === action.player && last.action.from === action.from && last.action.to === action.to) {
+          const currentCount = action.count !== undefined ? action.count : 1;
+          last.action.count += currentCount;
+          continue;
+        }
       }
-      if (action.type === 'deploy_all' || action.action === 'deploy_all') {
-        return (
-          <div key={idx} className="text-xs text-neutral-300 py-1 border-b border-neutral-800/40 leading-relaxed font-mono flex items-center gap-1.5">
-            <span className={`${playerColor} font-bold`}>({action.player})</span>
-            <span className="text-indigo-400 font-bold">📥</span>
-            <span className="font-bold text-white">{action.count || 0}</span>
-            <span className="text-neutral-500">at</span>
-            <span className="text-neutral-400 font-semibold">{action.cellKey}</span>
-          </div>
-        );
-      }
-      if (action.type === 'move' || action.action === 'move') {
-        return (
-          <div key={idx} className="text-xs text-neutral-300 py-1 border-b border-neutral-800/40 leading-relaxed font-mono flex items-center gap-1.5">
-            <span className={`${playerColor} font-bold`}>({action.player})</span>
-            <span className="text-emerald-450 font-bold">🏃</span>
-            <span className="font-bold text-white">{action.count}</span>
-            <span className="text-neutral-500">from</span>
-            <span className="text-neutral-400 font-semibold">{action.from} ➡️ {action.to}</span>
-          </div>
-        );
-      }
-      if (action.type === 'end_deploy' || action.action === 'end_deploy') {
-        return (
-          <div key={idx} className="text-xs text-neutral-400 italic py-1 border-b border-neutral-800/40 leading-relaxed font-mono flex items-center gap-1.5">
-            <span className={`${playerColor} font-bold`}>({action.player})</span>
-            <span className="font-semibold text-neutral-500">🏁 Completed Deploy</span>
-          </div>
-        );
-      }
-      if (action.type === 'end_turn' || action.action === 'end_turn') {
-        return (
-          <div key={idx} className="text-xs text-neutral-400 italic py-1 border-b border-neutral-800/40 leading-relaxed font-mono flex items-center gap-1.5">
-            <span className={`${playerColor} font-bold`}>({action.player})</span>
-            <span className="font-semibold text-neutral-500">⌛ Ended Turn</span>
-          </div>
-        );
-      }
-      if (action.type === 'react' || action.action === 'react') {
-        return (
-          <div key={idx} className="text-xs text-neutral-300 py-1 border-b border-neutral-800/40 leading-relaxed font-mono flex items-center gap-1.5">
-            <span className={`${playerColor} font-bold`}>({action.player})</span>
-            <span className="text-amber-400 font-bold">🛡️</span>
-            <span>{action.reactType === 'retreat' ? `Retreated to ${action.retreatTo}` : `Fought at ${action.cellKey}`}</span>
-          </div>
-        );
-      }
+
+      grouped.push({
+        key: `action-${i}`,
+        isJson: true,
+        action: {
+          type,
+          player: action.player,
+          count: action.count !== undefined ? action.count : 1,
+          cellKey: action.cellKey,
+          from: action.from,
+          to: action.to,
+          reactType: action.reactType,
+          retreatTo: action.retreatTo
+        }
+      });
     } catch (e) {
-      // ignore
+      grouped.push({
+        key: `raw-err-${i}`,
+        isJson: false,
+        rawLog: raw
+      });
     }
   }
 
-  // Plain text logs (combat and retreat)
-  const isCombat = log.includes('⚔️') || log.toLowerCase().includes('combat') || log.toLowerCase().includes('vs');
-  const isRetreat = log.includes('🏃') || log.toLowerCase().includes('retreat');
+  return grouped;
+}
+
+function renderGroupedHistoryEntry(grouped: GroupedLog) {
+  if (grouped.isJson && grouped.action) {
+    const action = grouped.action;
+    const playerColor = action.player === 'X' ? 'text-rose-400' : action.player === 'O' ? 'text-amber-400' : 'text-neutral-400';
+
+    if (action.type === 'deploy' || action.type === 'deploy_all') {
+      return (
+        <div key={grouped.key} className="text-xs text-neutral-300 py-1 border-b border-neutral-800/40 leading-relaxed font-mono flex items-center gap-1.5">
+          <span className={`${playerColor} font-bold`}>({action.player})</span>
+          <span className="text-indigo-400 font-bold">📥</span>
+          <span className="font-bold text-white">{action.count}</span>
+          <span className="text-neutral-500">at</span>
+          <span className="text-neutral-400 font-semibold">{action.cellKey}</span>
+        </div>
+      );
+    }
+    if (action.type === 'move') {
+      return (
+        <div key={grouped.key} className="text-xs text-neutral-300 py-1 border-b border-neutral-800/40 leading-relaxed font-mono flex items-center gap-1.5">
+          <span className={`${playerColor} font-bold`}>({action.player})</span>
+          <span className="text-emerald-450 font-bold">🏃</span>
+          <span className="font-bold text-white">{action.count}</span>
+          <span className="text-neutral-500">from</span>
+          <span className="text-neutral-400 font-semibold">{action.from} ➡️ {action.to}</span>
+        </div>
+      );
+    }
+    if (action.type === 'end_deploy') {
+      return (
+        <div key={grouped.key} className="text-xs text-neutral-400 italic py-1 border-b border-neutral-800/40 leading-relaxed font-mono flex items-center gap-1.5">
+          <span className={`${playerColor} font-bold`}>({action.player})</span>
+          <span className="font-semibold text-neutral-500">🏁 Completed Deploy</span>
+        </div>
+      );
+    }
+    if (action.type === 'end_turn') {
+      return (
+        <div key={grouped.key} className="text-xs text-neutral-400 italic py-1 border-b border-neutral-800/40 leading-relaxed font-mono flex items-center gap-1.5">
+          <span className={`${playerColor} font-bold`}>({action.player})</span>
+          <span className="font-semibold text-neutral-500">⌛ Ended Turn</span>
+        </div>
+      );
+    }
+    if (action.type === 'react') {
+      return (
+        <div key={grouped.key} className="text-xs text-neutral-300 py-1 border-b border-neutral-800/40 leading-relaxed font-mono flex items-center gap-1.5">
+          <span className={`${playerColor} font-bold`}>({action.player})</span>
+          <span className="text-amber-400 font-bold">🛡️</span>
+          <span>{action.reactType === 'retreat' ? `Retreated to ${action.retreatTo}` : `Fought at ${action.cellKey}`}</span>
+        </div>
+      );
+    }
+  }
+
+  const rawLog = grouped.rawLog || '';
+  const isCombat = rawLog.includes('⚔️') || rawLog.toLowerCase().includes('combat') || rawLog.toLowerCase().includes('vs');
+  const isRetreat = rawLog.includes('🏃') || rawLog.toLowerCase().includes('retreat');
 
   if (isCombat) {
-    const info = parseCombatText(log);
+    const info = parseCombatText(rawLog);
     if (info.cell) {
       const attColor = info.attackerPiece === 'X' ? 'text-rose-400' : 'text-amber-400';
       const defColor = info.defenderPiece === 'X' ? 'text-rose-400' : 'text-amber-400';
       const winnerColor = info.winnerText === 'Attacker' ? attColor : info.winnerText === 'Defender' ? defColor : 'text-neutral-400';
 
       return (
-        <div key={idx} className="text-[11px] py-1.5 px-2 my-1 rounded-lg bg-red-950/40 border border-red-900/40 text-neutral-300 font-mono leading-normal shadow-sm flex flex-col gap-0.5">
-          <div className="flex items-center justify-between">
-            <span className="text-red-400 font-bold">⚔️ {info.cell}</span>
-            {info.winnerText === 'Draw' ? (
-              <span className="text-neutral-400 font-semibold text-[10px]">Draw 💀</span>
-            ) : (
-              <span className={`${winnerColor} font-bold text-[10px]`}>
-                {info.winnerText} Wins
+        <div key={grouped.key} className="text-xs py-1 border-b border-neutral-800/40 leading-normal text-neutral-300 font-mono flex items-center gap-1.5 flex-wrap">
+          <span className={`${attColor} font-bold`}>({info.attackerPiece})</span>
+          <span className="text-red-400 font-bold">⚔️</span>
+          <span className={`${defColor} font-bold`}>({info.defenderPiece})</span>
+          <span className="text-neutral-500">at</span>
+          <span className="text-neutral-400 font-semibold">{info.cell}</span>
+          <span className="text-neutral-500">:</span>
+          <span className="text-white font-bold">{info.attackerCard}</span>
+          <span className="text-neutral-500">vs</span>
+          <span className="text-white font-bold">{info.defenderCard}</span>
+          <span className="text-neutral-400">➡️</span>
+          {info.winnerText === 'Draw' ? (
+            <span className="text-neutral-500 font-bold">💀 Draw</span>
+          ) : (
+            <>
+              <span className={`${winnerColor} font-bold`}>
+                ({info.winnerText === 'Attacker' ? info.attackerPiece : info.defenderPiece})
               </span>
-            )}
-          </div>
-          <div className="flex items-center gap-1 text-neutral-400 text-[10px]">
-            <span className={`${attColor} font-bold`}>{info.attackerCard}({info.attackerPiece})</span>
-            <span>vs</span>
-            <span className={`${defColor} font-bold`}>{info.defenderCard}({info.defenderPiece})</span>
-            {info.degradedVal && (
-              <>
-                <span>➡️</span>
-                <span className={`${winnerColor} font-bold`}>{info.degradedVal}</span>
-              </>
-            )}
-          </div>
+              {info.degradedVal && (
+                <span className="text-neutral-400 font-semibold">[{info.degradedVal}]</span>
+              )}
+            </>
+          )}
         </div>
       );
     }
   }
 
   if (isRetreat) {
-    const info = parseRetreatText(log);
+    const info = parseRetreatText(rawLog);
     if (info.cell) {
       const defColor = info.defenderPiece === 'X' ? 'text-rose-400' : 'text-amber-400';
       const attColor = info.attackerPiece === 'X' ? 'text-rose-400' : 'text-amber-400';
 
       return (
-        <div key={idx} className="text-[11px] py-1.5 px-2 my-1 rounded-lg bg-amber-955/20 border border-amber-900/30 text-neutral-300 font-mono leading-normal shadow-sm flex flex-col gap-0.5">
-          <div className="flex items-center justify-between">
-            <span className="text-amber-400 font-bold">🏃 Retreat at {info.cell}</span>
-          </div>
-          <div className="text-[10px] text-neutral-400">
-            <span className={`${defColor} font-semibold`}>{info.defenderPiece}</span> retreated to <span className="text-neutral-200 font-bold">{info.retreatTo}</span>.
-            <br />
-            <span className={`${attColor} font-semibold`}>{info.attackerPiece}</span> captured cell.
-          </div>
+        <div key={grouped.key} className="text-xs text-neutral-300 py-1 border-b border-neutral-800/40 leading-relaxed font-mono flex items-center gap-1.5 flex-wrap">
+          <span className={`${defColor} font-bold`}>({info.defenderPiece})</span>
+          <span className="text-amber-400 font-bold">🏃</span>
+          <span className="text-neutral-500">retreat to</span>
+          <span className="text-neutral-400 font-semibold">{info.retreatTo}</span>
+          <span className="text-neutral-500">|</span>
+          <span className={`${attColor} font-bold`}>({info.attackerPiece})</span>
+          <span className="text-indigo-400 font-bold">📥</span>
+          <span className="text-neutral-400 font-semibold">{info.cell}</span>
         </div>
       );
     }
   }
 
   return (
-    <div key={idx} className="text-xs text-neutral-300 py-1 border-b border-neutral-800/40 leading-relaxed">
-      {log}
+    <div key={grouped.key} className="text-xs text-neutral-300 py-1 border-b border-neutral-800/40 leading-relaxed">
+      {rawLog}
     </div>
   );
 }
@@ -358,11 +429,14 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
     }
   }, [state.history?.length, activeCombatCellKey, currentPropCombat]);
 
-  const logEndRef = useRef<HTMLDivElement>(null);
+  const logContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (logEndRef.current) {
-      logEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    if (logContainerRef.current) {
+      logContainerRef.current.scrollTo({
+        top: logContainerRef.current.scrollHeight,
+        behavior: 'smooth'
+      });
     }
   }, [state.history?.length]);
 
@@ -695,13 +769,19 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
         {/* Battle Log */}
         <div className="border-t border-neutral-800 pt-3 flex flex-col flex-1 w-full">
           <div className="text-xs font-semibold text-neutral-500 uppercase tracking-widest mb-2">Battle Log</div>
-          <div className="flex-1 min-h-[200px] max-h-[240px] overflow-y-auto bg-neutral-950/60 border border-neutral-800 rounded-xl p-3 flex flex-col gap-1 shadow-inner scrollbar-thin">
-            {state.history && state.history.length > 0 ? (
-              state.history.map((log, idx) => renderHistoryEntry(log, idx))
-            ) : (
-              <div className="text-xs text-neutral-600 italic text-center my-auto">No events yet.</div>
-            )}
-            <div ref={logEndRef} />
+          <div 
+            ref={logContainerRef}
+            className="flex-1 min-h-[200px] max-h-[240px] overflow-y-auto bg-neutral-950/60 border border-neutral-800 rounded-xl p-3 flex flex-col gap-1 shadow-inner scrollbar-thin"
+          >
+            {(() => {
+              const groupedLogs = getGroupedHistory(state.history || []);
+              if (groupedLogs.length > 0) {
+                return groupedLogs.map((grouped) => renderGroupedHistoryEntry(grouped));
+              }
+              return (
+                <div className="text-xs text-neutral-600 italic text-center my-auto">No events yet.</div>
+              );
+            })()}
           </div>
         </div>
 
