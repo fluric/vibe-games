@@ -697,7 +697,7 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
       `}</style>
       
       {/* ── Side panel for active phase info ── */}
-      <div className="w-full xl:w-72 flex flex-col gap-4 bg-neutral-900/80 border border-neutral-800 p-5 rounded-2xl backdrop-blur-md">
+      <div className="w-full xl:w-72 flex flex-col gap-4 bg-neutral-900/80 border border-neutral-800 p-5 rounded-2xl backdrop-blur-md relative z-20">
         <div>
           <div className="text-xs font-semibold text-neutral-500 uppercase tracking-widest">Active Turn</div>
           <div className="flex items-center gap-2 mt-1">
@@ -723,9 +723,9 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
             <div className="text-xs font-semibold text-neutral-500 uppercase tracking-widest">Phase</div>
             
             {/* Info Icon & Hover Tooltip */}
-            <div className="relative group/info cursor-help flex items-center justify-center w-5 h-5 rounded-full bg-neutral-800 hover:bg-neutral-700 text-[10px] text-neutral-450 hover:text-white font-bold transition-all">
+            <div className="relative group/info cursor-help flex items-center justify-center w-5 h-5 rounded-full bg-indigo-900/60 border border-indigo-500/30 text-indigo-300 hover:bg-indigo-650 hover:text-white hover:border-indigo-400 font-bold transition-all shadow-sm shadow-indigo-500/10">
               ℹ️
-              <div className="absolute left-full ml-2 top-1/2 -translate-y-1/2 hidden group-hover/info:block w-64 bg-neutral-950/95 border border-neutral-800 p-3.5 rounded-xl shadow-2xl z-30 pointer-events-none text-xs leading-relaxed text-neutral-350 font-normal normal-case">
+              <div className="absolute left-full ml-2 top-1/2 -translate-y-1/2 hidden group-hover/info:block w-64 bg-neutral-950 border border-neutral-800 p-3.5 rounded-xl shadow-2xl z-50 pointer-events-none text-xs leading-relaxed text-neutral-350 font-normal normal-case">
                 {phase === 'deploy' && (
                   <span>
                     Deploy cards from your hand onto your 🛖 <strong>Urban housing cells</strong>. 
@@ -1238,58 +1238,79 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
         </div>
 
         {/* Hand View at the bottom of the board canvas (Spacious card-game style) */}
-        {isMyTurn && phase === 'deploy' && (
-          <div className="w-full max-w-[560px] bg-neutral-900/80 border border-neutral-800/80 p-5 rounded-2xl backdrop-blur-md flex flex-col items-center gap-4 shadow-xl">
-            <div className="flex justify-between items-center w-full text-xs font-semibold text-neutral-400 px-1">
-              <span>YOUR HAND ({activeHand.length} cards)</span>
-              <div className="flex items-center gap-3">
-                {selectedCellKey && activeHand.length > 0 && (
-                  <button
-                    onClick={async () => {
-                      try {
-                        await onAction({
-                          type: 'deploy_all',
-                          cellKey: selectedCellKey
-                        });
-                        setSelectedCellKey(null);
-                      } catch (e) {
-                        console.error(e);
-                      }
-                    }}
-                    disabled={disabled || submittingMove}
-                    className="px-2 py-1 bg-indigo-650 hover:bg-indigo-500 text-white font-bold rounded text-[10px] transition-all cursor-pointer shadow-md hover:scale-105 active:scale-95"
-                  >
-                    Deploy All to {selectedCellKey}
-                  </button>
-                )}
-                <span>{selectedCellKey ? `Click a card to deploy to ${selectedCellKey}` : 'Click a card, then click a highlighted cell'}</span>
+        <div className="w-full max-w-[560px] bg-neutral-900/80 border border-neutral-800/80 p-5 rounded-2xl backdrop-blur-md flex flex-col items-center gap-4 shadow-xl min-h-[162px] h-[162px] justify-center">
+          {isMyTurn && phase === 'deploy' ? (
+            <>
+              <div className="flex justify-between items-center w-full text-xs font-semibold text-neutral-400 px-1">
+                <span>YOUR HAND ({activeHand.length} cards)</span>
+                <div className="flex items-center gap-3">
+                  {selectedCellKey && activeHand.length > 0 && (
+                    <button
+                      onClick={async () => {
+                        try {
+                          await onAction({
+                            type: 'deploy_all',
+                            cellKey: selectedCellKey
+                          });
+                          setSelectedCellKey(null);
+                        } catch (e) {
+                          console.error(e);
+                        }
+                      }}
+                      disabled={disabled || submittingMove}
+                      className="px-2 py-1 bg-indigo-650 hover:bg-indigo-500 text-white font-bold rounded text-[10px] transition-all cursor-pointer shadow-md hover:scale-105 active:scale-95"
+                    >
+                      Deploy All to {selectedCellKey}
+                    </button>
+                  )}
+                  <span>{selectedCellKey ? `Click a card to deploy to ${selectedCellKey}` : 'Click a card, then click a highlighted cell'}</span>
+                </div>
               </div>
+              {activeHand.length === 0 ? (
+                <div className="text-center py-6 text-neutral-600 text-sm italic">Empty hand</div>
+              ) : (
+                <div className="flex flex-wrap justify-center gap-4 w-full">
+                  {activeHand.map((card, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => handleHandCardClick(idx)}
+                      className={`w-16 h-24 rounded-xl flex flex-col items-center justify-between p-2.5 border-2 transition-all duration-200 relative hover:scale-105 active:scale-95 cursor-pointer shadow-lg ${
+                        selectedHandCardIndex === idx
+                          ? 'bg-indigo-950 border-indigo-400 text-indigo-200 shadow-indigo-500/30 scale-110 -translate-y-2'
+                          : 'bg-neutral-950 border-neutral-800 text-neutral-400 hover:border-neutral-700 hover:text-white'
+                      }`}
+                    >
+                      <span className="text-[9px] font-bold self-start">{formatCardValue(card.value)}</span>
+                      <span className="text-xl font-black">{formatCardValue(card.value)}</span>
+                      <span className="text-[7px] uppercase font-bold tracking-tight text-neutral-500 self-end">
+                        {card.value === 13 ? 'King' : card.value === 12 ? 'Queen' : card.value === 11 ? 'Jack' : 'Sol'}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="flex flex-col items-center justify-center text-neutral-500 gap-1.5 py-4">
+              {phase === 'deploy' ? (
+                <>
+                  <span className="text-2xl animate-pulse">📥</span>
+                  <span className="text-sm font-semibold tracking-wide font-mono uppercase">Awaiting Opponent Deployment</span>
+                </>
+              ) : phase === 'move' ? (
+                <>
+                  <span className="text-2xl text-emerald-500/80">🏃</span>
+                  <span className="text-sm font-semibold tracking-wide font-mono uppercase">Movement Phase Active</span>
+                </>
+              ) : (
+                <>
+                  <span className="text-2xl text-amber-500/80">🛡️</span>
+                  <span className="text-sm font-semibold tracking-wide font-mono uppercase">Combat Reaction Phase</span>
+                </>
+              )}
             </div>
-            {activeHand.length === 0 ? (
-              <div className="text-center py-6 text-neutral-600 text-sm italic">Empty hand</div>
-            ) : (
-              <div className="flex flex-wrap justify-center gap-4 w-full">
-                {activeHand.map((card, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => handleHandCardClick(idx)}
-                    className={`w-16 h-24 rounded-xl flex flex-col items-center justify-between p-2.5 border-2 transition-all duration-200 relative hover:scale-105 active:scale-95 cursor-pointer shadow-lg ${
-                      selectedHandCardIndex === idx
-                        ? 'bg-indigo-950 border-indigo-400 text-indigo-200 shadow-indigo-500/30 scale-110 -translate-y-2'
-                        : 'bg-neutral-950 border-neutral-800 text-neutral-400 hover:border-neutral-700 hover:text-white'
-                    }`}
-                  >
-                    <span className="text-[9px] font-bold self-start">{formatCardValue(card.value)}</span>
-                    <span className="text-xl font-black">{formatCardValue(card.value)}</span>
-                    <span className="text-[7px] uppercase font-bold tracking-tight text-neutral-500 self-end">
-                      {card.value === 13 ? 'King' : card.value === 12 ? 'Queen' : card.value === 11 ? 'Jack' : 'Sol'}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       {/* ── Active Actions Panels (Right Column) ── */}
