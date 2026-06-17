@@ -951,18 +951,25 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
       return 'fill-blue-900/60 stroke-blue-400 stroke-[2.5]';
     }
     if (isSelected) {
-      return 'fill-indigo-900/60 stroke-indigo-400 stroke-[2.5]';
+      return myPiece === 'X'
+        ? 'fill-rose-900/60 stroke-rose-400 stroke-[2.5]'
+        : 'fill-amber-900/60 stroke-amber-400 stroke-[2.5]';
     }
     if (isSelectableDeployCell) {
-      if (selectedHandCardIndex !== null) {
-        return 'fill-indigo-950/60 stroke-indigo-400 stroke-[2] animate-pulse';
+      if (myPiece === 'X') {
+        if (selectedHandCardIndex !== null) {
+          return 'fill-rose-950/60 stroke-rose-400 stroke-[2] animate-pulse';
+        }
+        return 'fill-rose-900/40 stroke-rose-500 stroke-[1.5]';
+      } else {
+        if (selectedHandCardIndex !== null) {
+          return 'fill-amber-950/60 stroke-amber-400 stroke-[2] animate-pulse';
+        }
+        return 'fill-amber-900/30 stroke-amber-500 stroke-[1.5]';
       }
-      return 'fill-indigo-900/40 stroke-indigo-500 stroke-[1.5]';
     }
 
     switch (cell.cellType) {
-      case 'grail_center':
-        return 'fill-amber-950/60 stroke-amber-500 stroke-[2]';
       case 'home_base':
         return cell.r < 0 
           ? 'fill-rose-950/80 stroke-rose-500 stroke-[2]' 
