@@ -460,6 +460,138 @@ async function runTests() {
     Math.random = originalRandom;
   }
 
+  // ── Test Turn Limit Draw ──
+  console.log('  Testing turn limit draw (draw at 400 turns)...');
+  const sLimit = createInitialState();
+  assert.strictEqual(sLimit.turnCount, 0);
+  
+  sLimit.turnCount = 399;
+  sLimit.phase = 'move';
+  sLimit.turn = 'X';
+  
+  const finalState = HolyGrailEngine.handleMove(sLimit, { type: 'end_turn' }, 'X');
+  assert.strictEqual(finalState.turnCount, 400);
+  assert.strictEqual(finalState.winner, 'draw');
+
+  // ── Test Grail Lock and Locked Soldiers Rule ──
+  console.log('  Testing Grail lock rules (cannot leave Grail without King, must move all)...');
+  const sLock = createInitialState();
+  sLock.board['0,0'].owner = 'X';
+  sLock.board['0,0'].soldiers = [
+    { value: 13, revealed: false }, // King
+    { value: 5, revealed: false }   // Number card
+  ];
+  sLock.phase = 'move';
+  sLock.turn = 'X';
+  
+  // Try to move only 1 soldier out of the Grail cell -> Should throw
+  assert.throws(() => {
+    HolyGrailEngine.handleMove(sLock, { type: 'move', from: '0,0', to: '0,-1', count: 1 }, 'X');
+  }, /Must move all soldiers from the Grail cell together/);
+  
+  // Try to move all soldiers, but without a King
+  sLock.board['0,0'].soldiers = [
+    { value: 10, revealed: false },
+    { value: 5, revealed: false }
+  ];
+  assert.throws(() => {
+    HolyGrailEngine.handleMove(sLock, { type: 'move', from: '0,0', to: '0,-1', count: 2 }, 'X');
+  }, /Must include the King in the moving stack/);
+
+  // Clean move with all soldiers including King
+  sLock.board['0,0'].soldiers = [
+    { value: 13, revealed: false },
+    { value: 5, revealed: false }
+  ];
+  const lockNextState = HolyGrailEngine.handleMove(sLock, { type: 'move', from: '0,0', to: '0,-1', count: 2 }, 'X');
+  assert.strictEqual(lockNextState.board['0,0'].soldiers.length, 0);
+  assert.strictEqual(lockNextState.movesThisTurn?.[0].cards.length, 2);
+
+  // ── Test King Death Carry Retreat ──
+  console.log('  Testing King death carry retreat...');
+  let sDeath = createInitialState();
+  sDeath.board['0,0'].owner = 'X';
+  sDeath.board['0,0'].soldiers = [
+    { value: 13, revealed: false }, // King
+    { value: 12, revealed: false }  // Queen
+  ];
+  
+  sDeath.board['0,-1'].owner = 'O';
+  sDeath.board['0,-1'].soldiers = [
+    { value: 13, revealed: false }  // King
+  ];
+  
+  sDeath.phase = 'move';
+  sDeath.turn = 'X';
+  
+  sDeath = HolyGrailEngine.handleMove(sDeath, { type: 'move', from: '0,0', to: '0,-1', count: 2 }, 'X');
+  assert.strictEqual(sDeath.grailCellKey, '0,-1');
+  
+  sDeath = HolyGrailEngine.handleMove(sDeath, { type: 'end_turn' }, 'X');
+  
+  sDeath.phase = 'react';
+  sDeath.turn = 'O';
+  sDeath = HolyGrailEngine.handleMove(sDeath, { type: 'react', cellKey: '0,-1', reactType: 'fight' }, 'O');
+  
+  assert.strictEqual(sDeath.grailCellKey, '0,0'); // Reverted
+  assert.strictEqual(sDeath.board['0,0'].soldiers.length, 1); // Queen returned
+  assert.strictEqual(sDeath.board['0,0'].owner, 'X');
+  assert.strictEqual(sDeath.board['0,-1'].soldiers.length, 0); // Destination empty
+  assert.strictEqual(sDeath.board['0,-1'].owner, null);
+
+  // ── Test King Death Carry Retreat on Merge ──
+  console.log('  Testing King death carry retreat on merge...');
+  let sMergeDeath = createInitialState();
+  
+  // Set up Grail cell (0,0) with King and Queen
+  sMergeDeath.board['0,0'].owner = 'X';
+  sMergeDeath.board['0,0'].soldiers = [
+    { value: 13, revealed: false }, // King
+    { value: 12, revealed: false }  // Queen
+  ];
+  
+  // Set up another cell (1,-1) with a Jack
+  sMergeDeath.board['1,-1'].owner = 'X';
+  sMergeDeath.board['1,-1'].soldiers = [
+    { value: 11, revealed: false }  // Jack
+  ];
+  
+  // Set up destination cell (0,-1) owned by O
+  sMergeDeath.board['0,-1'].owner = 'O';
+  sMergeDeath.board['0,-1'].soldiers = [
+    { value: 13, revealed: false }  // O's King
+  ];
+  
+  sMergeDeath.phase = 'move';
+  sMergeDeath.turn = 'X';
+  
+  // Move 1: Jack moves to (0,-1) -> initiates combat
+  sMergeDeath = HolyGrailEngine.handleMove(sMergeDeath, { type: 'move', from: '1,-1', to: '0,-1', count: 1 }, 'X');
+  
+  // Move 2: King + Queen move carrying the Grail to (0,-1) -> merges
+  sMergeDeath = HolyGrailEngine.handleMove(sMergeDeath, { type: 'move', from: '0,0', to: '0,-1', count: 2 }, 'X');
+  
+  assert.strictEqual(sMergeDeath.grailCellKey, '0,-1');
+  
+  sMergeDeath = HolyGrailEngine.handleMove(sMergeDeath, { type: 'end_turn' }, 'X');
+  
+  sMergeDeath.phase = 'react';
+  sMergeDeath.turn = 'O';
+  
+  // Duel 1: X's Jack (11) vs O's King (13) -> King wins, Jack destroyed. King remains.
+  sMergeDeath = HolyGrailEngine.handleMove(sMergeDeath, { type: 'react', cellKey: '0,-1', reactType: 'fight' }, 'O');
+  
+  // Duel 2: X's King (13) vs O's King (13) -> Draw, both die! King carrying Grail is dead!
+  sMergeDeath = HolyGrailEngine.handleMove(sMergeDeath, { type: 'react', cellKey: '0,-1', reactType: 'fight' }, 'O');
+  
+  // Abort and retreat should trigger!
+  // Surviving units (Queen) and Grail should retreat back to (0,0) [Grail cell's origin], NOT (1,-1) [Jack's origin]!
+  assert.strictEqual(sMergeDeath.grailCellKey, '0,0'); // Grail retreated to (0,0)
+  assert.strictEqual(sMergeDeath.board['0,0'].soldiers.length, 1); // Queen returned to (0,0)
+  assert.strictEqual(sMergeDeath.board['0,0'].owner, 'X');
+  assert.strictEqual(sMergeDeath.board['0,-1'].soldiers.length, 0); // Destination empty
+  assert.strictEqual(sMergeDeath.board['0,-1'].owner, null);
+
   console.log('✅ All Holy Grail Engine tests passed successfully!');
 }
 

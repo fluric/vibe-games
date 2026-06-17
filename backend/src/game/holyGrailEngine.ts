@@ -96,7 +96,8 @@ export function createInitialState(): HolyGrailGameState {
     drawnThisTurn: false,
     movesThisTurn: [],
     roundTurnsCompleted: 0,
-    history: []
+    history: [],
+    turnCount: 0
   };
 
   // Draw initial 2 cards for Player X immediately!
@@ -316,6 +317,12 @@ export function checkGameEnd(state: HolyGrailGameState): void {
         cell.owner = 'neutral';
       }
     }
+    return;
+  }
+
+  // 3. Turn limit (Draw after 400 turns)
+  if ((state.turnCount || 0) >= 400) {
+    state.winner = 'draw';
     return;
   }
 }
@@ -692,19 +699,25 @@ export function getSmartAiAction(state: HolyGrailGameState, player: PlayerPiece)
               }
             }
 
-            for (let count = 1; count <= usableCount; count++) {
-              const isGrailMove = state.grailCellKey === key;
-              if (isGrailMove) {
-                const movingCards = cell.soldiers.slice(0, count);
-                if (!movingCards.some(c => c.value === 13)) continue;
+            const isGrailMove = state.grailCellKey === key;
+            if (isGrailMove) {
+              if (usableCount === cell.soldiers.length && cell.soldiers.some(c => c.value === 13)) {
+                moves.push({
+                  type: 'move',
+                  from: key,
+                  to: nKey,
+                  count: cell.soldiers.length
+                });
               }
-
-              moves.push({
-                type: 'move',
-                from: key,
-                to: nKey,
-                count
-              });
+            } else {
+              for (let count = 1; count <= usableCount; count++) {
+                moves.push({
+                  type: 'move',
+                  from: key,
+                  to: nKey,
+                  count
+                });
+              }
             }
           }
         }
@@ -926,6 +939,43 @@ export const HolyGrailEngine = {
         combat.attackerTopCard = attackerStack[0] || null;
         combat.defenderTopCard = defenderStack[0] || null;
 
+        // Check if King died carrying the Grail
+        const isGrailCombat = !!combat.carriesGrail;
+        const hasKing = attackerStack.some(c => c.value === 13);
+
+        if (isGrailCombat && !hasKing) {
+          // King died carrying the Grail! Abort move, return survivors and Grail to origin
+          const originKey = combat.originKey;
+          if (originKey) {
+            const originCell = state.board[originKey];
+            if (originCell) {
+              originCell.owner = combat.attacker;
+              originCell.soldiers = [...originCell.soldiers, ...attackerStack];
+            }
+            state.grailCellKey = originKey;
+          }
+
+          // Combat is aborted
+          state.pendingCombats.splice(combatIdx, 1);
+
+          // Clear moving cards from movesThisTurn so they don't get merged at end_turn
+          state.movesThisTurn = (state.movesThisTurn || []).filter(m => m.to !== combat.cellKey);
+
+          // Log to history
+          if (!state.history) state.history = [];
+          state.history.push(`⚠️ Grail Transport Interrupted: King died in combat. Grail and surviving units retreated to ${originKey || 'origin'}.`);
+
+          // Update defender cell state since combat resolved
+          if (defenderStack.length === 0) {
+            cell.owner = null;
+            cell.soldiers = [];
+          } else {
+            cell.soldiers = defenderStack;
+          }
+
+          return state;
+        }
+
         // Resolve combat check
         if (attackerStack.length === 0) {
           state.pendingCombats.splice(combatIdx, 1);
@@ -1070,14 +1120,17 @@ export const HolyGrailEngine = {
 
       // Check Grail transport King requirement
       const isGrailMove = state.grailCellKey === fromKey;
-      const movingStack = fromCell.soldiers.slice(0, count);
-
       if (isGrailMove) {
-        const hasKing = movingStack.some(c => c.value === 13);
+        if (count !== fromCell.soldiers.length) {
+          throw new Error('Must move all soldiers from the Grail cell together');
+        }
+        const hasKing = fromCell.soldiers.some(c => c.value === 13);
         if (!hasKing) {
           throw new Error('Must include the King in the moving stack to carry the Grail');
         }
       }
+
+      const movingStack = fromCell.soldiers.slice(0, count);
 
       // Prevent moving cards that have already moved this turn
       const hasMovedCard = movingStack.some(c => c.moved === true);
@@ -1099,13 +1152,15 @@ export const HolyGrailEngine = {
       // Grail transport intent
       if (isGrailMove) {
         state.grailMovementCandidates = [...(state.grailMovementCandidates || []), toKey];
+        state.grailCellKey = toKey; // Grail moves with the King immediately
       }
 
       // Record this move to resolve clockwise merges
       state.movesThisTurn = [...(state.movesThisTurn || []), {
         from: fromKey,
         to: toKey,
-        cards: movingStack
+        cards: movingStack,
+        carriesGrail: isGrailMove
       }];
 
       // Check destination ownership
@@ -1123,6 +1178,10 @@ export const HolyGrailEngine = {
           combat.attackerStack = reassembleCombatAttackerStack(state, toKey);
           combat.attackerRemainingCount = combat.attackerStack.length;
           combat.attackerTopCard = combat.attackerStack[0] || null;
+          if (isGrailMove) {
+            combat.carriesGrail = true;
+            combat.originKey = fromKey;
+          }
         } else {
           // Create new PendingCombat
           const newCombat: PendingCombat = {
@@ -1133,7 +1192,9 @@ export const HolyGrailEngine = {
             attackerRemainingCount: count,
             defenderRemainingCount: toCell.soldiers.length,
             attackerTopCard: movingStack[0],
-            defenderTopCard: toCell.soldiers[0] || null
+            defenderTopCard: toCell.soldiers[0] || null,
+            originKey: fromKey,
+            carriesGrail: isGrailMove
           };
           state.pendingCombats.push(newCombat);
         }
@@ -1171,6 +1232,9 @@ export const HolyGrailEngine = {
       const opponent: PlayerPiece = player === 'X' ? 'O' : 'X';
       state.turn = opponent;
       
+      // Increment turn count
+      state.turnCount = (state.turnCount || 0) + 1;
+      
       // Determine next player phase (React if under attack, else Deploy)
       const hasDefenses = state.pendingCombats.some(c => c.defender === opponent);
       state.phase = hasDefenses ? 'react' : 'deploy';
@@ -1205,6 +1269,9 @@ export const HolyGrailEngine = {
           delete card.moved;
         }
       }
+
+      // Check for turn-limit draw
+      checkGameEnd(state);
 
       return state;
     }
