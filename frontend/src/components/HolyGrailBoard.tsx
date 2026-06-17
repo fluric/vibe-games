@@ -1399,7 +1399,7 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
       </div>
 
       {/* ── Main Board Canvas ── */}
-      <div className="relative flex flex-col items-center gap-4 w-full max-w-full">
+      <div className="relative flex flex-col items-center w-full max-w-full">
         {/* Pending combat alerts */}
         {pendingCombats.length > 0 && (
           <div className="absolute top-2 left-1/2 -translate-x-1/2 z-10 flex flex-col gap-1.5 max-w-md w-full px-4">
@@ -1961,58 +1961,62 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
         </div>
 
         {/* Hand View at the bottom of the board canvas (Spacious card-game style) */}
-        {isMyTurn && phase === 'deploy' && (
-          <div className="w-full max-w-[560px] bg-neutral-900/80 border border-neutral-800/80 px-5 py-3 rounded-2xl backdrop-blur-md flex flex-col items-center gap-3 shadow-xl min-h-[195px] h-[195px] justify-center">
-            <div className="flex justify-between items-center w-full text-xs font-semibold text-neutral-400 px-1">
-              <span>YOUR HAND ({activeHand.length} cards)</span>
-              <div className="flex items-center gap-3">
-                {selectedCellKey && activeHand.length > 0 && (
-                  <button
-                    onClick={async () => {
-                      try {
-                        await onAction({
-                          type: 'deploy_all',
-                          cellKey: selectedCellKey
-                        });
-                        setSelectedCellKey(null);
-                      } catch (e) {
-                        console.error(e);
-                      }
-                    }}
-                    disabled={isBoardLocked || submittingMove}
-                    className="px-2 py-1 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded text-[10px] transition-all cursor-pointer shadow-md hover:scale-105 active:scale-95"
-                  >
-                    Deploy All to {selectedCellKey}
-                  </button>
-                )}
-                <span>{selectedCellKey ? `Click a card to deploy to ${selectedCellKey}` : 'Click a card, then click a highlighted cell'}</span>
-              </div>
+        <div 
+          className={`w-full max-w-[560px] bg-neutral-900/80 px-5 rounded-2xl backdrop-blur-md flex flex-col items-center gap-3 shadow-xl justify-center transition-all duration-300 ease-in-out overflow-hidden ${
+            isMyTurn && phase === 'deploy'
+              ? 'opacity-100 min-h-[195px] h-[195px] mt-4 py-3 border border-neutral-800/80'
+              : 'opacity-0 min-h-0 h-0 mt-0 py-0 border-0 pointer-events-none'
+          }`}
+        >
+          <div className="flex justify-between items-center w-full text-xs font-semibold text-neutral-400 px-1">
+            <span>YOUR HAND ({activeHand.length} cards)</span>
+            <div className="flex items-center gap-3">
+              {selectedCellKey && activeHand.length > 0 && (
+                <button
+                  onClick={async () => {
+                    try {
+                      await onAction({
+                        type: 'deploy_all',
+                        cellKey: selectedCellKey
+                      });
+                      setSelectedCellKey(null);
+                    } catch (e) {
+                      console.error(e);
+                    }
+                  }}
+                  disabled={isBoardLocked || submittingMove}
+                  className="px-2 py-1 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded text-[10px] transition-all cursor-pointer shadow-md hover:scale-105 active:scale-95"
+                >
+                  Deploy All to {selectedCellKey}
+                </button>
+              )}
+              <span>{selectedCellKey ? `Click a card to deploy to ${selectedCellKey}` : 'Click a card, then click a highlighted cell'}</span>
             </div>
-            {activeHand.length === 0 ? (
-              <div className="text-center py-6 text-neutral-600 text-sm italic">Empty hand</div>
-            ) : (
-              <div className="flex flex-nowrap overflow-x-auto justify-start gap-3 w-full pb-1.5 scrollbar-thin">
-                {activeHand.map((card, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => handleHandCardClick(idx)}
-                    className={`w-16 h-24 rounded-xl flex flex-col items-center justify-between p-2.5 border-2 transition-all duration-200 relative hover:scale-105 active:scale-95 cursor-pointer shadow-lg ${
-                      selectedHandCardIndex === idx
-                        ? 'bg-indigo-950 border-indigo-400 text-indigo-200 shadow-indigo-500/30 scale-110 -translate-y-2'
-                        : 'bg-neutral-950 border-neutral-800 text-neutral-400 hover:border-neutral-700 hover:text-white'
-                    }`}
-                  >
-                    <span className="text-[9px] font-bold self-start">{formatCardValue(card.value)}</span>
-                    <span className="text-xl font-black">{formatCardValue(card.value)}</span>
-                    <span className="text-[7px] uppercase font-bold tracking-tight text-neutral-500 self-end">
-                      {card.value === 13 ? 'King' : card.value === 12 ? 'Queen' : card.value === 11 ? 'Jack' : 'Sol'}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            )}
           </div>
-        )}
+          {activeHand.length === 0 ? (
+            <div className="text-center py-6 text-neutral-600 text-sm italic">Empty hand</div>
+          ) : (
+            <div className="flex flex-nowrap overflow-x-auto justify-start gap-3 w-full pb-1.5 scrollbar-thin">
+              {activeHand.map((card, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => handleHandCardClick(idx)}
+                  className={`w-16 h-24 rounded-xl flex flex-col items-center justify-between p-2.5 border-2 transition-all duration-200 relative hover:scale-105 active:scale-95 cursor-pointer shadow-lg ${
+                    selectedHandCardIndex === idx
+                      ? 'bg-indigo-950 border-indigo-400 text-indigo-200 shadow-indigo-500/30 scale-110 -translate-y-2'
+                      : 'bg-neutral-950 border-neutral-800 text-neutral-400 hover:border-neutral-700 hover:text-white'
+                  }`}
+                >
+                  <span className="text-[9px] font-bold self-start">{formatCardValue(card.value)}</span>
+                  <span className="text-xl font-black">{formatCardValue(card.value)}</span>
+                  <span className="text-[7px] uppercase font-bold tracking-tight text-neutral-500 self-end">
+                    {card.value === 13 ? 'King' : card.value === 12 ? 'Queen' : card.value === 11 ? 'Jack' : 'Sol'}
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* ── Active Actions Panels (Right Column) ── */}
