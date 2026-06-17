@@ -6,6 +6,7 @@ import { MillBoard } from '../components/MillBoard';
 import { ConnectFourBoard } from '../components/ConnectFourBoard';
 import { HolyGrailBoard } from '../components/HolyGrailBoard';
 import * as audio from '../components/AudioEffects';
+import { ConfirmModal } from '../components/ConfirmModal';
 
 const AI_BOT_IDS = [
   '00000000-0000-0000-0000-000000000000', // legacy
@@ -53,6 +54,8 @@ export function GamePage() {
   const [submittingMove, setSubmittingMove] = useState(false);
   const connectFourTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const actionPendingRef = useRef(false);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const [showForfeitConfirm, setShowForfeitConfirm] = useState(false);
 
   useEffect(() => {
     return () => {
@@ -299,16 +302,19 @@ export function GamePage() {
     });
   };
 
-  const handleCancelGame = async () => {
-    console.log('[DEBUG] handleCancelGame clicked, game id:', id);
-    if (!id) return;
+  const handleCancelGame = () => {
     actionPendingRef.current = true;
-    if (!confirm('Are you sure you want to cancel this game lobby?')) {
-      console.log('[DEBUG] Cancel confirm cancelled');
-      actionPendingRef.current = false;
-      return;
-    }
-    console.log('[DEBUG] Cancel confirm accepted, calling api...');
+    setShowCancelConfirm(true);
+  };
+
+  const handleForfeitGame = () => {
+    actionPendingRef.current = true;
+    setShowForfeitConfirm(true);
+  };
+
+  const executeCancelGame = async () => {
+    console.log('[DEBUG] executeCancelGame called, game id:', id);
+    if (!id) return;
     try {
       audio.playPlaceSound();
       await api.cancelGame(id);
@@ -320,19 +326,13 @@ export function GamePage() {
       alert(err instanceof Error ? err.message : 'Failed to cancel game');
     } finally {
       actionPendingRef.current = false;
+      setShowCancelConfirm(false);
     }
   };
 
-  const handleForfeitGame = async () => {
-    console.log('[DEBUG] handleForfeitGame clicked, game id:', id);
+  const executeForfeitGame = async () => {
+    console.log('[DEBUG] executeForfeitGame called, game id:', id);
     if (!id) return;
-    actionPendingRef.current = true;
-    if (!confirm('Are you sure you want to forfeit this match? This will count as a loss.')) {
-      console.log('[DEBUG] Forfeit confirm cancelled');
-      actionPendingRef.current = false;
-      return;
-    }
-    console.log('[DEBUG] Forfeit confirm accepted, calling api...');
     try {
       audio.playPlaceSound();
       const updated = await api.forfeitGame(id);
@@ -344,6 +344,7 @@ export function GamePage() {
       alert(err instanceof Error ? err.message : 'Failed to forfeit game');
     } finally {
       actionPendingRef.current = false;
+      setShowForfeitConfirm(false);
     }
   };
 
@@ -787,6 +788,31 @@ export function GamePage() {
         )}
 
       </div>
+
+      {/* Custom Confirmation Modals */}
+      <ConfirmModal
+        isOpen={showCancelConfirm}
+        title="Cancel Game Lobby"
+        message="Are you sure you want to cancel this game lobby?"
+        confirmLabel="Cancel Game"
+        onConfirm={executeCancelGame}
+        onCancel={() => {
+          actionPendingRef.current = false;
+          setShowCancelConfirm(false);
+        }}
+      />
+
+      <ConfirmModal
+        isOpen={showForfeitConfirm}
+        title="Forfeit Match"
+        message="Are you sure you want to forfeit this match? This will count as a loss."
+        confirmLabel="Forfeit"
+        onConfirm={executeForfeitGame}
+        onCancel={() => {
+          actionPendingRef.current = false;
+          setShowForfeitConfirm(false);
+        }}
+      />
     </div>
   );
 }

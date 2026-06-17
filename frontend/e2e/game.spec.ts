@@ -83,13 +83,12 @@ test.describe('Vibe Games Matchmaking & Gameplay E2E', () => {
     const cancelButton = page.locator('button:has-text("Cancel")');
     await expect(cancelButton).toBeVisible();
 
-    // Handle dialog
-    page.once('dialog', async (dialog) => {
-      expect(dialog.message()).toContain('Are you sure you want to cancel this game lobby?');
-      await dialog.accept();
-    });
-
     await cancelButton.click();
+
+    // Confirm cancel in custom modal
+    const modalConfirm = page.locator('.fixed button:has-text("Cancel Game")');
+    await expect(modalConfirm).toBeVisible();
+    await modalConfirm.click();
 
     // Wait for the match to be deleted and removed from the UI list
     await expect(activeHeader).not.toBeVisible();
@@ -159,13 +158,12 @@ test.describe('Vibe Games Matchmaking & Gameplay E2E', () => {
     const cancelButton = page.locator('button:has-text("Cancel Game")');
     await expect(cancelButton).toBeVisible();
 
-    // Handle dialog
-    page.once('dialog', async (dialog) => {
-      expect(dialog.message()).toContain('Are you sure you want to cancel this game lobby?');
-      await dialog.accept();
-    });
-
     await cancelButton.click();
+
+    // Confirm cancel in custom modal
+    const modalConfirm = page.locator('.fixed button:has-text("Cancel Game")');
+    await expect(modalConfirm).toBeVisible();
+    await modalConfirm.click();
 
     // Verify we are redirected back to the lobby
     await expect(page).toHaveURL(/\/$/);
@@ -186,13 +184,12 @@ test.describe('Vibe Games Matchmaking & Gameplay E2E', () => {
     const forfeitButton = page.locator('button:has-text("Forfeit Match")');
     await expect(forfeitButton).toBeVisible();
 
-    // Handle dialog
-    page.once('dialog', async (dialog) => {
-      expect(dialog.message()).toContain('Are you sure you want to forfeit this match?');
-      await dialog.accept();
-    });
-
     await forfeitButton.click();
+
+    // Confirm forfeit in custom modal
+    const modalConfirm = page.getByRole('button', { name: 'Forfeit', exact: true });
+    await expect(modalConfirm).toBeVisible();
+    await modalConfirm.click();
 
     // Verify status banner changes to Winner
     const statusBanner = page.locator('h2');

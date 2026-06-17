@@ -4,6 +4,7 @@ import * as api from '../api/games';
 import { API_VERSION, type GameDto, type UserDto, type LeaderboardEntryDto } from '@vibe-games/shared';
 import * as audio from '../components/AudioEffects';
 import aiConfig from '../../../backend/src/game/aiConfig.json';
+import { ConfirmModal } from '../components/ConfirmModal';
 
 const typedConfig = aiConfig as unknown as Record<'mill' | 'connect_four' | 'holy_grail', Record<string, { id: string; username: string; elo: number; type: string }>>;
 
@@ -130,6 +131,8 @@ interface GoogleIdentity {
 export function LobbyPage() {
   const navigate = useNavigate();
   const actionPendingRef = useRef(false);
+  const [cancelGameId, setCancelGameId] = useState<string | null>(null);
+  const [forfeitGameId, setForfeitGameId] = useState<string | null>(null);
   const [openGames, setOpenGames] = useState<GameDto[]>([]);
   const [activeGames, setActiveGames] = useState<GameDto[]>([]);
   const [loadingLobby, setLoadingLobby] = useState(true);
@@ -473,17 +476,22 @@ export function LobbyPage() {
     }
   }, [currentUser, checkingAuth, gsiLoaded]);
 
-  const handleCancelGame = async (gameId: string) => {
-    console.log('[DEBUG] Lobby handleCancelGame clicked, gameId:', gameId);
+  const handleCancelGame = (gameId: string) => {
     actionPendingRef.current = true;
-    if (!confirm('Are you sure you want to cancel this game lobby?')) {
-      console.log('[DEBUG] Lobby cancel confirm cancelled');
-      actionPendingRef.current = false;
-      return;
-    }
+    setCancelGameId(gameId);
+  };
+
+  const handleForfeitGame = (gameId: string) => {
+    actionPendingRef.current = true;
+    setForfeitGameId(gameId);
+  };
+
+  const executeCancelGame = async () => {
+    if (!cancelGameId) return;
+    console.log('[DEBUG] Lobby executeCancelGame, gameId:', cancelGameId);
     try {
       audio.playPlaceSound();
-      await api.cancelGame(gameId);
+      await api.cancelGame(cancelGameId);
       console.log('[DEBUG] Lobby cancel success, fetching lobby...');
       await fetchLobby();
     } catch (err) {
@@ -492,20 +500,16 @@ export function LobbyPage() {
       alert(err instanceof Error ? err.message : 'Failed to cancel game');
     } finally {
       actionPendingRef.current = false;
+      setCancelGameId(null);
     }
   };
 
-  const handleForfeitGame = async (gameId: string) => {
-    console.log('[DEBUG] Lobby handleForfeitGame clicked, gameId:', gameId);
-    actionPendingRef.current = true;
-    if (!confirm('Are you sure you want to forfeit this match? This will count as a loss.')) {
-      console.log('[DEBUG] Lobby forfeit confirm cancelled');
-      actionPendingRef.current = false;
-      return;
-    }
+  const executeForfeitGame = async () => {
+    if (!forfeitGameId) return;
+    console.log('[DEBUG] Lobby executeForfeitGame, gameId:', forfeitGameId);
     try {
       audio.playPlaceSound();
-      await api.forfeitGame(gameId);
+      await api.forfeitGame(forfeitGameId);
       console.log('[DEBUG] Lobby forfeit success, fetching lobby...');
       await fetchLobby();
     } catch (err) {
@@ -514,6 +518,7 @@ export function LobbyPage() {
       alert(err instanceof Error ? err.message : 'Failed to forfeit game');
     } finally {
       actionPendingRef.current = false;
+      setForfeitGameId(null);
     }
   };
 
@@ -1290,6 +1295,31 @@ export function LobbyPage() {
           </div>
         </div>
       </div>
+
+      {/* Custom Confirmation Modals */}
+      <ConfirmModal
+        isOpen={cancelGameId !== null}
+        title="Cancel Game Lobby"
+        message="Are you sure you want to cancel this game lobby?"
+        confirmLabel="Cancel Game"
+        onConfirm={executeCancelGame}
+        onCancel={() => {
+          actionPendingRef.current = false;
+          setCancelGameId(null);
+        }}
+      />
+
+      <ConfirmModal
+        isOpen={forfeitGameId !== null}
+        title="Forfeit Match"
+        message="Are you sure you want to forfeit this match? This will count as a loss."
+        confirmLabel="Forfeit"
+        onConfirm={executeForfeitGame}
+        onCancel={() => {
+          actionPendingRef.current = false;
+          setForfeitGameId(null);
+        }}
+      />
     </div>
   );
 }
