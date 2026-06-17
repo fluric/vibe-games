@@ -461,7 +461,7 @@ export const HolyGrailEngine = {
             attackerStack.push(attackerCard);
 
             if (!state.history) state.history = [];
-            state.history.push(`⚔️ Hill Combat at ${cellName}: Attacker's ${attackerName} vs Defender's [${bestName}, ${worstName}]. Attacker wins! Defender's cards destroyed. Attacker degrades to ${getCardLabel(bestResult.newAttackerVal)}.`);
+            state.history.push(`⚔️ Hill Combat at ${cellName}: Attacker (${combat.attacker})'s ${attackerName} vs Defender (${combat.defender})'s [${bestName}, ${worstName}]. Attacker wins! Defender's cards destroyed. Attacker degrades to ${getCardLabel(bestResult.newAttackerVal)}.`);
           } else if (bestResult.winner === 'defender') {
             // Defender wins
             attackerStack.shift();
@@ -475,7 +475,7 @@ export const HolyGrailEngine = {
             defenderStack.push(wCard);
 
             if (!state.history) state.history = [];
-            state.history.push(`⚔️ Hill Combat at ${cellName}: Attacker's ${attackerName} vs Defender's [${bestName}, ${worstName}]. Defender chooses ${bestName} and wins! Attacker's card destroyed. Defender degrades to ${getCardLabel(bestResult.newDefenderVal)}.`);
+            state.history.push(`⚔️ Hill Combat at ${cellName}: Attacker (${combat.attacker})'s ${attackerName} vs Defender (${combat.defender})'s [${bestName}, ${worstName}]. Defender chooses ${bestName} and wins! Attacker's card destroyed. Defender degrades to ${getCardLabel(bestResult.newDefenderVal)}.`);
           } else {
             // Draw
             attackerStack.shift();
@@ -485,7 +485,7 @@ export const HolyGrailEngine = {
             defenderStack.push(wCard);
 
             if (!state.history) state.history = [];
-            state.history.push(`⚔️ Hill Combat at ${cellName}: Attacker's ${attackerName} vs Defender's [${bestName}, ${worstName}]. Draw! Defender's ${bestName} and Attacker's card are both destroyed. Defender's ${worstName} survives.`);
+            state.history.push(`⚔️ Hill Combat at ${cellName}: Attacker (${combat.attacker})'s ${attackerName} vs Defender (${combat.defender})'s [${bestName}, ${worstName}]. Draw! Defender's ${bestName} and Attacker's card are both destroyed. Defender's ${worstName} survives.`);
           }
 
         } else {
@@ -502,7 +502,7 @@ export const HolyGrailEngine = {
             attackerStack.push(attackerCard);
 
             if (!state.history) state.history = [];
-            state.history.push(`⚔️ Combat at ${cellName}: Attacker's ${attackerName} vs Defender's ${defenderName}. Attacker wins! Defender's card destroyed.${duelRes.newAttackerVal !== attackerCard.value ? ` Attacker degrades to ${getCardLabel(duelRes.newAttackerVal)}.` : ''}`);
+            state.history.push(`⚔️ Combat at ${cellName}: Attacker (${combat.attacker})'s ${attackerName} vs Defender (${combat.defender})'s ${defenderName}. Attacker wins! Defender's card destroyed.${duelRes.newAttackerVal !== attackerCard.value ? ` Attacker degrades to ${getCardLabel(duelRes.newAttackerVal)}.` : ''}`);
           } else if (duelRes.winner === 'defender') {
             attackerStack.shift(); // attacker card destroyed
             defenderStack.shift();
@@ -510,14 +510,14 @@ export const HolyGrailEngine = {
             defenderStack.push(defenderCard);
 
             if (!state.history) state.history = [];
-            state.history.push(`⚔️ Combat at ${cellName}: Attacker's ${attackerName} vs Defender's ${defenderName}. Defender wins! Attacker's card destroyed.${duelRes.newDefenderVal !== defenderCard.value ? ` Defender degrades to ${getCardLabel(duelRes.newDefenderVal)}.` : ''}`);
+            state.history.push(`⚔️ Combat at ${cellName}: Attacker (${combat.attacker})'s ${attackerName} vs Defender (${combat.defender})'s ${defenderName}. Defender wins! Attacker's card destroyed.${duelRes.newDefenderVal !== defenderCard.value ? ` Defender degrades to ${getCardLabel(duelRes.newDefenderVal)}.` : ''}`);
           } else {
             // Draw: both destroyed
             attackerStack.shift();
             defenderStack.shift();
 
             if (!state.history) state.history = [];
-            state.history.push(`⚔️ Combat at ${cellName}: Attacker's ${attackerName} vs Defender's ${defenderName}. Draw! Both cards are destroyed.`);
+            state.history.push(`⚔️ Combat at ${cellName}: Attacker (${combat.attacker})'s ${attackerName} vs Defender (${combat.defender})'s ${defenderName}. Draw! Both cards are destroyed.`);
           }
         }
 
@@ -558,7 +558,7 @@ export const HolyGrailEngine = {
 
         const cellName = getCellType(cell.q, cell.r) === 'grail_center' ? 'Grail Center' : `${cell.q},${cell.r}`;
         if (!state.history) state.history = [];
-        state.history.push(`🏃 Retreat at ${cellName}: Defender retreated to ${destKey}. Attacker captures ${cellName} with ${attackerStack.length} unit(s).`);
+        state.history.push(`🏃 Retreat at ${cellName}: Defender (${combat.defender}) retreated to ${destKey}. Attacker (${combat.attacker}) captures ${cellName} with ${attackerStack.length} unit(s).`);
 
         // Resolve combat
         state.pendingCombats.splice(combatIdx, 1);

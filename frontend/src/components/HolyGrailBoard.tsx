@@ -41,63 +41,119 @@ function formatCardValue(value: number): string {
   return value.toString();
 }
 
-function formatCellName(key: string): string {
-  if (key === '0,0') return 'Grail Center';
-  if (key === '0,-3') return "Player X's Base";
-  if (key === '0,3') return "Player O's Base";
-  const [q, r] = key.split(',').map(Number);
-  if (isNaN(q) || isNaN(r)) return key;
-  return `(${q}, ${r})`;
+function parseCardLabel(label: string): number {
+  if (!label) return 0;
+  label = label.trim();
+  if (label === 'King' || label === 'K') return 13;
+  if (label === 'Queen' || label === 'Q') return 12;
+  if (label === 'Jack' || label === 'J') return 11;
+  const num = parseInt(label, 10);
+  return isNaN(num) ? 0 : num;
+}
+
+function parseCombatText(log: string) {
+  const cellMatch = log.match(/at\s+([^:]+):/);
+  const cell = cellMatch ? cellMatch[1].trim() : '';
+  
+  const attMatch = log.match(/Attacker\s+\(([XO])\)'s\s+([^\s]+)\s+vs/);
+  const attackerPiece = attMatch ? attMatch[1] : '';
+  const attackerCard = attMatch ? attMatch[2].trim() : '';
+  
+  const defMatch = log.match(/Defender\s+\(([XO])\)'s\s+([^.]+)\./);
+  const defenderPiece = defMatch ? defMatch[1] : '';
+  let defenderCard = defMatch ? defMatch[2].trim() : '';
+  if (defenderCard.startsWith('[')) {
+    defenderCard = defenderCard.replace(/[\[\]]/g, '');
+  }
+
+  let winnerText = '';
+  if (log.includes('Attacker wins')) winnerText = 'Attacker';
+  else if (log.includes('Defender chooses') && log.includes('wins')) winnerText = 'Defender';
+  else if (log.includes('Defender wins')) winnerText = 'Defender';
+  else if (log.includes('Draw!')) winnerText = 'Draw';
+
+  const degradeMatch = log.match(/degrades\s+to\s+([^\s.]+)/);
+  const degradedVal = degradeMatch ? degradeMatch[1].trim() : '';
+
+  if (!attackerPiece) {
+    const fallbackAtt = log.includes('Attacker (X)') ? 'X' : log.includes('Attacker (O)') ? 'O' : 'X';
+    const fallbackDef = fallbackAtt === 'X' ? 'O' : 'X';
+    return { 
+      cell, 
+      attackerPiece: fallbackAtt, 
+      attackerCard: attackerCard || '?', 
+      defenderPiece: fallbackDef, 
+      defenderCard: defenderCard || '?', 
+      winnerText, 
+      degradedVal 
+    };
+  }
+
+  return { cell, attackerPiece, attackerCard, defenderPiece, defenderCard, winnerText, degradedVal };
+}
+
+function parseRetreatText(log: string) {
+  const cellMatch = log.match(/at\s+([^:]+):/);
+  const cell = cellMatch ? cellMatch[1].trim() : '';
+
+  const defMatch = log.match(/Defender\s+\(([XO])\)\s+retreated\s+to\s+([^\s.]+)/);
+  const defenderPiece = defMatch ? defMatch[1] : '';
+  const retreatTo = defMatch ? defMatch[2] : '';
+
+  const attMatch = log.match(/Attacker\s+\(([XO])\)\s+captures/);
+  const attackerPiece = attMatch ? attMatch[1] : '';
+
+  return { cell, defenderPiece, retreatTo, attackerPiece };
 }
 
 function renderHistoryEntry(log: string, idx: number) {
   if (log.trim().startsWith('{')) {
     try {
       const action = JSON.parse(log);
-      const playerText = action.player ? `Player ${action.player}` : 'A player';
       const playerColor = action.player === 'X' ? 'text-rose-400' : action.player === 'O' ? 'text-amber-400' : 'text-neutral-400';
 
       if (action.type === 'deploy' || action.action === 'deploy') {
         return (
-          <div key={idx} className="text-xs text-neutral-300 py-1 border-b border-neutral-800/40 leading-relaxed">
-            <span className={`font-semibold ${playerColor}`}>{playerText}</span> deployed{' '}
-            <span className="font-semibold text-indigo-400">{formatCardValue(action.cardValue)}</span> at{' '}
-            <span className="text-neutral-400 font-medium">{formatCellName(action.cellKey)}</span>
+          <div key={idx} className="text-xs text-neutral-300 py-1 border-b border-neutral-800/40 leading-relaxed font-mono flex items-center gap-1.5">
+            <span className="text-neutral-500 font-bold">{action.cellKey}</span>
+            <span className="text-indigo-400 font-bold">📥</span>
+            <span className="font-bold text-white">{formatCardValue(action.cardValue)}</span>
+            <span className={`${playerColor} font-bold`}>({action.player})</span>
           </div>
         );
       }
       if (action.type === 'move' || action.action === 'move') {
         return (
-          <div key={idx} className="text-xs text-neutral-300 py-1 border-b border-neutral-800/40 leading-relaxed">
-            <span className={`font-semibold ${playerColor}`}>{playerText}</span> moved{' '}
-            <span className="font-semibold text-emerald-450">{action.count} unit(s)</span> from{' '}
-            <span className="text-neutral-400 font-medium">{formatCellName(action.from)}</span> to{' '}
-            <span className="text-neutral-400 font-medium">{formatCellName(action.to)}</span>
+          <div key={idx} className="text-xs text-neutral-300 py-1 border-b border-neutral-800/40 leading-relaxed font-mono flex items-center gap-1.5">
+            <span className="text-neutral-500 font-bold">{action.from} ➡️ {action.to}</span>
+            <span className="text-emerald-450 font-bold">🏃</span>
+            <span className="font-bold text-white">{action.count}</span>
+            <span className={`${playerColor} font-bold`}>({action.player})</span>
           </div>
         );
       }
       if (action.type === 'end_deploy' || action.action === 'end_deploy') {
         return (
-          <div key={idx} className="text-xs text-neutral-400 italic py-1 border-b border-neutral-800/40 leading-relaxed">
-            <span className={`font-semibold ${playerColor} not-italic`}>{playerText}</span> completed deployment
+          <div key={idx} className="text-xs text-neutral-400 italic py-1 border-b border-neutral-800/40 leading-relaxed font-mono flex items-center gap-1.5">
+            <span className={`${playerColor} font-bold`}>🏁 {action.player}</span>
+            <span>Completed Deploy</span>
           </div>
         );
       }
       if (action.type === 'end_turn' || action.action === 'end_turn') {
         return (
-          <div key={idx} className="text-xs text-neutral-400 italic py-1 border-b border-neutral-800/40 leading-relaxed">
-            <span className={`font-semibold ${playerColor} not-italic`}>{playerText}</span> ended turn
+          <div key={idx} className="text-xs text-neutral-400 italic py-1 border-b border-neutral-800/40 leading-relaxed font-mono flex items-center gap-1.5">
+            <span className={`${playerColor} font-bold`}>⌛ {action.player}</span>
+            <span>Ended Turn</span>
           </div>
         );
       }
       if (action.type === 'react' || action.action === 'react') {
-        const reactVerb = action.reactType === 'retreat' ? 'retreated' : 'fought';
-        const targetText = action.reactType === 'retreat' ? ` to ${formatCellName(action.retreatTo)}` : '';
         return (
-          <div key={idx} className="text-xs text-neutral-300 py-1 border-b border-neutral-800/40 leading-relaxed">
-            <span className={`font-semibold ${playerColor}`}>{playerText}</span> {reactVerb} at{' '}
-            <span className="text-neutral-400 font-medium">{formatCellName(action.cellKey)}</span>
-            {targetText}
+          <div key={idx} className="text-xs text-neutral-300 py-1 border-b border-neutral-800/40 leading-relaxed font-mono flex items-center gap-1.5">
+            <span className="text-neutral-500 font-bold">{action.cellKey}</span>
+            <span className={`${playerColor} font-bold`}>🛡️ {action.player}</span>
+            <span>{action.reactType === 'retreat' ? `Retreated ➡️ ${action.retreatTo}` : 'Fought ⚔️'}</span>
           </div>
         );
       }
@@ -106,24 +162,64 @@ function renderHistoryEntry(log: string, idx: number) {
     }
   }
 
-  // Combat or retreat log (plain text)
+  // Plain text logs (combat and retreat)
   const isCombat = log.includes('⚔️') || log.toLowerCase().includes('combat') || log.toLowerCase().includes('vs');
   const isRetreat = log.includes('🏃') || log.toLowerCase().includes('retreat');
 
   if (isCombat) {
-    return (
-      <div key={idx} className="text-xs py-2 px-2.5 my-1 rounded-lg bg-red-950/40 border border-red-900/40 text-red-200 leading-relaxed shadow-sm">
-        {log}
-      </div>
-    );
+    const info = parseCombatText(log);
+    if (info.cell) {
+      const attColor = info.attackerPiece === 'X' ? 'text-rose-400' : 'text-amber-400';
+      const defColor = info.defenderPiece === 'X' ? 'text-rose-400' : 'text-amber-400';
+      const winnerColor = info.winnerText === 'Attacker' ? attColor : info.winnerText === 'Defender' ? defColor : 'text-neutral-400';
+
+      return (
+        <div key={idx} className="text-[11px] py-1.5 px-2 my-1 rounded-lg bg-red-950/40 border border-red-900/40 text-neutral-300 font-mono leading-normal shadow-sm flex flex-col gap-0.5">
+          <div className="flex items-center justify-between">
+            <span className="text-red-400 font-bold">⚔️ {info.cell}</span>
+            {info.winnerText === 'Draw' ? (
+              <span className="text-neutral-400 font-semibold text-[10px]">Draw 💀</span>
+            ) : (
+              <span className={`${winnerColor} font-bold text-[10px]`}>
+                {info.winnerText} Wins
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-1 text-neutral-400 text-[10px]">
+            <span className={`${attColor} font-bold`}>{info.attackerCard}({info.attackerPiece})</span>
+            <span>vs</span>
+            <span className={`${defColor} font-bold`}>{info.defenderCard}({info.defenderPiece})</span>
+            {info.degradedVal && (
+              <>
+                <span>➡️</span>
+                <span className={`${winnerColor} font-bold`}>{info.degradedVal}</span>
+              </>
+            )}
+          </div>
+        </div>
+      );
+    }
   }
 
   if (isRetreat) {
-    return (
-      <div key={idx} className="text-xs py-2 px-2.5 my-1 rounded-lg bg-amber-950/20 border border-amber-900/30 text-amber-200 leading-relaxed shadow-sm">
-        {log}
-      </div>
-    );
+    const info = parseRetreatText(log);
+    if (info.cell) {
+      const defColor = info.defenderPiece === 'X' ? 'text-rose-400' : 'text-amber-400';
+      const attColor = info.attackerPiece === 'X' ? 'text-rose-400' : 'text-amber-400';
+
+      return (
+        <div key={idx} className="text-[11px] py-1.5 px-2 my-1 rounded-lg bg-amber-955/20 border border-amber-900/30 text-neutral-300 font-mono leading-normal shadow-sm flex flex-col gap-0.5">
+          <div className="flex items-center justify-between">
+            <span className="text-amber-400 font-bold">🏃 Retreat at {info.cell}</span>
+          </div>
+          <div className="text-[10px] text-neutral-400">
+            <span className={`${defColor} font-semibold`}>{info.defenderPiece}</span> retreated to <span className="text-neutral-200 font-bold">{info.retreatTo}</span>.
+            <br />
+            <span className={`${attColor} font-semibold`}>{info.attackerPiece}</span> captured cell.
+          </div>
+        </div>
+      );
+    }
   }
 
   return (
@@ -159,75 +255,91 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
   const [hoveredCellKey, setHoveredCellKey] = useState<string | null>(null);
   const [hoveredMoveIdx, setHoveredMoveIdx] = useState<number | null>(null);
 
-  const [isRevealingAttacker, setIsRevealingAttacker] = useState(false);
-  const prevAttackerValRef = useRef<number | undefined>(undefined);
+  const [displayedCombat, setDisplayedCombat] = useState<PendingCombat | null>(null);
   const [displayedAttackerVal, setDisplayedAttackerVal] = useState<number | undefined>(undefined);
-  
-  const [isRevealingDefender, setIsRevealingDefender] = useState(false);
-  const prevDefenderValRef = useRef<number | undefined>(undefined);
   const [displayedDefenderVal, setDisplayedDefenderVal] = useState<number | undefined>(undefined);
+  
+  const [isRevealingAttacker, setIsRevealingAttacker] = useState(false);
+  const [isTransitioningNext, setIsTransitioningNext] = useState(false);
+  
+  const prevHistoryLenRef = useRef<number>(state.history?.length || 0);
+  const isTransitioningRef = useRef<boolean>(false);
 
-  const combat = pendingCombats.find(c => c.cellKey === activeCombatCellKey);
-
-  useEffect(() => {
-    if (combat && combat.attackerTopCard) {
-      const currentVal = combat.attackerTopCard.value;
-      const prevVal = prevAttackerValRef.current;
-      if ((prevVal === 0 || prevVal === undefined) && currentVal > 0) {
-        setIsRevealingAttacker(true);
-        setDisplayedAttackerVal(0); // Show '?' first
-
-        const midTimer = setTimeout(() => {
-          setDisplayedAttackerVal(currentVal);
-        }, 250);
-
-        const endTimer = setTimeout(() => {
-          setIsRevealingAttacker(false);
-        }, 500);
-
-        return () => {
-          clearTimeout(midTimer);
-          clearTimeout(endTimer);
-        };
-      } else {
-        setDisplayedAttackerVal(currentVal);
-      }
-      prevAttackerValRef.current = currentVal;
-    } else {
-      setDisplayedAttackerVal(undefined);
-      prevAttackerValRef.current = undefined;
-    }
-  }, [combat?.attackerTopCard?.value]);
+  const currentPropCombat = pendingCombats.find(c => c.cellKey === activeCombatCellKey) || null;
 
   useEffect(() => {
-    if (combat && combat.defenderTopCard) {
-      const currentVal = combat.defenderTopCard.value;
-      const prevVal = prevDefenderValRef.current;
-      if ((prevVal === 0 || prevVal === undefined) && currentVal > 0) {
-        setIsRevealingDefender(true);
-        setDisplayedDefenderVal(0); // Show '?' first
-
-        const midTimer = setTimeout(() => {
-          setDisplayedDefenderVal(currentVal);
-        }, 250);
-
-        const endTimer = setTimeout(() => {
-          setIsRevealingDefender(false);
-        }, 500);
-
-        return () => {
-          clearTimeout(midTimer);
-          clearTimeout(endTimer);
-        };
+    if (!isTransitioningRef.current) {
+      setDisplayedCombat(currentPropCombat);
+      if (currentPropCombat) {
+        setDisplayedAttackerVal(currentPropCombat.attackerTopCard?.value);
+        setDisplayedDefenderVal(currentPropCombat.defenderTopCard?.value);
       } else {
-        setDisplayedDefenderVal(currentVal);
+        setDisplayedAttackerVal(undefined);
+        setDisplayedDefenderVal(undefined);
       }
-      prevDefenderValRef.current = currentVal;
-    } else {
-      setDisplayedDefenderVal(undefined);
-      prevDefenderValRef.current = undefined;
     }
-  }, [combat?.defenderTopCard?.value]);
+  }, [currentPropCombat, activeCombatCellKey]);
+
+  useEffect(() => {
+    const history = state.history || [];
+    const prevHistoryLen = prevHistoryLenRef.current;
+    prevHistoryLenRef.current = history.length;
+
+    if (history.length > prevHistoryLen && activeCombatCellKey) {
+      const lastLog = history[history.length - 1];
+      if (lastLog && lastLog.includes('⚔️') && lastLog.includes(activeCombatCellKey)) {
+        const duel = parseCombatText(lastLog);
+        if (duel) {
+          isTransitioningRef.current = true;
+          // STAGE 1: Spin card to reveal attacker value
+          setIsRevealingAttacker(true);
+          setDisplayedAttackerVal(0); // Spin face-down
+
+          const attackerRevealTimer = setTimeout(() => {
+            const parsedAtt = parseCardLabel(duel.attackerCard);
+            const parsedDef = parseCardLabel(duel.defenderCard);
+            setDisplayedAttackerVal(parsedAtt);
+            setDisplayedDefenderVal(parsedDef);
+          }, 200);
+
+          // STAGE 2: Spin both cards face down, and swap to the new state
+          const transitionTimer = setTimeout(() => {
+            setIsTransitioningNext(true);
+            setIsRevealingAttacker(false);
+            
+            setDisplayedAttackerVal(0);
+            setDisplayedDefenderVal(0);
+
+            const swapTimer = setTimeout(() => {
+              setDisplayedCombat(currentPropCombat);
+              if (currentPropCombat) {
+                setDisplayedAttackerVal(currentPropCombat.attackerTopCard?.value);
+                setDisplayedDefenderVal(currentPropCombat.defenderTopCard?.value);
+              } else {
+                setDisplayedAttackerVal(undefined);
+                setDisplayedDefenderVal(undefined);
+              }
+            }, 200);
+
+            const endTransitionTimer = setTimeout(() => {
+              setIsTransitioningNext(false);
+              isTransitioningRef.current = false;
+            }, 400);
+
+            return () => {
+              clearTimeout(swapTimer);
+              clearTimeout(endTransitionTimer);
+            };
+          }, 1400);
+
+          return () => {
+            clearTimeout(attackerRevealTimer);
+            clearTimeout(transitionTimer);
+          };
+        }
+      }
+    }
+  }, [state.history?.length, activeCombatCellKey, currentPropCombat]);
 
   const logEndRef = useRef<HTMLDivElement>(null);
 
@@ -240,12 +352,22 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
   const isMyTurn = turn === myPiece && !winner;
   const activeHand = myPiece ? (hands[myPiece] || []) : [];
 
+  // Auto-advance deploy phase if hand is empty
+  useEffect(() => {
+    if (phase === 'deploy' && isMyTurn && activeHand.length === 0 && !disabled && !submittingMove) {
+      endDeploy();
+    }
+  }, [phase, isMyTurn, activeHand.length, disabled, submittingMove]);
+
   // If active combat is resolved, close modal
   useEffect(() => {
     if (activeCombatCellKey) {
       const exists = pendingCombats.some(c => c.cellKey === activeCombatCellKey);
       if (!exists) {
-        setActiveCombatCellKey(null);
+        const timer = setTimeout(() => {
+          setActiveCombatCellKey(null);
+        }, 1800);
+        return () => clearTimeout(timer);
       }
     }
   }, [pendingCombats, activeCombatCellKey]);
@@ -1122,7 +1244,7 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
         {activeCombatCellKey !== null && (
           <div className="fixed inset-0 bg-neutral-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
             {(() => {
-              const combat = pendingCombats.find(c => c.cellKey === activeCombatCellKey);
+              const combat = displayedCombat;
               if (!combat) return null;
               const isHill = board[combat.cellKey]?.cellType === 'hill';
               const adjacentFriendly = getAdjacentFriendlyCells(combat.cellKey);
@@ -1169,8 +1291,9 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
                   <div className="flex items-center justify-around bg-neutral-950 p-5 rounded-2xl border border-neutral-800 mb-4">
                     {/* Attacker side */}
                     <div className="flex flex-col items-center gap-1">
-                               <div className={`w-16 h-22 border-2 border-rose-500 bg-rose-950/20 rounded-xl flex items-center justify-center text-2xl font-black text-rose-100 relative shadow-[0_0_15px_rgba(239,68,68,0.1)] ${
-                        isRevealingAttacker ? 'animate-card-flip' : ''
+                      <span className="text-[10px] font-semibold text-rose-400 uppercase tracking-widest">Attacker</span>
+                      <div className={`w-16 h-22 border-2 border-rose-500 bg-rose-950/20 rounded-xl flex items-center justify-center text-2xl font-black text-rose-100 relative shadow-[0_0_15px_rgba(239,68,68,0.1)] ${
+                        (isRevealingAttacker || isTransitioningNext) ? 'animate-card-flip' : ''
                       }`}>
                         {displayedAttackerVal !== undefined ? formatCardValue(displayedAttackerVal) : '?'}
                         {displayedAttackerVal === 13 && <span className="absolute -top-3 text-sm">👑</span>}
@@ -1206,7 +1329,7 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
                     <div className="flex flex-col items-center gap-1">
                       <span className="text-[10px] font-semibold text-amber-400 uppercase tracking-widest font-mono">Defender</span>
                       <div className={`w-16 h-22 border-2 border-amber-500 bg-amber-950/20 rounded-xl flex items-center justify-center text-2xl font-black text-amber-100 relative shadow-[0_0_15px_rgba(245,158,11,0.1)] ${
-                        isRevealingDefender ? 'animate-card-flip' : ''
+                        isTransitioningNext ? 'animate-card-flip' : ''
                       }`}>
                         {displayedDefenderVal !== undefined ? formatCardValue(displayedDefenderVal) : '?'}
                         {displayedDefenderVal === 13 && <span className="absolute -top-3 text-sm">👑</span>}
