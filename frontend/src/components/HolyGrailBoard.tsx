@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import type { 
   HolyGrailGameState, 
   HolyGrailCell, 
@@ -674,6 +674,7 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
   const [reviewMoves, setReviewMoves] = useState<TempVisualMove[]>([]);
   const [reviewDeploys, setReviewDeploys] = useState<TempVisualDeploy[]>([]);
   const [lastReviewedEndTurnIdx, setLastReviewedEndTurnIdx] = useState<number>(-1);
+  const [isLogCollapsed, setIsLogCollapsed] = useState<boolean>(true);
 
   const isMyTurn = turn === myPiece && !winner;
   const history = useMemo(() => state.history || [], [state.history]);
@@ -1362,32 +1363,30 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
         </div>
 
         {/* Battle Log */}
-        <div className="border-t border-neutral-800 pt-3 flex flex-col flex-1 w-full">
-          <div className="text-xs font-semibold text-neutral-500 uppercase tracking-widest mb-2">Battle Log</div>
-          <div 
-            ref={logContainerRef}
-            className="flex-1 min-h-[200px] max-h-[240px] overflow-y-auto bg-neutral-950/60 border border-neutral-800 rounded-xl p-3 flex flex-col gap-1 shadow-inner scrollbar-thin"
+        <div className="border-t border-neutral-800 pt-3 flex flex-col w-full">
+          <button 
+            onClick={() => setIsLogCollapsed(!isLogCollapsed)}
+            className="flex items-center justify-between text-xs font-semibold text-neutral-500 uppercase tracking-widest mb-2 w-full hover:text-neutral-300 transition-colors"
           >
-            {(() => {
-              const groupedLogs = getGroupedHistory(state.history || []);
-              if (groupedLogs.length > 0) {
-                return groupedLogs.map((grouped) => renderGroupedHistoryEntry(grouped));
-              }
-              return (
-                <div className="text-xs text-neutral-600 italic text-center my-auto">No events yet.</div>
-              );
-            })()}
-          </div>
-        </div>
-
-        {/* Leave Match */}
-        <div className="flex flex-col gap-2 mt-4 border-t border-neutral-800 pt-3">
-          <Link
-            to="/"
-            className="w-full py-2 rounded-xl text-center font-bold text-xs border border-neutral-800 hover:border-neutral-700 bg-neutral-950 hover:bg-neutral-900 text-neutral-400 hover:text-white transition-all duration-200"
-          >
-            Leave Match
-          </Link>
+            <span>Battle Log</span>
+            <span className="text-[10px]">{isLogCollapsed ? '▶' : '▼'}</span>
+          </button>
+          {!isLogCollapsed && (
+            <div 
+              ref={logContainerRef}
+              className="flex-1 min-h-[200px] max-h-[240px] overflow-y-auto bg-neutral-950/60 border border-neutral-800 rounded-xl p-3 flex flex-col gap-1 shadow-inner scrollbar-thin"
+            >
+              {(() => {
+                const groupedLogs = getGroupedHistory(state.history || []);
+                if (groupedLogs.length > 0) {
+                  return groupedLogs.map((grouped) => renderGroupedHistoryEntry(grouped));
+                }
+                return (
+                  <div className="text-xs text-neutral-600 italic text-center my-auto">No events yet.</div>
+                );
+              })()}
+            </div>
+          )}
         </div>
       </div>
 
