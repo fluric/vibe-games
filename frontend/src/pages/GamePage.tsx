@@ -31,6 +31,9 @@ const AI_BOT_IDS = [
   '00000000-0000-0000-0000-000000000020', // Cowardly Connie (C4 Easy)
   '00000000-0000-0000-0000-000000000021', // Greedy Gordon (C4 Easy)
   '00000000-0000-0000-0000-000000000022', // Arthur the Aggressive (C4 Easy)
+  '00000000-0000-0000-0000-000000000030', // Random Randy (HG Easy)
+  '00000000-0000-0000-0000-000000000031', // Aggressive Archie (HG Medium)
+  '00000000-0000-0000-0000-000000000032', // Tactical Toby (HG Hard)
 ];
 
 function isBotId(id?: string): boolean {
@@ -49,6 +52,7 @@ export function GamePage() {
   const [game, setGame] = useState<GameDto | null>(null);
   const [submittingMove, setSubmittingMove] = useState(false);
   const connectFourTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const actionPendingRef = useRef(false);
 
   useEffect(() => {
     return () => {
@@ -171,7 +175,11 @@ export function GamePage() {
 
     if (isFinished || isAiGame) return;
 
-    const interval = setInterval(fetchGame, 2000);
+    const interval = setInterval(() => {
+      if (!actionPendingRef.current) {
+        fetchGame();
+      }
+    }, 2000);
     return () => clearInterval(interval);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, game?.status, game?.playerX?.id, game?.playerO?.id, fetchGame, checkingAuth]);
@@ -292,28 +300,50 @@ export function GamePage() {
   };
 
   const handleCancelGame = async () => {
+    console.log('[DEBUG] handleCancelGame clicked, game id:', id);
     if (!id) return;
-    if (!confirm('Are you sure you want to cancel this game lobby?')) return;
+    actionPendingRef.current = true;
+    if (!confirm('Are you sure you want to cancel this game lobby?')) {
+      console.log('[DEBUG] Cancel confirm cancelled');
+      actionPendingRef.current = false;
+      return;
+    }
+    console.log('[DEBUG] Cancel confirm accepted, calling api...');
     try {
       audio.playPlaceSound();
       await api.cancelGame(id);
+      console.log('[DEBUG] Cancel api call success, navigating to lobby...');
       navigate('/');
     } catch (err) {
+      console.error('[DEBUG] Cancel api call failed:', err);
       audio.playErrorSound();
       alert(err instanceof Error ? err.message : 'Failed to cancel game');
+    } finally {
+      actionPendingRef.current = false;
     }
   };
 
   const handleForfeitGame = async () => {
+    console.log('[DEBUG] handleForfeitGame clicked, game id:', id);
     if (!id) return;
-    if (!confirm('Are you sure you want to forfeit this match? This will count as a loss.')) return;
+    actionPendingRef.current = true;
+    if (!confirm('Are you sure you want to forfeit this match? This will count as a loss.')) {
+      console.log('[DEBUG] Forfeit confirm cancelled');
+      actionPendingRef.current = false;
+      return;
+    }
+    console.log('[DEBUG] Forfeit confirm accepted, calling api...');
     try {
       audio.playPlaceSound();
       const updated = await api.forfeitGame(id);
+      console.log('[DEBUG] Forfeit api call success, updated status:', updated.status);
       setGame(updated);
     } catch (err) {
+      console.error('[DEBUG] Forfeit api call failed:', err);
       audio.playErrorSound();
       alert(err instanceof Error ? err.message : 'Failed to forfeit game');
+    } finally {
+      actionPendingRef.current = false;
     }
   };
 
@@ -451,6 +481,7 @@ export function GamePage() {
 
             {game.status === 'waiting' && (game.playerX?.id === userId || game.playerO?.id === userId) && (
               <button
+                type="button"
                 onClick={handleCancelGame}
                 className="px-3 py-1.5 rounded-lg bg-rose-950/40 hover:bg-rose-900/40 text-xs font-semibold text-rose-400 transition-all border border-rose-900/30 hover:border-rose-800/50 active:scale-95"
               >
@@ -460,6 +491,7 @@ export function GamePage() {
 
             {game.status === 'in_progress' && !isSpectator && (
               <button
+                type="button"
                 onClick={handleForfeitGame}
                 className="px-3 py-1.5 rounded-lg bg-rose-950/40 hover:bg-rose-900/40 text-xs font-semibold text-rose-400 transition-all border border-rose-900/30 hover:border-rose-800/50 active:scale-95"
               >

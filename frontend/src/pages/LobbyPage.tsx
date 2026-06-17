@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import * as api from '../api/games';
 import { API_VERSION, type GameDto, type UserDto, type LeaderboardEntryDto } from '@vibe-games/shared';
@@ -129,6 +129,7 @@ interface GoogleIdentity {
 
 export function LobbyPage() {
   const navigate = useNavigate();
+  const actionPendingRef = useRef(false);
   const [openGames, setOpenGames] = useState<GameDto[]>([]);
   const [activeGames, setActiveGames] = useState<GameDto[]>([]);
   const [loadingLobby, setLoadingLobby] = useState(true);
@@ -381,7 +382,11 @@ export function LobbyPage() {
     if (!currentUser) return;
     // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchLobby();
-    const interval = setInterval(fetchLobby, 3000);
+    const interval = setInterval(() => {
+      if (!actionPendingRef.current) {
+        fetchLobby();
+      }
+    }, 3000);
     return () => clearInterval(interval);
   }, [currentUser, fetchLobby]);
 
@@ -469,26 +474,46 @@ export function LobbyPage() {
   }, [currentUser, checkingAuth, gsiLoaded]);
 
   const handleCancelGame = async (gameId: string) => {
-    if (!confirm('Are you sure you want to cancel this game lobby?')) return;
+    console.log('[DEBUG] Lobby handleCancelGame clicked, gameId:', gameId);
+    actionPendingRef.current = true;
+    if (!confirm('Are you sure you want to cancel this game lobby?')) {
+      console.log('[DEBUG] Lobby cancel confirm cancelled');
+      actionPendingRef.current = false;
+      return;
+    }
     try {
       audio.playPlaceSound();
       await api.cancelGame(gameId);
+      console.log('[DEBUG] Lobby cancel success, fetching lobby...');
       await fetchLobby();
     } catch (err) {
       audio.playErrorSound();
+      console.error('[DEBUG] Lobby cancel failed:', err);
       alert(err instanceof Error ? err.message : 'Failed to cancel game');
+    } finally {
+      actionPendingRef.current = false;
     }
   };
 
   const handleForfeitGame = async (gameId: string) => {
-    if (!confirm('Are you sure you want to forfeit this match? This will count as a loss.')) return;
+    console.log('[DEBUG] Lobby handleForfeitGame clicked, gameId:', gameId);
+    actionPendingRef.current = true;
+    if (!confirm('Are you sure you want to forfeit this match? This will count as a loss.')) {
+      console.log('[DEBUG] Lobby forfeit confirm cancelled');
+      actionPendingRef.current = false;
+      return;
+    }
     try {
       audio.playPlaceSound();
       await api.forfeitGame(gameId);
+      console.log('[DEBUG] Lobby forfeit success, fetching lobby...');
       await fetchLobby();
     } catch (err) {
       audio.playErrorSound();
+      console.error('[DEBUG] Lobby forfeit failed:', err);
       alert(err instanceof Error ? err.message : 'Failed to forfeit game');
+    } finally {
+      actionPendingRef.current = false;
     }
   };
 
@@ -1036,12 +1061,14 @@ export function LobbyPage() {
                       {isWaiting ? (
                         <>
                           <button
+                            type="button"
                             onClick={() => handleCopyLink(game.id)}
                             className="px-3 py-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-xs font-medium text-neutral-300 transition-all border border-neutral-700/50 hover:border-neutral-600 active:scale-95 flex items-center gap-1"
                           >
                             {copiedId === game.id ? '✓ Copied' : '🔗 Copy Link'}
                           </button>
                           <button
+                            type="button"
                             onClick={() => handleCancelGame(game.id)}
                             className="px-3 py-1.5 rounded-lg bg-rose-950/40 hover:bg-rose-900/40 text-xs font-semibold text-rose-400 transition-all border border-rose-900/30 hover:border-rose-800/50 active:scale-95"
                           >
@@ -1051,12 +1078,14 @@ export function LobbyPage() {
                       ) : (
                         <div className="flex items-center gap-2">
                           <button
+                            type="button"
                             onClick={() => navigate(`/game/${game.id}`)}
                             className="px-4 py-1.5 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-xs font-bold text-white transition-all shadow-lg shadow-indigo-600/10 active:scale-95"
                           >
                             Resume Match
                           </button>
                           <button
+                            type="button"
                             onClick={() => handleForfeitGame(game.id)}
                             className="px-3 py-1.5 rounded-lg bg-rose-950/40 hover:bg-rose-900/40 text-xs font-semibold text-rose-400 transition-all border border-rose-900/30 hover:border-rose-800/50 active:scale-95"
                           >
