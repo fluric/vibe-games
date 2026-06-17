@@ -269,7 +269,7 @@
     "medium_aggressive": {
       "id": "00000000-0000-0000-0000-000000000031",
       "username": "Aggressive Archie (HG Medium)",
-      "elo": 163,
+      "elo": 270,
       "type": "minimax",
       "depth": 3,
       "timeLimitMs": 500
@@ -277,9 +277,17 @@
     "hard_tactical": {
       "id": "00000000-0000-0000-0000-000000000032",
       "username": "Tactical Toby (HG Hard)",
-      "elo": 162,
+      "elo": 295,
       "type": "minimax",
       "depth": 4,
+      "timeLimitMs": 4000
+    },
+    "expert_smart": {
+      "id": "00000000-0000-0000-0000-000000000033",
+      "username": "Smart Sophia (HG Expert)",
+      "elo": 292,
+      "type": "smart",
+      "depth": 1,
       "timeLimitMs": 4000
     }
   }

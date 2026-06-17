@@ -39,7 +39,8 @@ const BOT_DESCRIPTIONS: Record<string, Record<string, string>> = {
   holy_grail: {
     easy_random: "Random Play",
     medium_aggressive: "Positional & Combat",
-    hard_tactical: "Tactical Search"
+    hard_tactical: "Tactical Search",
+    expert_smart: "Lookahead 1-ply Simulation"
   }
 };
 
@@ -73,7 +74,8 @@ const BOT_EMOJIS: Record<string, Record<string, string>> = {
   holy_grail: {
     easy_random: "🟢",
     medium_aggressive: "🟡",
-    hard_tactical: "🔴"
+    hard_tactical: "🔴",
+    expert_smart: "🌌"
   }
 };
 
@@ -107,7 +109,8 @@ const BOT_HELP_TEXT: Record<string, Record<string, string>> = {
   holy_grail: {
     easy_random: "Randy HG plays completely random moves.",
     medium_aggressive: "Archie HG plays a positional game targeting farms and bases.",
-    hard_tactical: "Toby HG calculates moves and combat sequences."
+    hard_tactical: "Toby HG calculates moves and combat sequences.",
+    expert_smart: "Sophia simulates all possible next moves and evaluates positions using detailed combat, farm, base, and Grail heuristics."
   }
 };
 
@@ -141,7 +144,7 @@ export function LobbyPage() {
   const [joiningCode, setJoiningCode] = useState(false);
   const [lobbyError, setLobbyError] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
-  type BotLevel = 'easy_random' | 'easy_cowardly' | 'easy_greedy' | 'easy_aggressive' | 'medium_aggressive' | 'medium_defensive' | 'medium_mobile' | 'hard_tactical' | 'expert_garry' | 'legendary_magnus' | 'perfect_oracle';
+  type BotLevel = 'easy_random' | 'easy_cowardly' | 'easy_greedy' | 'easy_aggressive' | 'medium_aggressive' | 'medium_defensive' | 'medium_mobile' | 'hard_tactical' | 'expert_garry' | 'legendary_magnus' | 'perfect_oracle' | 'expert_smart';
 
   const [activeGameTab, setActiveGameTab] = useState<'mill' | 'connect_four' | 'holy_grail'>(() => {
     const saved = localStorage.getItem('vibe-games-active-tab');
@@ -170,7 +173,7 @@ export function LobbyPage() {
 
   const [aiLevelHolyGrail, setAiLevelHolyGrail] = useState<BotLevel>(() => {
     const saved = localStorage.getItem('vibe-games-ai-level-holy_grail');
-    const validLevels = ['easy_random', 'medium_aggressive', 'hard_tactical'];
+    const validLevels = ['easy_random', 'medium_aggressive', 'hard_tactical', 'expert_smart'];
     return (saved && validLevels.includes(saved)) ? (saved as BotLevel) : 'medium_aggressive';
   });
 
@@ -592,7 +595,7 @@ export function LobbyPage() {
   const handleCreateGame = async (
     vsAi = false,
     isPublic = true,
-    selectedAiLevel?: 'easy' | 'medium' | 'hard' | 'easy_random' | 'easy_cowardly' | 'easy_greedy' | 'easy_aggressive' | 'medium_aggressive' | 'medium_defensive' | 'medium_mobile' | 'hard_tactical' | 'expert_garry' | 'legendary_magnus' | 'perfect_oracle'
+    selectedAiLevel?: 'easy' | 'medium' | 'hard' | 'easy_random' | 'easy_cowardly' | 'easy_greedy' | 'easy_aggressive' | 'medium_aggressive' | 'medium_defensive' | 'medium_mobile' | 'hard_tactical' | 'expert_garry' | 'legendary_magnus' | 'perfect_oracle' | 'expert_smart'
   ) => {
     if (syncStatus === 'mismatch') {
       alert('Cannot create match: API version mismatch. Please refresh the page.');

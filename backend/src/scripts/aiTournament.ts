@@ -24,7 +24,7 @@ function runGame(
   const engine = ENGINES[gameType];
   let state = engine.createInitialState();
   let moveCount = 0;
-  const maxMoves = gameType === 'mill' ? 150 : 60;
+  const maxMoves = gameType === 'mill' ? 150 : (gameType === 'holy_grail' ? 400 : 60);
   const positionCounts = new Map<string, number>();
 
   const gameBotsConfig = localConfig[gameType];
@@ -80,6 +80,7 @@ if (!isMainThread) {
 
   const millBots = Object.keys(config.mill);
   const c4Bots = Object.keys(config.connect_four);
+  const hgBots = Object.keys(config.holy_grail);
 
   if (MOVE_TIME_MS !== null) {
     console.log(`⏱️  Move time budget: Overridden to ${MOVE_TIME_MS}ms per move`);
@@ -90,11 +91,13 @@ if (!isMainThread) {
   // Initialize tournament ratings
   const ratings: Record<string, Record<string, number>> = {
     mill: {},
-    connect_four: {}
+    connect_four: {},
+    holy_grail: {}
   };
   const winCounts: Record<string, Record<string, Record<string, number>>> = {
     mill: {},
-    connect_four: {}
+    connect_four: {},
+    holy_grail: {}
   };
   for (const key of millBots) {
     ratings.mill[key] = config.mill[key].elo;
@@ -104,12 +107,17 @@ if (!isMainThread) {
     ratings.connect_four[key] = config.connect_four[key].elo;
     winCounts.connect_four[key] = { wins: 0, losses: 0, draws: 0 };
   }
+  for (const key of hgBots) {
+    ratings.holy_grail[key] = config.holy_grail[key].elo;
+    winCounts.holy_grail[key] = { wins: 0, losses: 0, draws: 0 };
+  }
 
   console.log('🤖 Starting Offline Parallel AI Tournament Calibration...');
 
   const MATCHUPS = [
     { gameType: 'mill' as const, bots: millBots, baselineKey: 'easy_random' },
     { gameType: 'connect_four' as const, bots: c4Bots, baselineKey: 'easy_random' },
+    { gameType: 'holy_grail' as const, bots: hgBots, baselineKey: 'easy_random' },
   ];
 
   // Generate all tasks (matchups)
@@ -247,8 +255,10 @@ if (!isMainThread) {
     // Write updated ELOs directly back to aiConfig.json
     const outConfig = JSON.parse(fs.readFileSync(configPath, 'utf8'));
     for (const group of MATCHUPS) {
-      for (const bot of group.bots) {
-        outConfig[group.gameType][bot].elo = Math.round(ratings[group.gameType][bot]);
+      if (group.gameType === 'holy_grail') {
+        for (const bot of group.bots) {
+          outConfig[group.gameType][bot].elo = Math.round(ratings[group.gameType][bot]);
+        }
       }
     }
     fs.writeFileSync(configPath, JSON.stringify(outConfig, null, 2) + '\n');
