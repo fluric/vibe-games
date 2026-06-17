@@ -65,6 +65,11 @@ export interface TempVisualDeploy {
   cellKey: string;
   count: number;
 }
+export interface TempVisualRadioactivity {
+  cellKey: string;
+  player: PlayerPiece | 'neutral';
+  card: string;
+}
 interface RolledBackState {
   board: Record<string, HolyGrailCell>;
   grailCellKey: string;
@@ -823,6 +828,7 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
   const [isReviewingLastTurn, setIsReviewingLastTurn] = useState<boolean>(false);
   const [reviewMoves, setReviewMoves] = useState<TempVisualMove[]>([]);
   const [reviewDeploys, setReviewDeploys] = useState<TempVisualDeploy[]>([]);
+  const [reviewRadioactivity, setReviewRadioactivity] = useState<TempVisualRadioactivity[]>([]);
   const [lastReviewedEndTurnIdx, setLastReviewedEndTurnIdx] = useState<number>(-1);
   const [isLogCollapsed, setIsLogCollapsed] = useState<boolean>(true);
 
@@ -918,6 +924,7 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
           setIsReviewingLastTurn(false);
           setReviewMoves([]);
           setReviewDeploys([]);
+          setReviewRadioactivity([]);
           return;
         }
 
@@ -927,6 +934,7 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
           let hasOppAction = false;
           const opponentMoves: TempVisualMove[] = [];
           const opponentDeploys: TempVisualDeploy[] = [];
+          const opponentRadioactivity: TempVisualRadioactivity[] = [];
 
           for (let i = sliceStart; i < history.length; i++) {
             const log = history[i];
@@ -934,9 +942,17 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
               if (log.trim().startsWith('{')) {
                 try {
                   const action = JSON.parse(log);
-                  if (action.player && action.player !== myPiece) {
+                  const type = action.type || action.action;
+                  if (type === 'radioactivity') {
                     hasOppAction = true;
-                    const type = action.type || action.action;
+                    const cellKey = action.cell === 'Grail Center' ? '0,0' : action.cell;
+                    opponentRadioactivity.push({
+                      cellKey,
+                      player: action.player,
+                      card: action.card
+                    });
+                  } else if (action.player && action.player !== myPiece) {
+                    hasOppAction = true;
                     if (type === 'move' && action.from && action.to) {
                       opponentMoves.push({
                         from: action.from,
@@ -961,6 +977,21 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
                   // ignore
                 }
               } else {
+                // Parse text radioactivity log
+                const isRadio = log.includes('☢️') || log.toLowerCase().includes('radioactivity');
+                if (isRadio) {
+                  const info = parseRadioactiveText(log);
+                  if (info) {
+                    hasOppAction = true;
+                    const cellKey = info.cell === 'Grail Center' ? '0,0' : info.cell;
+                    opponentRadioactivity.push({
+                      cellKey,
+                      player: info.player as PlayerPiece,
+                      card: info.card
+                    });
+                  }
+                }
+
                 // Parse text retreat log
                 const isRetreat = log.includes('🏃') || log.toLowerCase().includes('retreat');
                 if (isRetreat) {
@@ -984,27 +1015,32 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
             setIsReviewingLastTurn(true);
             setReviewMoves(opponentMoves);
             setReviewDeploys(opponentDeploys);
+            setReviewRadioactivity(opponentRadioactivity);
           } else {
             setIsReviewingLastTurn(false);
             setReviewMoves([]);
             setReviewDeploys([]);
+            setReviewRadioactivity([]);
             setLastReviewedEndTurnIdx(lastSelfEndTurnIdx);
           }
         } else {
           setIsReviewingLastTurn(false);
           setReviewMoves([]);
           setReviewDeploys([]);
+          setReviewRadioactivity([]);
         }
       } else {
         setIsReviewingLastTurn(false);
         setReviewMoves([]);
         setReviewDeploys([]);
+        setReviewRadioactivity([]);
       }
     }
   }, [isMyTurn, history, myPiece, state.winner, lastSelfEndTurnIdx, lastReviewedEndTurnIdx]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
   const isBoardLocked = disabled || isReviewingLastTurn;
+  const canDeploy = isMyTurn && phase === 'deploy' && !isBoardLocked;
 
   const [selectedCellKey, setSelectedCellKey] = useState<string | null>(null);
   const [moveTargetKey, setMoveTargetKey] = useState<string | null>(null);
@@ -1168,13 +1204,18 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
   const logContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (logContainerRef.current) {
-      logContainerRef.current.scrollTo({
-        top: logContainerRef.current.scrollHeight,
-        behavior: 'smooth'
-      });
+    if (!isLogCollapsed && logContainerRef.current) {
+      const timer = setTimeout(() => {
+        if (logContainerRef.current) {
+          logContainerRef.current.scrollTo({
+            top: logContainerRef.current.scrollHeight,
+            behavior: 'smooth'
+          });
+        }
+      }, 50);
+      return () => clearTimeout(timer);
     }
-  }, [state.history?.length]);
+  }, [state.history?.length, isLogCollapsed]);
 
   const activeHand = myPiece ? (hands[myPiece] || []) : [];
 
@@ -1517,11 +1558,11 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
       <div className="w-full xl:w-80 flex flex-col gap-4 bg-neutral-900/80 border border-neutral-800 p-5 rounded-2xl backdrop-blur-md relative z-20">
         <div>
           <div className="text-xs font-semibold text-neutral-500 uppercase tracking-widest">Active Turn</div>
-          <div className="flex items-center gap-2 mt-1">
-            <span className={`w-3 h-3 rounded-full ${turn === 'X' ? 'bg-blue-500' : 'bg-rose-500'}`} />
-            <span className="font-bold text-lg text-white">Player {turn}</span>
+          <div className="flex items-center gap-2 mt-1 flex-nowrap">
+            <span className={`w-3 h-3 rounded-full shrink-0 ${turn === 'X' ? 'bg-blue-500' : 'bg-rose-500'}`} />
+            <span className="font-bold text-lg text-white whitespace-nowrap">Player {turn}</span>
             {isMyTurn && (
-              <span className="text-xs px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 font-medium">Your Turn</span>
+              <span className="text-xs px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 font-medium shrink-0">Your Turn</span>
             )}
           </div>
         </div>
@@ -1569,8 +1610,32 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
               </div>
             </div>
           </div>
-          <div className="text-white font-semibold text-lg capitalize mt-0.5">
-            {isReviewingLastTurn ? 'Reviewing Log' : `${phase} Phase`}
+          <div className="flex items-center gap-2.5 mt-0.5 flex-wrap">
+            <span className="text-white font-semibold text-lg capitalize">
+              {isReviewingLastTurn ? 'Review Phase' : `${phase} Phase`}
+            </span>
+            {isReviewingLastTurn && reviewRadioactivity.length > 0 && (
+              <div className="flex items-center gap-1.5 flex-wrap">
+                {reviewRadioactivity.map((rad, idx) => {
+                  const isX = rad.player === 'X';
+                  const playerColor = isX ? 'text-blue-400' : rad.player === 'O' ? 'text-rose-400' : 'text-neutral-400';
+                  const cardVal = parseCardLabel(rad.card);
+                  const displaySymbol = formatCardValue(cardVal);
+                  return (
+                    <div 
+                      key={idx} 
+                      title={`Destroyed by radiation at ${rad.cellKey === '0,0' ? 'Grail Center' : rad.cellKey}`}
+                      className="text-[10px] font-mono flex items-center gap-1 cursor-help"
+                    >
+                      <span>☢️</span>
+                      <span className={`${playerColor} font-black bg-neutral-950 px-1.5 py-0.5 rounded border border-neutral-800 shadow-md`}>
+                        {displaySymbol}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
 
@@ -1583,6 +1648,7 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
                 setIsReviewingLastTurn(false);
                 setReviewMoves([]);
                 setReviewDeploys([]);
+                setReviewRadioactivity([]);
                 setLastReviewedEndTurnIdx(lastSelfEndTurnIdx);
               }}
               className="w-full py-2.5 rounded-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-500 hover:to-indigo-500 shadow-lg shadow-indigo-500/20 transition-all duration-200 animate-pulse cursor-pointer"
@@ -2211,12 +2277,18 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
 
         {/* Hand View at the bottom of the board canvas (Spacious card-game style) */}
         <div 
-          className="w-full max-w-[560px] bg-neutral-900/80 border border-neutral-800/80 px-5 py-3 rounded-2xl backdrop-blur-md flex flex-col items-center gap-3 shadow-xl min-h-[195px] h-[195px] justify-center"
+          className={`w-full max-w-[560px] bg-neutral-900/80 border border-neutral-800/80 px-5 py-3 rounded-2xl backdrop-blur-md flex flex-col items-center gap-3 shadow-xl min-h-[195px] h-[195px] justify-center transition-all duration-300 ${!canDeploy ? 'border-neutral-900/50 bg-neutral-900/40 opacity-70' : ''}`}
         >
           <div className="flex justify-between items-center w-full text-xs font-semibold text-neutral-400 px-1">
             <span>YOUR HAND ({activeHand.length} cards)</span>
             <div className="flex items-center gap-3">
-              {isMyTurn && phase === 'deploy' ? (
+              {!isMyTurn ? (
+                <span className="text-neutral-500 font-mono uppercase tracking-wider text-[10px]">Opponent's Turn</span>
+              ) : isReviewingLastTurn ? (
+                <span className="text-neutral-500 font-mono uppercase tracking-wider text-[10px]">Review Phase Active</span>
+              ) : phase !== 'deploy' ? (
+                <span className="text-neutral-500 font-mono uppercase tracking-wider text-[10px]">Deploy Phase Only</span>
+              ) : (
                 <>
                   {selectedCellKey && activeHand.length > 0 && (
                     <button
@@ -2239,17 +2311,15 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
                   )}
                   <span>{selectedCellKey ? `Click a card to deploy to ${selectedCellKey}` : 'Click a card, then click a highlighted cell'}</span>
                 </>
-              ) : (
-                <span className="text-neutral-500 font-mono uppercase tracking-wider text-[10px]">Deploy Phase Only</span>
               )}
             </div>
           </div>
           {activeHand.length === 0 ? (
             <div className="text-center py-6 text-neutral-600 text-sm italic">Empty hand</div>
           ) : (
-            <div className="flex flex-nowrap overflow-x-auto justify-start gap-3 w-full pb-1.5 scrollbar-thin">
+            <div className={`flex flex-nowrap overflow-x-auto justify-start gap-3 w-full pb-1.5 scrollbar-thin transition-all duration-300 ${!canDeploy ? 'opacity-30 grayscale saturate-0 pointer-events-none' : ''}`}>
               {activeHand.map((card, idx) => {
-                const canInteract = isMyTurn && phase === 'deploy';
+                const canInteract = canDeploy;
                 return (
                   <button
                     key={idx}
