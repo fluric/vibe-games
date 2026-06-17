@@ -696,20 +696,7 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
     }
   }
 
-  // Save the pre-opponent board state to sessionStorage for perfect review rollback
-  useEffect(() => {
-    if (isMyTurn && !isReviewingLastTurn && lastSelfEndTurnIdx === lastReviewedEndTurnIdx && !state.winner) {
-      const cacheData = {
-        board: stateBoard,
-        grailCellKey: stateGrailCellKey
-      };
-      try {
-        sessionStorage.setItem(`pre-board-${gameId || 'default'}`, JSON.stringify(cacheData));
-      } catch {
-        // ignore
-      }
-    }
-  }, [isMyTurn, isReviewingLastTurn, lastSelfEndTurnIdx, lastReviewedEndTurnIdx, stateBoard, stateGrailCellKey, state.winner, gameId]);
+  // Cache is now updated at the end of our turn inside the endTurn handler to capture finalized user positions.
 
   // Determine displaying board state
   const getDisplayedState = (): { board: Record<string, HolyGrailCell>; grailCellKey: string } => {
@@ -1105,7 +1092,11 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
         if (distance === 1) {
           setMoveTargetKey(key);
           const maxCount = board[selectedCellKey]?.soldiers.length || 1;
-          setMoveCount(Math.min(1, maxCount));
+          if (grailCellKey === selectedCellKey) {
+            setMoveCount(maxCount);
+          } else {
+            setMoveCount(Math.min(1, maxCount));
+          }
         } else {
           // Select another friendly stack
           if (cell.owner === myPiece && cell.soldiers.length > 0) {
@@ -1184,6 +1175,69 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
 
   const endTurn = async () => {
     try {
+      // 1. Construct the finalized board where all our in-transit moves are placed on their destinations
+      const finalizedBoard: Record<string, HolyGrailCell> = JSON.parse(JSON.stringify(board));
+      
+      const friendlyTargets = new Set<string>();
+      for (const move of state.movesThisTurn || []) {
+        friendlyTargets.add(move.to);
+      }
+      
+      const AXIAL_NEIGHBORS = [
+        { q: 1, r: 0 },
+        { q: 0, r: 1 },
+        { q: -1, r: 1 },
+        { q: -1, r: 0 },
+        { q: 0, r: -1 },
+        { q: 1, r: -1 }
+      ];
+
+      const getNeighborIndex = (q_dest: number, r_dest: number, q_start: number, r_start: number): number => {
+        const dq = q_start - q_dest;
+        const dr = r_start - r_dest;
+        return AXIAL_NEIGHBORS.findIndex(n => n.q === dq && n.r === dr);
+      };
+
+      const reassembleCellStackFrontend = (
+        moves: any[],
+        cellKey: string,
+        baseSoldiers: HolyGrailCard[]
+      ): HolyGrailCard[] => {
+        const incoming = moves.filter(m => m.to === cellKey);
+        if (incoming.length === 0) return baseSoldiers;
+
+        const [q_dest, r_dest] = cellKey.split(',').map(Number);
+        const sortedIncoming = [...incoming].sort((a, b) => {
+          const [aq, ar] = a.from.split(',').map(Number);
+          const [bq, br] = b.from.split(',').map(Number);
+          return getNeighborIndex(q_dest, r_dest, aq, ar) - getNeighborIndex(q_dest, r_dest, bq, br);
+        });
+
+        const mergedIncoming = sortedIncoming.flatMap(m => m.cards);
+        return [...baseSoldiers, ...mergedIncoming];
+      };
+
+      for (const toKey of friendlyTargets) {
+        const toCell = finalizedBoard[toKey];
+        if (toCell) {
+          toCell.soldiers = reassembleCellStackFrontend(state.movesThisTurn || [], toKey, toCell.soldiers);
+          if (myPiece) {
+            toCell.owner = myPiece;
+          }
+        }
+      }
+
+      const cacheData = {
+        board: finalizedBoard,
+        grailCellKey: stateGrailCellKey
+      };
+
+      try {
+        sessionStorage.setItem(`pre-board-${gameId || 'default'}`, JSON.stringify(cacheData));
+      } catch (err) {
+        console.error('Failed to save pre-board to sessionStorage:', err);
+      }
+
       await onAction({ type: 'end_turn' });
       setSelectedCellKey(null);
       setSelectedHandCardIndex(null);
@@ -2040,25 +2094,28 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
 
             {moveTargetKey ? (
               <div className="flex flex-col gap-4">
-                <div>
-                  <div className="flex justify-between text-sm text-neutral-300 mb-1">
-                    <span>Count to move:</span>
-                    <span className="font-bold text-white">{moveCount} / {board[selectedCellKey]?.soldiers.length}</span>
+                {grailCellKey === selectedCellKey ? (
+                  <div className="text-xs bg-amber-500/10 border border-amber-500/30 text-amber-400 p-3.5 rounded-xl flex items-start gap-2.5 shadow-lg">
+                    <span className="text-base">⚠️</span>
+                    <div className="leading-relaxed text-left">
+                      <strong className="text-white block mb-0.5 font-bold">Carrying the Grail!</strong>
+                      All {board[selectedCellKey]?.soldiers.length} units in this hex must be moved together. The stack must contain your King (K) to transport the Grail.
+                    </div>
                   </div>
-                  <input
-                    type="range"
-                    min="1"
-                    max={board[selectedCellKey]?.soldiers.length || 1}
-                    value={moveCount}
-                    onChange={(e) => setMoveCount(Number(e.target.value))}
-                    className="w-full accent-indigo-500 h-1.5 bg-neutral-950 rounded-lg appearance-none cursor-pointer"
-                  />
-                </div>
-
-                {/* King transport warnings */}
-                {grailCellKey === selectedCellKey && (
-                  <div className="text-xs bg-amber-950/20 border border-amber-500/20 text-amber-400 p-2.5 rounded-lg">
-                    ⚠️ Carrying the Grail! At least one King (K) must be in the moving stack of {moveCount} cards.
+                ) : (
+                  <div>
+                    <div className="flex justify-between text-sm text-neutral-300 mb-1">
+                      <span>Count to move:</span>
+                      <span className="font-bold text-white">{moveCount} / {board[selectedCellKey]?.soldiers.length}</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="1"
+                      max={board[selectedCellKey]?.soldiers.length || 1}
+                      value={moveCount}
+                      onChange={(e) => setMoveCount(Number(e.target.value))}
+                      className="w-full accent-indigo-500 h-1.5 bg-neutral-950 rounded-lg appearance-none cursor-pointer"
+                    />
                   </div>
                 )}
 

@@ -35,6 +35,10 @@ const BOT_DESCRIPTIONS: Record<string, Record<string, string>> = {
     expert_garry: "Minimax Depth 5",
     legendary_magnus: "Minimax Depth 6",
     perfect_oracle: "Center Alignment Search",
+    rl_novice: "Neural Network (Depth 0)",
+    rl_intermediate: "Neural Network + MCTS 50",
+    rl_strong: "Neural Network + MCTS 200",
+    rl_master: "Neural Network + MCTS 800",
   },
   holy_grail: {
     easy_random: "Random Play",
@@ -70,6 +74,10 @@ const BOT_EMOJIS: Record<string, Record<string, string>> = {
     expert_garry: "🔥",
     legendary_magnus: "👑",
     perfect_oracle: "🌌",
+    rl_novice: "⚡",
+    rl_intermediate: "⚡",
+    rl_strong: "⚡",
+    rl_master: "⚡",
   },
   holy_grail: {
     easy_random: "🟢",
@@ -105,6 +113,10 @@ const BOT_HELP_TEXT: Record<string, Record<string, string>> = {
     expert_garry: "Garry evaluates 5 plies deep with optimized positional heuristics. A true challenge!",
     legendary_magnus: "Magnus calculates 6 plies deep with extremely optimized weights. Legendary level!",
     perfect_oracle: "The Oracle uses deep positional evaluation and center column search for maximum control.",
+    rl_novice: "⚡ Neural Novice uses a pure neural network (no lookahead) trained by AlphaZero-style self-play.",
+    rl_intermediate: "⚡ Neural Scout combines a trained neural network with 50 MCTS simulations per move.",
+    rl_strong: "⚡ Neural Strategist runs 200 MCTS simulations guided by a deep self-play trained network.",
+    rl_master: "⚡ Neural Master runs 800 MCTS simulations. The strongest self-play trained bot on this platform.",
   },
   holy_grail: {
     easy_random: "Randy HG plays completely random moves.",
@@ -144,7 +156,7 @@ export function LobbyPage() {
   const [joiningCode, setJoiningCode] = useState(false);
   const [lobbyError, setLobbyError] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
-  type BotLevel = 'easy_random' | 'easy_cowardly' | 'easy_greedy' | 'easy_aggressive' | 'medium_aggressive' | 'medium_defensive' | 'medium_mobile' | 'hard_tactical' | 'expert_garry' | 'legendary_magnus' | 'perfect_oracle' | 'expert_smart';
+  type BotLevel = 'easy_random' | 'easy_cowardly' | 'easy_greedy' | 'easy_aggressive' | 'medium_aggressive' | 'medium_defensive' | 'medium_mobile' | 'hard_tactical' | 'expert_garry' | 'legendary_magnus' | 'perfect_oracle' | 'expert_smart' | 'rl_novice' | 'rl_intermediate' | 'rl_strong' | 'rl_master';
 
   const [activeGameTab, setActiveGameTab] = useState<'mill' | 'connect_four' | 'holy_grail'>(() => {
     const saved = localStorage.getItem('vibe-games-active-tab');
@@ -166,7 +178,8 @@ export function LobbyPage() {
     const validLevels = [
       'easy_random', 'easy_cowardly', 'easy_greedy', 'easy_aggressive',
       'medium_aggressive', 'medium_defensive', 'medium_mobile',
-      'hard_tactical', 'expert_garry', 'legendary_magnus', 'perfect_oracle'
+      'hard_tactical', 'expert_garry', 'legendary_magnus', 'perfect_oracle',
+      'rl_novice', 'rl_intermediate', 'rl_strong', 'rl_master',
     ];
     return (saved && validLevels.includes(saved)) ? (saved as BotLevel) : 'medium_aggressive';
   });
@@ -595,7 +608,7 @@ export function LobbyPage() {
   const handleCreateGame = async (
     vsAi = false,
     isPublic = true,
-    selectedAiLevel?: 'easy' | 'medium' | 'hard' | 'easy_random' | 'easy_cowardly' | 'easy_greedy' | 'easy_aggressive' | 'medium_aggressive' | 'medium_defensive' | 'medium_mobile' | 'hard_tactical' | 'expert_garry' | 'legendary_magnus' | 'perfect_oracle' | 'expert_smart'
+    selectedAiLevel?: 'easy' | 'medium' | 'hard' | 'easy_random' | 'easy_cowardly' | 'easy_greedy' | 'easy_aggressive' | 'medium_aggressive' | 'medium_defensive' | 'medium_mobile' | 'hard_tactical' | 'expert_garry' | 'legendary_magnus' | 'perfect_oracle' | 'expert_smart' | 'rl_novice' | 'rl_intermediate' | 'rl_strong' | 'rl_master'
   ) => {
     if (syncStatus === 'mismatch') {
       alert('Cannot create match: API version mismatch. Please refresh the page.');

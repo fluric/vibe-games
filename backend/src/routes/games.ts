@@ -8,7 +8,7 @@ import { GameDto, UserDto, PlayerPiece, GameType, MillGameState, LeaderboardResp
 import { calculateElo } from '../game/elo';
 import { ENGINES } from '../game/gameRegistry';
 import { StrategyWeights } from '../game/minimaxAi';
-const aiConfig: Record<string, Record<string, { id: string; username: string; elo: number; type: string; depth?: number; weights?: StrategyWeights }>> = require('../game/aiConfig.json');
+const aiConfig: Record<string, Record<string, { id: string; username: string; elo: number; type: string; depth?: number; weights?: StrategyWeights; botLevel?: string; enabled?: boolean }>> = require('../game/aiConfig.json');
 
 declare module 'fastify' {
   interface FastifyRequest {
@@ -17,14 +17,16 @@ declare module 'fastify' {
 }
 
 // BOTS configuration lookup map
-const BOTS_MAP = new Map<string, { username: string; elo: number; type: string; depth?: number; weights?: StrategyWeights; timeLimitMs?: number }>();
+const BOTS_MAP = new Map<string, { username: string; elo: number; type: string; depth?: number; weights?: StrategyWeights; timeLimitMs?: number; botLevel?: string }>();
 for (const gameBots of Object.values(aiConfig)) {
   for (const bot of Object.values(gameBots)) {
-    BOTS_MAP.set(bot.id, { username: bot.username, elo: bot.elo, type: bot.type, depth: bot.depth, weights: bot.weights, timeLimitMs: (bot as any).timeLimitMs });
+    // Skip disabled RL bots that have not yet been trained
+    if (bot.enabled === false) continue;
+    BOTS_MAP.set(bot.id, { username: bot.username, elo: bot.elo, type: bot.type, depth: bot.depth, weights: bot.weights, timeLimitMs: (bot as any).timeLimitMs, botLevel: bot.botLevel });
   }
 }
 
-function runAiLoopIfNeeded(game: Game) {
+async function runAiLoopIfNeeded(game: Game): Promise<void> {
   const botId = [game.playerXId, game.playerOId].find(id => id && BOTS_MAP.has(id));
   if (!botId) return;
 
@@ -37,7 +39,21 @@ function runAiLoopIfNeeded(game: Game) {
   let aiActive = !game.state.winner;
   while (aiActive && game.state.turn === aiPiece) {
     try {
-      const rawAction = engine.getAiAction(game.state, botInfo.type, botInfo.depth || 3, botInfo.weights, botInfo.timeLimitMs || 4000);
+      let rawAction: any;
+
+      // ── RL sidecar path (async) ───────────────────────────────────────────
+      if (botInfo.type === 'rl' && engine.getAiActionAsync) {
+        const asyncResult = engine.getAiActionAsync(game.state, botInfo.botLevel ?? botInfo.type, botInfo.depth || 3, botInfo.weights, botInfo.timeLimitMs || 4000);
+        if (asyncResult !== null) {
+          rawAction = await asyncResult;
+        } else {
+          rawAction = engine.getAiAction(game.state, botInfo.type, botInfo.depth || 3, botInfo.weights, botInfo.timeLimitMs || 4000);
+        }
+      } else {
+        // ── Standard synchronous path ─────────────────────────────────────
+        rawAction = engine.getAiAction(game.state, botInfo.type, botInfo.depth || 3, botInfo.weights, botInfo.timeLimitMs || 4000);
+      }
+
       game.state = engine.handleMove(game.state, rawAction, aiPiece);
 
       if (game.state.winner) {
@@ -484,7 +500,7 @@ export async function gameRoutes(server: FastifyInstance) {
     });
 
     if (vsAi && aiStarts) {
-      runAiLoopIfNeeded(game);
+      await runAiLoopIfNeeded(game);
       if (game.status === 'finished') {
         await handleGameFinished(game);
       }
@@ -756,7 +772,7 @@ export async function gameRoutes(server: FastifyInstance) {
     }
 
     // ── AI Opponent Logic Loop ───────────────────────────────────────────────
-    runAiLoopIfNeeded(game);
+    await runAiLoopIfNeeded(game);
 
     if (game.status === 'finished') {
       await handleGameFinished(game);

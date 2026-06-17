@@ -352,7 +352,16 @@ export function endRound(state: HolyGrailGameState): void {
   const grailCell = state.board[state.grailCellKey || '0,0'];
   if (grailCell && grailCell.soldiers.length > 0) {
     const killIdx = Math.floor(Math.random() * grailCell.soldiers.length);
+    const killedCard = grailCell.soldiers[killIdx];
     grailCell.soldiers.splice(killIdx, 1);
+
+    const cellName = getCellType(grailCell.q, grailCell.r) === 'grail_center' ? 'Grail Center' : `${grailCell.q},${grailCell.r}`;
+    const cardName = getCardLabel(killedCard.value);
+    const ownerName = grailCell.owner ? `(${grailCell.owner})` : 'neutral';
+
+    if (!state.history) state.history = [];
+    state.history.push(`☢️ Radioactivity at ${cellName}: ${ownerName}'s ${cardName} was killed by the Grail.`);
+
     if (grailCell.soldiers.length === 0) {
       grailCell.owner = null;
     }

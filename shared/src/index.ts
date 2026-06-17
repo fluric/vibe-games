@@ -92,6 +92,8 @@ export interface PendingCombat {
   attackerRemainingCount: number;
   defenderRemainingCount: number;
   attackerStack?: HolyGrailCard[]; // Full stack of attacker's cards (hidden from client)
+  originKey?: string;
+  carriesGrail?: boolean;
 }
 
 export interface HolyGrailGameState {
@@ -107,9 +109,10 @@ export interface HolyGrailGameState {
   grailCellKey?: string;
   grailMovementCandidates?: string[];
   drawnThisTurn?: boolean;
-  movesThisTurn?: { from: string; to: string; cards: HolyGrailCard[] }[];
+  movesThisTurn?: { from: string; to: string; cards: HolyGrailCard[]; carriesGrail?: boolean }[];
   roundTurnsCompleted?: number;
   history?: string[];
+  turnCount?: number;
 }
 
 export interface GameDto {

@@ -7,6 +7,7 @@ import { ConnectFourBoard } from '../components/ConnectFourBoard';
 import { HolyGrailBoard } from '../components/HolyGrailBoard';
 import * as audio from '../components/AudioEffects';
 import { ConfirmModal } from '../components/ConfirmModal';
+import { RulesModal } from '../components/RulesModal';
 
 const AI_BOT_IDS = [
   '00000000-0000-0000-0000-000000000000', // legacy
@@ -56,6 +57,7 @@ export function GamePage() {
   const actionPendingRef = useRef(false);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [showForfeitConfirm, setShowForfeitConfirm] = useState(false);
+  const [showRules, setShowRules] = useState(false);
 
   useEffect(() => {
     return () => {
@@ -291,6 +293,7 @@ export function GamePage() {
       }
     } catch (err) {
       console.error(err);
+      alert(err instanceof Error ? err.message : 'Move rejected by server');
       setSubmittingMove(false);
     }
   };
@@ -498,6 +501,19 @@ export function GamePage() {
                 className="px-3 py-1.5 rounded-lg bg-rose-950/40 hover:bg-rose-900/40 text-xs font-semibold text-rose-400 transition-all border border-rose-900/30 hover:border-rose-800/50 active:scale-95"
               >
                 Forfeit Match
+              </button>
+            )}
+
+            {game.gameType === 'holy_grail' && (
+              <button
+                type="button"
+                onClick={() => {
+                  audio.playPlaceSound();
+                  setShowRules(true);
+                }}
+                className="px-3 py-1.5 rounded-lg bg-indigo-950/40 hover:bg-indigo-900/40 text-xs font-semibold text-indigo-400 transition-all border border-indigo-900/30 hover:border-indigo-800/50 active:scale-95 flex items-center gap-1.5"
+              >
+                ℹ️ Rules
               </button>
             )}
           </div>
@@ -813,6 +829,11 @@ export function GamePage() {
           actionPendingRef.current = false;
           setShowForfeitConfirm(false);
         }}
+      />
+
+      <RulesModal
+        isOpen={showRules}
+        onClose={() => setShowRules(false)}
       />
     </div>
   );
