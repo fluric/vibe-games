@@ -46,9 +46,10 @@ function formatCardValue(value: number): string {
 function parseCardLabel(label: string): number {
   if (!label) return 0;
   label = label.trim();
-  if (label === 'King' || label === 'K') return 13;
-  if (label === 'Queen' || label === 'Q') return 12;
-  if (label === 'Jack' || label === 'J') return 11;
+  const lower = label.toLowerCase();
+  if (lower.includes('king') || lower === 'k') return 13;
+  if (lower.includes('queen') || lower === 'q') return 12;
+  if (lower.includes('jack') || lower === 'j') return 11;
   const num = parseInt(label, 10);
   return isNaN(num) ? 0 : num;
 }
@@ -191,6 +192,18 @@ function parseRetreatText(log: string) {
   return { cell, defenderPiece, retreatTo, attackerPiece };
 }
 
+function parseRadioactiveText(log: string) {
+  const match = log.match(/☢️ Radioactivity at ([^:]+):\s*\(([XO])\)\s*💀\s*(.+)/);
+  if (match) {
+    return {
+      cell: match[1].trim(),
+      player: match[2],
+      card: match[3].trim()
+    };
+  }
+  return null;
+}
+
 interface GroupedLog {
   key: string;
   isJson: boolean;
@@ -216,6 +229,11 @@ interface GroupedLog {
     outcome: 'attacker_captured' | 'defender_held' | 'defender_retreated';
     retreatTo?: string;
     rawLogs: string[];
+  };
+  radioactiveSummary?: {
+    cell: string;
+    player: string;
+    card: string;
   };
 }
 
@@ -341,6 +359,20 @@ function getGroupedHistory(history: string[]): GroupedLog[] {
           continue;
         }
 
+        if (type === 'radioactivity') {
+          flushCombat();
+          grouped.push({
+            key: `radioactive-${grouped.length}`,
+            isJson: true,
+            radioactiveSummary: {
+              cell: action.cell,
+              player: action.player,
+              card: action.card
+            }
+          });
+          continue;
+        }
+
         flushCombat();
 
 
@@ -391,6 +423,26 @@ function getGroupedHistory(history: string[]): GroupedLog[] {
       continue;
     }
 
+    const isRadioactivityLog = raw.includes('☢️') || raw.toLowerCase().includes('radioactivity');
+    if (isRadioactivityLog) {
+      flushCombat();
+      const info = parseRadioactiveText(raw);
+      if (info) {
+        grouped.push({
+          key: `radioactive-${grouped.length}`,
+          isJson: false,
+          radioactiveSummary: info
+        });
+      } else {
+        grouped.push({
+          key: `raw-text-${grouped.length}`,
+          isJson: false,
+          rawLog: raw
+        });
+      }
+      continue;
+    }
+
     const isCombatLog = raw.includes('⚔️') || raw.toLowerCase().includes('combat') || raw.toLowerCase().includes('vs');
     const isRetreatLog = raw.includes('🏃') || raw.toLowerCase().includes('retreat');
 
@@ -433,6 +485,24 @@ function getGroupedHistory(history: string[]): GroupedLog[] {
 }
 
 function renderGroupedHistoryEntry(grouped: GroupedLog) {
+  if (grouped.radioactiveSummary) {
+    const summary = grouped.radioactiveSummary;
+    const playerColor = summary.player === 'X' ? 'text-blue-400' : 'text-rose-400';
+    return (
+      <div 
+        key={grouped.key} 
+        className="text-xs text-neutral-305 py-1 border-b border-neutral-800/40 leading-relaxed font-mono flex items-center gap-1.5 flex-wrap px-1 rounded hover:bg-neutral-800/30 transition-colors"
+      >
+        <span className="text-amber-400 font-bold">☢️</span>
+        <span className="text-neutral-400 font-semibold">{summary.cell}</span>
+        <span className="text-neutral-500">:</span>
+        <span className={`${playerColor} font-bold`}>({summary.player})</span>
+        <span className="text-neutral-500 font-bold">💀</span>
+        <span className="text-red-400 font-bold">{formatCardString(summary.card)}</span>
+      </div>
+    );
+  }
+
   if (grouped.combatSummary) {
     const summary = grouped.combatSummary;
     const attColor = summary.attacker === 'X' ? 'text-blue-400' : 'text-rose-400';

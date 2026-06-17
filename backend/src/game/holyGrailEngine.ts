@@ -357,10 +357,15 @@ export function endRound(state: HolyGrailGameState): void {
 
     const cellName = getCellType(grailCell.q, grailCell.r) === 'grail_center' ? 'Grail Center' : `${grailCell.q},${grailCell.r}`;
     const cardName = getCardLabel(killedCard.value);
-    const ownerName = grailCell.owner ? `(${grailCell.owner})` : 'neutral';
+    const ownerName = grailCell.owner || 'neutral';
 
     if (!state.history) state.history = [];
-    state.history.push(`☢️ Radioactivity at ${cellName}: ${ownerName}'s ${cardName} was killed by the Grail.`);
+    state.history.push(JSON.stringify({
+      type: 'radioactivity',
+      cell: cellName,
+      player: ownerName,
+      card: cardName
+    }));
 
     if (grailCell.soldiers.length === 0) {
       grailCell.owner = null;
