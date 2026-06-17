@@ -487,7 +487,11 @@ function getGroupedHistory(history: string[]): GroupedLog[] {
 function renderGroupedHistoryEntry(grouped: GroupedLog) {
   if (grouped.radioactiveSummary) {
     const summary = grouped.radioactiveSummary;
-    const playerColor = summary.player === 'X' ? 'text-blue-400' : 'text-rose-400';
+    const playerColor = summary.player === 'X' 
+      ? 'text-blue-400' 
+      : summary.player === 'O' 
+      ? 'text-rose-400' 
+      : 'text-amber-500';
     return (
       <div 
         key={grouped.key} 
@@ -496,9 +500,8 @@ function renderGroupedHistoryEntry(grouped: GroupedLog) {
         <span className="text-amber-400 font-bold">☢️</span>
         <span className="text-neutral-400 font-semibold">{summary.cell}</span>
         <span className="text-neutral-500">:</span>
-        <span className={`${playerColor} font-bold`}>({summary.player})</span>
         <span className="text-neutral-500 font-bold">💀</span>
-        <span className="text-red-400 font-bold">{formatCardString(summary.card)}</span>
+        <span className={`${playerColor} font-bold`}>{formatCardString(summary.card)}</span>
       </div>
     );
   }
