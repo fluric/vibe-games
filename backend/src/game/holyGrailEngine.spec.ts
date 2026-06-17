@@ -108,15 +108,10 @@ async function runTests() {
   sDeploy.board['-1,-2'].owner = 'X';
   sDeploy.board['-1,-2'].soldiers = [];
 
-  // Deploying to empty urban cell should fail
-  assert.throws(() => {
-    HolyGrailEngine.handleMove(sDeploy, { type: 'deploy', cellKey: '-1,-2', cardValue: 12 }, 'X');
-  });
-
-  // Add a card to make it occupied, now deploying should succeed
-  sDeploy.board['-1,-2'].soldiers = [{ value: 5, revealed: false }];
+  // Deploying to empty owned urban cell should now succeed!
   sDeploy = HolyGrailEngine.handleMove(sDeploy, { type: 'deploy', cellKey: '-1,-2', cardValue: 12 }, 'X');
-  assert.strictEqual(sDeploy.board['-1,-2'].soldiers.length, 2);
+  assert.strictEqual(sDeploy.board['-1,-2'].soldiers.length, 1);
+  assert.strictEqual(sDeploy.board['-1,-2'].soldiers[0].value, 12);
 
   // Deploying to non-owned or non-urban/non-base cell should fail
   assert.throws(() => {
@@ -126,11 +121,11 @@ async function runTests() {
   // Verify farm land counting: X owns farm land (-2,0) but it is empty
   sDeploy.board['-2,0'].owner = 'X';
   sDeploy.board['-2,0'].soldiers = [];
-  assert.strictEqual(getFarmLandsCount(sDeploy, 'X'), 0); // 0 because unoccupied
+  assert.strictEqual(getFarmLandsCount(sDeploy, 'X'), 1); // 1 because owned, even if unoccupied
 
   // Occupy it with 1 soldier
   sDeploy.board['-2,0'].soldiers = [{ value: 3, revealed: false }];
-  assert.strictEqual(getFarmLandsCount(sDeploy, 'X'), 1); // 1 because occupied
+  assert.strictEqual(getFarmLandsCount(sDeploy, 'X'), 1); // still 1 when occupied
 
   // End deploy phase
   sDeploy = HolyGrailEngine.handleMove(sDeploy, { type: 'end_deploy' }, 'X');

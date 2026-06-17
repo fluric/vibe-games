@@ -168,7 +168,7 @@ export function getCardLabel(val: number): string {
 export function getFarmLandsCount(state: HolyGrailGameState, player: PlayerPiece): number {
   let count = 0;
   for (const cell of Object.values(state.board)) {
-    if (cell.cellType === 'farm_land' && cell.owner === player && cell.soldiers.length > 0) {
+    if (cell.cellType === 'farm_land' && cell.owner === player) {
       count++;
     }
   }
@@ -605,9 +605,6 @@ export const HolyGrailEngine = {
       if (cell.cellType !== 'urban' && cell.cellType !== 'home_base') {
         throw new Error('Can only deploy to Urban housing cells or your Home Base');
       }
-      if (cell.cellType === 'urban' && cell.soldiers.length === 0) {
-        throw new Error('Must have at least one unit on the Urban housing cell to deploy to it');
-      }
 
       const hand = state.hands[player] || [];
       if (hand.length === 0) {
@@ -632,9 +629,6 @@ export const HolyGrailEngine = {
       }
       if (cell.cellType !== 'urban' && cell.cellType !== 'home_base') {
         throw new Error('Can only deploy to Urban housing cells or your Home Base');
-      }
-      if (cell.cellType === 'urban' && cell.soldiers.length === 0) {
-        throw new Error('Must have at least one unit on the Urban housing cell to deploy to it');
       }
 
       const cardValue = action.cardValue;
@@ -708,7 +702,7 @@ export const HolyGrailEngine = {
 
       // Slice cards from origin cell
       fromCell.soldiers.splice(0, count);
-      if (fromCell.soldiers.length === 0 && fromCell.cellType !== 'home_base') {
+      if (fromCell.soldiers.length === 0 && fromCell.cellType !== 'home_base' && fromCell.cellType !== 'urban' && fromCell.cellType !== 'farm_land') {
         fromCell.owner = null; // Cell becomes neutral/unoccupied
       }
 

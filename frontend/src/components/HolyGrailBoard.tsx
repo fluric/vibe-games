@@ -1062,7 +1062,7 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
     // ── Deploy Phase Action ──
     if (phase === 'deploy') {
       const isValidDeployCell = cell.owner === myPiece && (
-        cell.cellType === 'home_base' || (cell.cellType === 'urban' && cell.soldiers.length > 0)
+        cell.cellType === 'home_base' || cell.cellType === 'urban'
       );
       if (isValidDeployCell) {
         if (selectedHandCardIndex !== null) {
@@ -1197,7 +1197,7 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
     const isMoveTarget = moveTargetKey === `${cell.q},${cell.r}`;
     const isPendingCombat = pendingCombats.some(c => c.cellKey === `${cell.q},${cell.r}`);
     const isSelectableDeployCell = phase === 'deploy' && isMyTurn && cell.owner === myPiece && (
-      cell.cellType === 'home_base' || (cell.cellType === 'urban' && cell.soldiers.length > 0)
+      cell.cellType === 'home_base' || cell.cellType === 'urban'
     );
 
     if (isPendingCombat) {
