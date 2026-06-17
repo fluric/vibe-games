@@ -115,45 +115,58 @@ function renderHistoryEntry(log: string, idx: number) {
       if (action.type === 'deploy' || action.action === 'deploy') {
         return (
           <div key={idx} className="text-xs text-neutral-300 py-1 border-b border-neutral-800/40 leading-relaxed font-mono flex items-center gap-1.5">
-            <span className="text-neutral-500 font-bold">{action.cellKey}</span>
-            <span className="text-indigo-400 font-bold">📥</span>
-            <span className="font-bold text-white">{formatCardValue(action.cardValue)}</span>
             <span className={`${playerColor} font-bold`}>({action.player})</span>
+            <span className="text-indigo-400 font-bold">📥</span>
+            <span className="font-bold text-white">{action.count || 1}</span>
+            <span className="text-neutral-500">at</span>
+            <span className="text-neutral-400 font-semibold">{action.cellKey}</span>
+          </div>
+        );
+      }
+      if (action.type === 'deploy_all' || action.action === 'deploy_all') {
+        return (
+          <div key={idx} className="text-xs text-neutral-300 py-1 border-b border-neutral-800/40 leading-relaxed font-mono flex items-center gap-1.5">
+            <span className={`${playerColor} font-bold`}>({action.player})</span>
+            <span className="text-indigo-400 font-bold">📥</span>
+            <span className="font-bold text-white">{action.count || 0}</span>
+            <span className="text-neutral-500">at</span>
+            <span className="text-neutral-400 font-semibold">{action.cellKey}</span>
           </div>
         );
       }
       if (action.type === 'move' || action.action === 'move') {
         return (
           <div key={idx} className="text-xs text-neutral-300 py-1 border-b border-neutral-800/40 leading-relaxed font-mono flex items-center gap-1.5">
-            <span className="text-neutral-500 font-bold">{action.from} ➡️ {action.to}</span>
+            <span className={`${playerColor} font-bold`}>({action.player})</span>
             <span className="text-emerald-450 font-bold">🏃</span>
             <span className="font-bold text-white">{action.count}</span>
-            <span className={`${playerColor} font-bold`}>({action.player})</span>
+            <span className="text-neutral-500">from</span>
+            <span className="text-neutral-400 font-semibold">{action.from} ➡️ {action.to}</span>
           </div>
         );
       }
       if (action.type === 'end_deploy' || action.action === 'end_deploy') {
         return (
           <div key={idx} className="text-xs text-neutral-400 italic py-1 border-b border-neutral-800/40 leading-relaxed font-mono flex items-center gap-1.5">
-            <span className={`${playerColor} font-bold`}>🏁 {action.player}</span>
-            <span>Completed Deploy</span>
+            <span className={`${playerColor} font-bold`}>({action.player})</span>
+            <span className="font-semibold text-neutral-500">🏁 Completed Deploy</span>
           </div>
         );
       }
       if (action.type === 'end_turn' || action.action === 'end_turn') {
         return (
           <div key={idx} className="text-xs text-neutral-400 italic py-1 border-b border-neutral-800/40 leading-relaxed font-mono flex items-center gap-1.5">
-            <span className={`${playerColor} font-bold`}>⌛ {action.player}</span>
-            <span>Ended Turn</span>
+            <span className={`${playerColor} font-bold`}>({action.player})</span>
+            <span className="font-semibold text-neutral-500">⌛ Ended Turn</span>
           </div>
         );
       }
       if (action.type === 'react' || action.action === 'react') {
         return (
           <div key={idx} className="text-xs text-neutral-300 py-1 border-b border-neutral-800/40 leading-relaxed font-mono flex items-center gap-1.5">
-            <span className="text-neutral-500 font-bold">{action.cellKey}</span>
-            <span className={`${playerColor} font-bold`}>🛡️ {action.player}</span>
-            <span>{action.reactType === 'retreat' ? `Retreated ➡️ ${action.retreatTo}` : 'Fought ⚔️'}</span>
+            <span className={`${playerColor} font-bold`}>({action.player})</span>
+            <span className="text-amber-400 font-bold">🛡️</span>
+            <span>{action.reactType === 'retreat' ? `Retreated to ${action.retreatTo}` : `Fought at ${action.cellKey}`}</span>
           </div>
         );
       }
@@ -307,8 +320,12 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
             setIsTransitioningNext(true);
             setIsRevealingAttacker(false);
             
-            setDisplayedAttackerVal(0);
-            setDisplayedDefenderVal(0);
+            if (duel.attackerPiece !== myPiece) {
+              setDisplayedAttackerVal(0);
+            }
+            if (duel.defenderPiece !== myPiece) {
+              setDisplayedDefenderVal(0);
+            }
 
             const swapTimer = setTimeout(() => {
               setDisplayedCombat(currentPropCombat);

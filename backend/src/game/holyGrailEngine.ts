@@ -379,7 +379,16 @@ export const HolyGrailEngine = {
     if (!state.history) {
       state.history = [];
     }
-    state.history.push(JSON.stringify({ ...action, player }));
+    const logAction = { ...action };
+    if (type === 'deploy_all') {
+      logAction.count = state.hands[player]?.length || 0;
+    } else if (type === 'deploy') {
+      logAction.count = 1;
+    }
+    if (type === 'deploy' || type === 'deploy_all') {
+      delete (logAction as any).cardValue;
+    }
+    state.history.push(JSON.stringify({ ...logAction, player }));
 
     // ─── 1. REACT ACTION ───────────────────────────────────────────────────────
     if (type === 'react') {
