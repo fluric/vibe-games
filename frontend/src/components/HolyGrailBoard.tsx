@@ -1265,7 +1265,7 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
       `}</style>
       
       {/* ── Side panel for active phase info ── */}
-      <div className="w-full xl:w-72 flex flex-col gap-4 bg-neutral-900/80 border border-neutral-800 p-5 rounded-2xl backdrop-blur-md relative z-20">
+      <div className="w-full xl:w-80 flex flex-col gap-4 bg-neutral-900/80 border border-neutral-800 p-5 rounded-2xl backdrop-blur-md relative z-20">
         <div>
           <div className="text-xs font-semibold text-neutral-500 uppercase tracking-widest">Active Turn</div>
           <div className="flex items-center gap-2 mt-1">
@@ -1294,20 +1294,28 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
             <div className="relative group/info cursor-help flex items-center justify-center w-5 h-5 rounded-full bg-indigo-900/60 border border-indigo-500/30 text-indigo-300 hover:bg-indigo-600 hover:text-white hover:border-indigo-400 font-bold transition-all shadow-sm shadow-indigo-500/10">
               ℹ️
               <div className="absolute left-full ml-2 top-1/2 -translate-y-1/2 hidden group-hover/info:block w-64 bg-neutral-950 border border-neutral-800 p-3.5 rounded-xl shadow-2xl z-50 pointer-events-none text-xs leading-relaxed text-neutral-350 font-normal normal-case">
-                {phase === 'deploy' && (
+                {isReviewingLastTurn ? (
                   <span>
-                    Deploy cards from your hand onto your 🛖 <strong>Urban housing cells</strong>. 
-                    <br/><br/>
-                    Your valid cells are highlighted in purple. 
-                    <br/><br/>
-                    <strong>To place:</strong> Click a highlighted housing cell, then click a card in your hand. Or click a card first, then click a highlighted cell.
+                    <strong>Review Mode:</strong> Opponent turn completed. Take your time to review the logs and board state (opponent deployments/moves shown as overlays) before starting your action phase.
                   </span>
-                )}
-                {phase === 'move' && (
-                  <span>Select one of your stacks, then click an adjacent hex to move units. Stacks with Kings can carry the Grail 🏆.</span>
-                )}
-                {phase === 'react' && (
-                  <span>You are under attack! Click the contested cells (highlighted in red ⚔️) to fight or retreat.</span>
+                ) : (
+                  <>
+                    {phase === 'deploy' && (
+                      <span>
+                        Deploy cards from your hand onto your 🛖 <strong>Urban housing cells</strong>. 
+                        <br/><br/>
+                        Your valid cells are highlighted in purple. 
+                        <br/><br/>
+                        <strong>To place:</strong> Click a highlighted housing cell, then click a card in your hand. Or click a card first, then click a highlighted cell.
+                      </span>
+                    )}
+                    {phase === 'move' && (
+                      <span>Select one of your stacks, then click an adjacent hex to move units. Stacks with Kings can carry the Grail 🏆.</span>
+                    )}
+                    {phase === 'react' && (
+                      <span>You are under attack! Click the contested cells (highlighted in red ⚔️) to fight or retreat.</span>
+                    )}
+                  </>
                 )}
               </div>
             </div>
@@ -2030,15 +2038,6 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
 
       {/* ── Active Actions Panels (Right Column) ── */}
       <div className="w-full xl:w-80 flex flex-col gap-4">
-        {/* Review Banner for Space-saving / context when reviewing */}
-        {isReviewingLastTurn && (
-          <div className="bg-neutral-900/80 border border-neutral-800 p-4 rounded-2xl backdrop-blur-md animate-pulse">
-            <h3 className="text-sm font-semibold text-neutral-300 mb-2 uppercase tracking-wider">Review Mode</h3>
-            <p className="text-xs text-neutral-500 leading-relaxed">
-              Opponent turn completed. Take your time to review the logs and board state before starting your action phase.
-            </p>
-          </div>
-        )}
 
         {/* Move sliders / controllers */}
         {isMyTurn && phase === 'move' && selectedCellKey && !isReviewingLastTurn && (
