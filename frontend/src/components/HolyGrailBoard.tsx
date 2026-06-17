@@ -1962,10 +1962,14 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
 
         {/* Hand View at the bottom of the board canvas (Spacious card-game style) */}
         <div 
-          className={`w-full max-w-[560px] bg-neutral-900/80 px-5 rounded-2xl backdrop-blur-md flex flex-col items-center gap-3 shadow-xl justify-center transition-all duration-300 ease-in-out overflow-hidden ${
+          className={`max-w-[560px] bg-neutral-900/90 px-5 rounded-2xl backdrop-blur-md flex flex-col items-center gap-3 shadow-2xl justify-center transition-all duration-300 ease-in-out overflow-hidden z-40 ${
             isMyTurn && phase === 'deploy'
-              ? 'opacity-100 min-h-[195px] h-[195px] mt-4 py-3 border border-neutral-800/80'
-              : 'opacity-0 min-h-0 h-0 mt-0 py-0 border-0 pointer-events-none'
+              ? 'opacity-100 min-h-[195px] h-[195px] py-3 border border-neutral-800/80 pointer-events-auto'
+              : 'opacity-0 min-h-0 h-0 py-0 border-0 pointer-events-none'
+          } ${
+            isMyTurn && phase === 'deploy'
+              ? 'fixed bottom-4 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] xl:relative xl:bottom-auto xl:left-auto xl:translate-x-0 xl:w-full xl:mt-4'
+              : 'fixed bottom-4 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] xl:relative xl:bottom-auto xl:left-auto xl:translate-x-0 xl:w-full xl:mt-0'
           }`}
         >
           <div className="flex justify-between items-center w-full text-xs font-semibold text-neutral-400 px-1">
