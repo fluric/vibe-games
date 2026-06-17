@@ -492,14 +492,19 @@ function renderGroupedHistoryEntry(grouped: GroupedLog) {
       : summary.player === 'O' 
       ? 'text-rose-400' 
       : 'text-amber-500';
+    const showCell = summary.cell && summary.cell !== 'Grail Center';
     return (
       <div 
         key={grouped.key} 
         className="text-xs text-neutral-305 py-1 border-b border-neutral-800/40 leading-relaxed font-mono flex items-center gap-1.5 flex-wrap px-1 rounded hover:bg-neutral-800/30 transition-colors"
       >
         <span className="text-amber-400 font-bold">☢️</span>
-        <span className="text-neutral-400 font-semibold">{summary.cell}</span>
-        <span className="text-neutral-500">:</span>
+        {showCell && (
+          <>
+            <span className="text-neutral-400 font-semibold">{summary.cell}</span>
+            <span className="text-neutral-500">:</span>
+          </>
+        )}
         <span className="text-neutral-500 font-bold">💀</span>
         <span className={`${playerColor} font-bold`}>{formatCardString(summary.card)}</span>
       </div>
