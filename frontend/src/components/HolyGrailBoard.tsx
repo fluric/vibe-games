@@ -1399,7 +1399,7 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
       </div>
 
       {/* ── Main Board Canvas ── */}
-      <div className="relative flex flex-col items-center gap-4">
+      <div className="relative flex flex-col items-center gap-4 w-full max-w-full">
         {/* Pending combat alerts */}
         {pendingCombats.length > 0 && (
           <div className="absolute top-2 left-1/2 -translate-x-1/2 z-10 flex flex-col gap-1.5 max-w-md w-full px-4">
@@ -1431,12 +1431,12 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
         )}
 
         {/* Board SVG */}
-        <div className="bg-neutral-950/45 border border-neutral-800/80 p-2 sm:p-4 rounded-3xl backdrop-blur-sm shadow-2xl relative">
+        <div className="w-full bg-neutral-950/45 border border-neutral-800/80 p-2 sm:p-4 rounded-3xl backdrop-blur-sm shadow-2xl relative flex justify-center">
           <svg 
             width="100%" 
             height="100%" 
             viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
-            className="w-[340px] h-[340px] sm:w-[480px] sm:h-[480px] md:w-[520px] md:h-[520px] select-none"
+            className="w-full max-w-[560px] aspect-square select-none"
           >
             <defs>
               <marker 
