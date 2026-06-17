@@ -146,10 +146,10 @@ export function drawRandomCard(state: HolyGrailGameState, player: PlayerPiece): 
   if (value === 13 && faceCounts.kings >= 1) {
     return { value: Math.floor(Math.random() * 10) + 1, revealed: false }; // Redraw to number card (1..10)
   }
-  if (value === 12 && faceCounts.queens >= 1) {
+  if (value === 12 && faceCounts.queens >= 2) {
     return { value: Math.floor(Math.random() * 10) + 1, revealed: false };
   }
-  if (value === 11 && faceCounts.jacks >= 1) {
+  if (value === 11 && faceCounts.jacks >= 3) {
     return { value: Math.floor(Math.random() * 10) + 1, revealed: false };
   }
 

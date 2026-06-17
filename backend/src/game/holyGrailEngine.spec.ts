@@ -1,5 +1,5 @@
 import assert from 'assert';
-import { HolyGrailEngine, getDistance, isValidHex, getCellType, evaluateDuel, getNeighborIndex, reassembleCellStack, getFarmLandsCount } from './holyGrailEngine';
+import { HolyGrailEngine, getDistance, isValidHex, getCellType, evaluateDuel, getNeighborIndex, reassembleCellStack, getFarmLandsCount, createInitialState, drawRandomCard } from './holyGrailEngine';
 import { HolyGrailCard, HolyGrailGameState } from '@vibe-games/shared';
 
 async function runTests() {
@@ -397,6 +397,68 @@ async function runTests() {
   // Execute reaction to verify it doesn't crash
   sAiReact = HolyGrailEngine.handleMove(sAiReact, reactAction, 'O');
   assert.strictEqual(sAiReact.pendingCombats.length, 0); // Resolved
+
+  // ── Test Face Card Draw Limits ──
+  console.log('  Testing card draw limits (max 1 King, 2 Queens, 3 Jacks)...');
+  const sDraw = createInitialState(); // Has 1 King, 1 Queen, 1 Jack in X's hand.
+  sDraw.hands.X = [
+    { value: 13, revealed: false }, // 1 King
+    { value: 12, revealed: false }, // 1 Queen
+    { value: 11, revealed: false }  // 1 Jack
+  ];
+  sDraw.board = {};
+  sDraw.pendingCombats = [];
+  const originalRandom = Math.random;
+  try {
+    let callCount = 0;
+    // Mock Math.random to return 0.95 (which yields 13) on first call, and 0.4 (which yields 5) on second call
+    Math.random = () => {
+      callCount++;
+      if (callCount === 1) return 0.95; // yields 13 (King)
+      return 0.4; // yields 5 (number card)
+    };
+    
+    const kingDraw = drawRandomCard(sDraw, 'X');
+    assert.strictEqual(kingDraw.value, 5); // Should redraw because 1 King is already in play
+
+    // Reset mock for Queen test: first call yields 12 (Queen), second yields 5
+    callCount = 0;
+    Math.random = () => {
+      callCount++;
+      if (callCount === 1) return 0.85; // yields 12 (Queen)
+      return 0.4;
+    };
+    const queenDraw1 = drawRandomCard(sDraw, 'X');
+    assert.strictEqual(queenDraw1.value, 12); // Should allow 2nd Queen since max is 2 and we only have 1 in play
+
+    // Now add another queen so we have 2 Queens in play
+    sDraw.hands.X.push({ value: 12, revealed: false });
+    callCount = 0;
+    const queenDraw2 = drawRandomCard(sDraw, 'X');
+    assert.strictEqual(queenDraw2.value, 5); // Should redraw to number card because 2 Queens are in play
+
+    // Reset mock for Jack test: first call yields 11 (Jack), second yields 5
+    callCount = 0;
+    Math.random = () => {
+      callCount++;
+      if (callCount === 1) return 0.77; // yields 11 (Jack)
+      return 0.4;
+    };
+    const jackDraw1 = drawRandomCard(sDraw, 'X');
+    assert.strictEqual(jackDraw1.value, 11); // Should allow 2nd Jack
+    
+    sDraw.hands.X.push({ value: 11, revealed: false }); // Now 2 Jacks in play
+    callCount = 0;
+    const jackDraw2 = drawRandomCard(sDraw, 'X');
+    assert.strictEqual(jackDraw2.value, 11); // Should allow 3rd Jack
+    
+    sDraw.hands.X.push({ value: 11, revealed: false }); // Now 3 Jacks in play
+    callCount = 0;
+    const jackDraw3 = drawRandomCard(sDraw, 'X');
+    assert.strictEqual(jackDraw3.value, 5); // Should redraw because 3 Jacks are in play
+  } finally {
+    Math.random = originalRandom;
+  }
 
   console.log('✅ All Holy Grail Engine tests passed successfully!');
 }
