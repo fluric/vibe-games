@@ -1231,13 +1231,17 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
           ? 'fill-blue-950/80 stroke-blue-500 stroke-[2]' 
           : 'fill-rose-900/40 stroke-rose-500 stroke-[2]';
       case 'urban':
-        return cell.owner === 'X' && cell.soldiers.length > 0
+        return cell.owner === 'X'
           ? 'fill-blue-950/50 stroke-blue-500/80 stroke-2'
-          : cell.owner === 'O' && cell.soldiers.length > 0
+          : cell.owner === 'O'
           ? 'fill-rose-950/50 stroke-rose-500/80 stroke-2'
           : 'fill-neutral-900 stroke-neutral-800';
       case 'farm_land':
-        return 'fill-emerald-950/40 stroke-emerald-600/50 stroke-[1.5]';
+        return cell.owner === 'X'
+          ? 'fill-emerald-950/20 stroke-blue-500/80 stroke-2'
+          : cell.owner === 'O'
+          ? 'fill-emerald-950/20 stroke-rose-500/80 stroke-2'
+          : 'fill-emerald-950/40 stroke-emerald-600/50 stroke-[1.5]';
       case 'hill':
         return 'fill-slate-800/60 stroke-slate-600/50 stroke-[1.5]';
       default:
@@ -1508,13 +1512,29 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
                     <text x={cx} y={cy - 4} textAnchor="middle" className="text-base opacity-75 select-none fill-slate-400">⛰️</text>
                   )}
                   {cell.cellType === 'farm_land' && !hasSoldiers && (
-                    <text x={cx} y={cy - 4} textAnchor="middle" className="text-base opacity-75 select-none fill-emerald-400">🌾</text>
+                    <g>
+                      <text x={cx} y={cy - 4} textAnchor="middle" className="text-base opacity-75 select-none fill-emerald-400">🌾</text>
+                      {cell.owner === 'X' && (
+                        <circle cx={cx + 12} cy={cy - 12} r="3.5" className="fill-blue-500 stroke-neutral-950 stroke-[1]" />
+                      )}
+                      {cell.owner === 'O' && (
+                        <circle cx={cx + 12} cy={cy - 12} r="3.5" className="fill-rose-500 stroke-neutral-950 stroke-[1]" />
+                      )}
+                    </g>
                   )}
                   {cell.cellType === 'home_base' && !hasSoldiers && (
                     <text x={cx} y={cy - 4} textAnchor="middle" className={`text-base opacity-75 select-none ${cell.r < 0 ? 'fill-blue-400' : 'fill-rose-400'}`}>🏰</text>
                   )}
                   {cell.cellType === 'urban' && !hasSoldiers && (
-                    <text x={cx} y={cy - 4} textAnchor="middle" className="text-base opacity-75 select-none fill-indigo-400">🛖</text>
+                    <g>
+                      <text x={cx} y={cy - 4} textAnchor="middle" className="text-base opacity-75 select-none fill-indigo-400">🛖</text>
+                      {cell.owner === 'X' && (
+                        <circle cx={cx + 12} cy={cy - 12} r="3.5" className="fill-blue-500 stroke-neutral-950 stroke-[1]" />
+                      )}
+                      {cell.owner === 'O' && (
+                        <circle cx={cx + 12} cy={cy - 12} r="3.5" className="fill-rose-500 stroke-neutral-950 stroke-[1]" />
+                      )}
+                    </g>
                   )}
 
                   {/* Combat swords if contested */}
