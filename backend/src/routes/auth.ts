@@ -146,6 +146,101 @@ export async function authRoutes(server: FastifyInstance) {
     }
   });
 
+  // ── OAuth Redirect Flow (Firefox / privacy-browser fallback) ────────────
+  // Uses the traditional authorization code flow instead of GSI popup.
+  // Requires GOOGLE_CLIENT_SECRET and BACKEND_URL env vars.
+
+  server.get<{
+    Querystring: { returnUrl?: string };
+  }>('/google/redirect', async (request, reply) => {
+    if (!GOOGLE_CLIENT_ID) {
+      return reply.code(500).send({ error: 'Google auth not configured' });
+    }
+
+    const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+    if (!clientSecret) {
+      return reply.code(500).send({ error: 'Google client secret not configured for redirect flow' });
+    }
+
+    const returnUrl = request.query.returnUrl || process.env.FRONTEND_URL || 'http://localhost:5173';
+    const backendUrl = process.env.BACKEND_URL || `http://localhost:${process.env.PORT || 3001}`;
+    const redirectUri = `${backendUrl}/auth/google/redirect/callback`;
+
+    const client = new OAuth2Client(GOOGLE_CLIENT_ID, clientSecret, redirectUri);
+
+    const authUrl = client.generateAuthUrl({
+      access_type: 'offline',
+      scope: ['openid', 'email', 'profile'],
+      state: Buffer.from(JSON.stringify({ returnUrl })).toString('base64url'),
+      prompt: 'select_account',
+    });
+
+    return reply.redirect(authUrl);
+  });
+
+  server.get<{
+    Querystring: { code?: string; state?: string; error?: string };
+  }>('/google/redirect/callback', async (request, reply) => {
+    const { code, state, error: authError } = request.query;
+
+    // Parse returnUrl from state
+    let returnUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    if (state) {
+      try {
+        const stateData = JSON.parse(Buffer.from(state, 'base64url').toString());
+        returnUrl = stateData.returnUrl || returnUrl;
+      } catch { /* ignore malformed state */ }
+    }
+
+    if (authError || !code) {
+      const sep = returnUrl.includes('?') ? '&' : '?';
+      return reply.redirect(`${returnUrl}${sep}auth_error=${encodeURIComponent(authError || 'no_code')}`);
+    }
+
+    const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+    if (!clientSecret || !GOOGLE_CLIENT_ID) {
+      return reply.code(500).send({ error: 'Google auth not configured' });
+    }
+
+    const backendUrl = process.env.BACKEND_URL || `http://localhost:${process.env.PORT || 3001}`;
+    const redirectUri = `${backendUrl}/auth/google/redirect/callback`;
+
+    try {
+      const client = new OAuth2Client(GOOGLE_CLIENT_ID, clientSecret, redirectUri);
+      const { tokens } = await client.getToken(code);
+
+      if (!tokens.id_token) {
+        throw new Error('No id_token returned from Google');
+      }
+
+      const ticket = await client.verifyIdToken({
+        idToken: tokens.id_token,
+        audience: GOOGLE_CLIENT_ID,
+      });
+      const payload = ticket.getPayload();
+      if (!payload || !payload.email) {
+        throw new Error('Invalid token payload');
+      }
+
+      const user = await getOrCreateGoogleUser(
+        payload.sub,
+        payload.email,
+        payload.name || 'Anonymous User',
+        payload.picture
+      );
+
+      const token = setSessionCookie(reply, user.id);
+
+      // Redirect back to frontend with token in URL
+      const sep = returnUrl.includes('?') ? '&' : '?';
+      return reply.redirect(`${returnUrl}${sep}token=${encodeURIComponent(token)}`);
+    } catch (err: any) {
+      request.log.error(err);
+      const sep = returnUrl.includes('?') ? '&' : '?';
+      return reply.redirect(`${returnUrl}${sep}auth_error=token_exchange_failed`);
+    }
+  });
+
   // Mock Developer Login Route
   server.post<{
     Body: { name: string; email: string; avatarUrl?: string };

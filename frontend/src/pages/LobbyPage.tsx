@@ -403,6 +403,50 @@ export function LobbyPage() {
     }
   }, [lobbyTab, activeGameTab, fetchLeaderboard]);
 
+  // Handle token from OAuth redirect flow (Firefox fallback)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const redirectToken = params.get('token');
+    const authError = params.get('auth_error');
+
+    if (authError) {
+      alert(`Google login failed: ${authError}`);
+      params.delete('auth_error');
+      const newUrl = params.toString()
+        ? `${window.location.pathname}?${params.toString()}`
+        : window.location.pathname;
+      window.history.replaceState({}, '', newUrl);
+      return;
+    }
+
+    if (redirectToken) {
+      localStorage.setItem('vibe-games-token', redirectToken);
+      params.delete('token');
+      const newUrl = params.toString()
+        ? `${window.location.pathname}?${params.toString()}`
+        : window.location.pathname;
+      window.history.replaceState({}, '', newUrl);
+      // Re-check auth with the new token
+      (async () => {
+        try {
+          const res = await api.getAuthMe();
+          if (res.user) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
+            setCurrentUser(res.user);
+            localStorage.setItem('vibe-games-user-id', res.user.id);
+          }
+        } catch (err) {
+          console.error('Failed to verify redirect token:', err);
+        } finally {
+          // eslint-disable-next-line react-hooks/set-state-in-effect
+          setCheckingAuth(false);
+        }
+      })();
+      return; // Skip the normal session check
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   useEffect(() => {
     const checkSession = async () => {
       try {
@@ -706,6 +750,12 @@ export function LobbyPage() {
           {googleClientId ? (
             <div className="flex flex-col items-center gap-4 py-2 border-b border-neutral-800/60 pb-6 last:border-0 last:pb-0">
               <div id="google-signin-button" className="transition-transform active:scale-[0.98]" />
+              <a
+                href={`${(import.meta.env.VITE_API_URL || 'http://localhost:3001').replace(/^(?!https?:\/\/)/, 'https://')}/auth/google/redirect?returnUrl=${encodeURIComponent(window.location.href)}`}
+                className="text-[11px] text-neutral-500 hover:text-neutral-300 underline underline-offset-2 transition-colors"
+              >
+                Having trouble? Sign in via redirect
+              </a>
             </div>
           ) : null}
 
