@@ -431,20 +431,17 @@ export function LobbyPage() {
         try {
           const res = await api.getAuthMe();
           if (res.user) {
-            // eslint-disable-next-line react-hooks/set-state-in-effect
             setCurrentUser(res.user);
             localStorage.setItem('vibe-games-user-id', res.user.id);
           }
         } catch (err) {
           console.error('Failed to verify redirect token:', err);
         } finally {
-          // eslint-disable-next-line react-hooks/set-state-in-effect
           setCheckingAuth(false);
         }
       })();
       return; // Skip the normal session check
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
