@@ -71,7 +71,8 @@ Combat occurs when a stack moves into a cell containing enemy soldiers.
   - If a player defends a **Hill** cell and has **at least 2 cards** in their stack:
     - The system automatically draws the top **two** cards of their stack.
     - The **best value** of the two counts in the duel against the attacker's top card.
-    - If the chosen card wins (or draws), the unused card survives and goes to the bottom of the defender's stack as well, while the winning card undergoes standard resolution (goes to the bottom of the stack).
+    - If the chosen card wins, the unused card survives and goes to the bottom of the defender's stack as well, while the winning card undergoes standard resolution (goes to the bottom of the stack).
+    - If the chosen card draws, both defender cards are destroyed.
     - If *both* drawn cards are worse than the attacker's card, **both defender cards are destroyed**.
 - **Combat Interrupt (Retreat)**:
   - Fights are evaluated card-by-card.

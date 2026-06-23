@@ -319,7 +319,9 @@ export function RulesModal({ isOpen, onClose }: RulesModalProps) {
                     If combat occurs on a **Hill hex**, a defender with at least 2 cards gets to "draw two":
                   </p>
                   <p className="text-xs text-neutral-400 mt-1 leading-relaxed">
-                    The defender evaluates how the attacking top card performs against the defender's **top two cards** combined, and selects the matchup that is most favorable (Win &gt; Draw &gt; Loss). The selected card fights, and both defending cards are placed at the bottom of the stack afterward.
+                    The defender evaluates how the attacking top card performs against the defender's **top two cards**, and selects the matchup that is most favorable (Win &gt; Draw &gt; Loss). 
+                    If the chosen card wins, the unused card survives and goes to the bottom of the stack as well, while the winning card degrades and goes to the bottom.
+                    If the chosen card draws (or both cards are weaker than the attacker's card), both defending cards are destroyed.
                   </p>
                 </div>
               </div>

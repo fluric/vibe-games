@@ -947,15 +947,12 @@ export const HolyGrailEngine = {
             if (!state.history) state.history = [];
             state.history.push(`⚔️ Hill Combat at ${cellName}: Attacker (${combat.attacker})'s ${attackerName} vs Defender (${combat.defender})'s [${bestName}, ${worstName}]. Defender chooses ${bestName} and wins! Attacker's card destroyed. Defender degrades to ${getCardLabel(bestResult.newDefenderVal)}.`);
           } else {
-            // Draw
+            // Draw: Both attacker and both drawn defender cards are destroyed
             attackerStack.shift();
-            defenderStack.splice(bestCardIdx, 1); // Best destroyed
-            // Worst survives and goes to bottom
-            const wCard = defenderStack.splice(defenderStack.indexOf(worstCard), 1)[0];
-            defenderStack.push(wCard);
+            defenderStack.splice(0, 2);
 
             if (!state.history) state.history = [];
-            state.history.push(`⚔️ Hill Combat at ${cellName}: Attacker (${combat.attacker})'s ${attackerName} vs Defender (${combat.defender})'s [${bestName}, ${worstName}]. Draw! Defender's ${bestName} and Attacker's card are both destroyed. Defender's ${worstName} survives.`);
+            state.history.push(`⚔️ Hill Combat at ${cellName}: Attacker (${combat.attacker})'s ${attackerName} vs Defender (${combat.defender})'s [${bestName}, ${worstName}]. Draw! Defender's cards [${bestName}, ${worstName}] and Attacker's card are all destroyed.`);
           }
 
         } else {

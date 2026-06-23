@@ -279,6 +279,30 @@ async function runTests() {
   assert.strictEqual(sHill.board['1,1'].soldiers[0].value, 1); // Best card (9 -> 1)
   assert.strictEqual(sHill.board['1,1'].soldiers[1].value, 6); // Unused card (6)
 
+  // 9b. Hill Defense double-draw with Draw Result
+  console.log('👉 Testing: Hill defense advantage with draw outcome (Q vs Q & K)');
+  let sHillDraw = HolyGrailEngine.createInitialState();
+  sHillDraw.board['1,0'].owner = 'X';
+  sHillDraw.board['1,0'].soldiers = [{ value: 12, revealed: false }]; // Attacker Q (12)
+  sHillDraw.board['1,1'].owner = 'O';
+  sHillDraw.board['1,1'].soldiers = [
+    { value: 12, revealed: false }, // Defender Q (12)
+    { value: 13, revealed: false }  // Defender K (13)
+  ];
+
+  sHillDraw.phase = 'move';
+  sHillDraw.turn = 'X';
+  sHillDraw = HolyGrailEngine.handleMove(sHillDraw, { type: 'move', from: '1,0', to: '1,1', count: 1 }, 'X');
+  sHillDraw = HolyGrailEngine.handleMove(sHillDraw, { type: 'end_turn' }, 'X');
+
+  // O fights on the Hill
+  sHillDraw = HolyGrailEngine.handleMove(sHillDraw, { type: 'react', cellKey: '1,1', reactType: 'fight' }, 'O');
+
+  // Both Qs draw and are destroyed, and the unused K is also destroyed because the chosen card drew.
+  assert.strictEqual(sHillDraw.board['1,1'].soldiers.length, 0);
+  assert.strictEqual(sHillDraw.board['1,1'].owner, null);
+  assert.strictEqual(sHillDraw.pendingCombats.length, 0);
+
   // 10. Grail Movement & Radioactivity
   console.log('👉 Testing: Grail movement & radioactivity');
   let sGrail = HolyGrailEngine.createInitialState();
