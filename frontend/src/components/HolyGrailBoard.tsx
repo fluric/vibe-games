@@ -1495,7 +1495,9 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
       return 'fill-red-950/70 stroke-red-500 stroke-[2.5] animate-pulse';
     }
     if (isMoveTarget) {
-      return 'fill-blue-900/60 stroke-blue-400 stroke-[2.5]';
+      return myPiece === 'X'
+        ? 'fill-blue-900/60 stroke-blue-400 stroke-[2.5]'
+        : 'fill-rose-900/60 stroke-rose-400 stroke-[2.5]';
     }
     if (isSelected) {
       return myPiece === 'X'
