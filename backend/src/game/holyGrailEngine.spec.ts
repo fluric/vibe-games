@@ -298,7 +298,10 @@ async function runTests() {
   // End turn for O to complete the round
   sGrail.phase = 'move';
   sGrail.turn = 'O';
+  const originalRandomGrail = Math.random;
+  Math.random = () => 0.1; // Ensure radioactivity kills the King (0.1 < 0.5)
   sGrail = HolyGrailEngine.handleMove(sGrail, { type: 'end_turn' }, 'O');
+  Math.random = originalRandomGrail;
 
   // Round completed, Grail should have moved to (0,-1)
   assert.strictEqual(sGrail.grailCellKey, '0,-1');
@@ -507,8 +510,8 @@ async function runTests() {
   assert.strictEqual(lockNextState.board['0,0'].soldiers.length, 0);
   assert.strictEqual(lockNextState.movesThisTurn?.[0].cards.length, 2);
 
-  // ── Test King Death Carry Retreat ──
-  console.log('  Testing King death carry retreat...');
+  // ── Test King Death Carry Retreat (No longer blocked by empty cell requirement) ──
+  console.log('  Testing King death carry retreat to non-empty cell...');
   let sDeath = createInitialState();
   sDeath.board['0,0'].owner = 'X';
   sDeath.board['0,0'].soldiers = [
@@ -524,22 +527,16 @@ async function runTests() {
   sDeath.phase = 'move';
   sDeath.turn = 'X';
   
-  sDeath = HolyGrailEngine.handleMove(sDeath, { type: 'move', from: '0,0', to: '0,-1', count: 2 }, 'X');
-  assert.strictEqual(sDeath.grailCellKey, '0,-1');
-  
-  sDeath = HolyGrailEngine.handleMove(sDeath, { type: 'end_turn' }, 'X');
-  
-  sDeath.phase = 'react';
-  sDeath.turn = 'O';
-  sDeath = HolyGrailEngine.handleMove(sDeath, { type: 'react', cellKey: '0,-1', reactType: 'fight' }, 'O');
-  
-  assert.strictEqual(sDeath.grailCellKey, '0,0'); // Reverted
-  assert.strictEqual(sDeath.board['0,0'].soldiers.length, 1); // Queen returned
-  assert.strictEqual(sDeath.board['0,0'].owner, 'X');
-  assert.strictEqual(sDeath.board['0,-1'].soldiers.length, 0); // Destination empty
-  assert.strictEqual(sDeath.board['0,-1'].owner, null);
+  // Try to move carrying Grail to (0,-1) -> Should succeed and initiate combat
+  let sDeathAfter = HolyGrailEngine.handleMove(sDeath, { type: 'move', from: '0,0', to: '0,-1', count: 2 }, 'X');
+  assert.strictEqual(sDeathAfter.grailCellKey, '0,-1');
+  assert.strictEqual(sDeathAfter.pendingCombats.length, 1);
+  const combatDeath = sDeathAfter.pendingCombats[0];
+  assert.strictEqual(combatDeath.cellKey, '0,-1');
+  assert.strictEqual(combatDeath.attacker, 'X');
+  assert.strictEqual(combatDeath.carriesGrail, true);
 
-  // ── Test King Death Carry Retreat on Merge ──
+  // ── Test King Death Carry Retreat on Merge (No longer blocked by empty cell requirement) ──
   console.log('  Testing King death carry retreat on merge...');
   let sMergeDeath = createInitialState();
   
@@ -568,29 +565,12 @@ async function runTests() {
   // Move 1: Jack moves to (0,-1) -> initiates combat
   sMergeDeath = HolyGrailEngine.handleMove(sMergeDeath, { type: 'move', from: '1,-1', to: '0,-1', count: 1 }, 'X');
   
-  // Move 2: King + Queen move carrying the Grail to (0,-1) -> merges
-  sMergeDeath = HolyGrailEngine.handleMove(sMergeDeath, { type: 'move', from: '0,0', to: '0,-1', count: 2 }, 'X');
-  
-  assert.strictEqual(sMergeDeath.grailCellKey, '0,-1');
-  
-  sMergeDeath = HolyGrailEngine.handleMove(sMergeDeath, { type: 'end_turn' }, 'X');
-  
-  sMergeDeath.phase = 'react';
-  sMergeDeath.turn = 'O';
-  
-  // Duel 1: X's Jack (11) vs O's King (13) -> King wins, Jack destroyed. King remains.
-  sMergeDeath = HolyGrailEngine.handleMove(sMergeDeath, { type: 'react', cellKey: '0,-1', reactType: 'fight' }, 'O');
-  
-  // Duel 2: X's King (13) vs O's King (13) -> Draw, both die! King carrying Grail is dead!
-  sMergeDeath = HolyGrailEngine.handleMove(sMergeDeath, { type: 'react', cellKey: '0,-1', reactType: 'fight' }, 'O');
-  
-  // Abort and retreat should trigger!
-  // Surviving units (Queen) and Grail should retreat back to (0,0) [Grail cell's origin], NOT (1,-1) [Jack's origin]!
-  assert.strictEqual(sMergeDeath.grailCellKey, '0,0'); // Grail retreated to (0,0)
-  assert.strictEqual(sMergeDeath.board['0,0'].soldiers.length, 1); // Queen returned to (0,0)
-  assert.strictEqual(sMergeDeath.board['0,0'].owner, 'X');
-  assert.strictEqual(sMergeDeath.board['0,-1'].soldiers.length, 0); // Destination empty
-  assert.strictEqual(sMergeDeath.board['0,-1'].owner, null);
+  // Move 2: King + Queen move carrying the Grail to (0,-1) -> Should succeed and merge into combat
+  let sMergeDeathAfter = HolyGrailEngine.handleMove(sMergeDeath, { type: 'move', from: '0,0', to: '0,-1', count: 2 }, 'X');
+  assert.strictEqual(sMergeDeathAfter.grailCellKey, '0,-1');
+  assert.strictEqual(sMergeDeathAfter.pendingCombats.length, 1);
+  const combatMerge = sMergeDeathAfter.pendingCombats[0];
+  assert.strictEqual(combatMerge.carriesGrail, true);
 
   // 12. Neutral Soldiers / Empty-Refill Cell Owner Retention Bug Test
   console.log('👉 Testing: Empty-Refill Cell Owner Retention (preventing neutral soldiers)');
@@ -627,7 +607,7 @@ async function runTests() {
   sRadio.phase = 'move';
   sRadio.turn = 'X';
   
-  sRadio.board['0,-1'].soldiers = [{ value: 10, revealed: false }];
+  sRadio.board['0,-1'].soldiers = [{ value: 13, revealed: false }];
   sRadio.board['0,-1'].owner = 'X';
   sRadio = HolyGrailEngine.handleMove(sRadio, { type: 'move', from: '0,-1', to: '0,0', count: 1 }, 'X');
 
@@ -637,15 +617,58 @@ async function runTests() {
   assert.strictEqual(sRadio.pendingCombats[0].defender, 'O');
 
   sRadio.roundTurnsCompleted = 1;
+  const originalRandomRadio = Math.random;
+  Math.random = () => 0.1; // Ensure radioactivity kills the defender (0.1 < 0.5)
   sRadio = HolyGrailEngine.handleMove(sRadio, { type: 'end_turn' }, 'X');
+  Math.random = originalRandomRadio;
 
   assert.strictEqual(sRadio.pendingCombats.length, 0);
   assert.strictEqual(sRadio.board['0,0'].owner, 'X');
   assert.strictEqual(sRadio.board['0,0'].soldiers.length, 1);
-  assert.strictEqual(sRadio.board['0,0'].soldiers[0].value, 10);
+  assert.strictEqual(sRadio.board['0,0'].soldiers[0].value, 13);
   
   assert.ok((sRadio.history || []).some(log => typeof log === 'string' && log.includes('radioactivity')));
   assert.ok((sRadio.history || []).some(log => typeof log === 'string' && log.includes('resolved') && log.includes('radioactivity')));
+
+  // 14. Grail Cell Entry & Movement Constraints Test
+  console.log('👉 Testing: Grail cell entry & movement constraints');
+  
+  // Setup state where Grail is at (0,-1)
+  let sConstraints = HolyGrailEngine.createInitialState();
+  sConstraints.grailCellKey = '0,-1';
+  
+  // Cell (0,-2) owned by X, contains soldiers without King: [10, 5]
+  sConstraints.board['0,-2'].owner = 'X';
+  sConstraints.board['0,-2'].soldiers = [{ value: 10, revealed: false }, { value: 5, revealed: false }];
+  sConstraints.phase = 'move';
+  sConstraints.turn = 'X';
+  
+  // 1. Move stack from (0,-2) to Grail cell (0,-1) without King -> Should succeed
+  let sConstraintsAfter = HolyGrailEngine.handleMove(sConstraints, { type: 'move', from: '0,-2', to: '0,-1', count: 2 }, 'X');
+  
+  // Verify units are in transit to (0,-1)
+  assert.strictEqual(sConstraintsAfter.board['0,-2'].soldiers.length, 0);
+  assert.strictEqual(sConstraintsAfter.movesThisTurn?.[0].to, '0,-1');
+  
+  // 3. Carrying Grail: destination does not need to be empty anymore
+  // Reset state
+  let sCarry = HolyGrailEngine.createInitialState();
+  sCarry.grailCellKey = '0,0';
+  
+  // Grail cell (0,0) has King + number card
+  sCarry.board['0,0'].owner = 'X';
+  sCarry.board['0,0'].soldiers = [{ value: 13, revealed: false }, { value: 5, revealed: false }];
+  sCarry.phase = 'move';
+  sCarry.turn = 'X';
+  
+  // Adjacent cell (0,-1) is NOT empty (contains 1 soldier)
+  sCarry.board['0,-1'].owner = 'O';
+  sCarry.board['0,-1'].soldiers = [{ value: 6, revealed: false }];
+  
+  // Try to move carrying Grail to (0,-1) -> Should succeed and initiate combat
+  let sCarryAfter = HolyGrailEngine.handleMove(sCarry, { type: 'move', from: '0,0', to: '0,-1', count: 2 }, 'X');
+  assert.strictEqual(sCarryAfter.grailCellKey, '0,-1');
+  assert.strictEqual(sCarryAfter.pendingCombats.length, 1);
 
   console.log('✅ All Holy Grail Engine tests passed successfully!');
 }

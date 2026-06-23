@@ -348,49 +348,60 @@ export function endRound(state: HolyGrailGameState): void {
 
   state.grailMovementCandidates = [];
 
-  // 2. Radioactivity: kill 1 random card in the Grail's cell
+  // 2. Radioactivity: each soldier in the Grail's cell is killed with 50% chance
   const grailCell = state.board[state.grailCellKey || '0,0'];
   if (grailCell && grailCell.soldiers.length > 0) {
-    const killIdx = Math.floor(Math.random() * grailCell.soldiers.length);
-    const killedCard = grailCell.soldiers[killIdx];
-    grailCell.soldiers.splice(killIdx, 1);
-
-    const cellName = getCellType(grailCell.q, grailCell.r) === 'grail_center' ? 'Grail Center' : `${grailCell.q},${grailCell.r}`;
-    const cardName = getCardLabel(killedCard.value);
-    const ownerName = grailCell.owner || 'neutral';
-
-    if (!state.history) state.history = [];
-    state.history.push(JSON.stringify({
-      type: 'radioactivity',
-      cell: cellName,
-      player: ownerName,
-      card: cardName
-    }));
-
-    if (grailCell.soldiers.length === 0) {
-      if (grailCell.cellType !== 'home_base' && grailCell.cellType !== 'urban') {
-        grailCell.owner = null;
+    const killedCards: HolyGrailCard[] = [];
+    const remainingSoldiers: HolyGrailCard[] = [];
+    for (const soldier of grailCell.soldiers) {
+      if (Math.random() < 0.5) {
+        killedCards.push(soldier);
+      } else {
+        remainingSoldiers.push(soldier);
       }
     }
+    grailCell.soldiers = remainingSoldiers;
 
-    const combatIdx = state.pendingCombats.findIndex(c => c.cellKey === (state.grailCellKey || '0,0'));
-    if (combatIdx !== -1) {
-      const combat = state.pendingCombats[combatIdx];
+    if (killedCards.length > 0) {
+      const cellName = getCellType(grailCell.q, grailCell.r) === 'grail_center' ? 'Grail Center' : `${grailCell.q},${grailCell.r}`;
+      const ownerName = grailCell.owner || 'neutral';
+
+      if (!state.history) state.history = [];
+      for (const killedCard of killedCards) {
+        const cardName = getCardLabel(killedCard.value);
+        state.history.push(JSON.stringify({
+          type: 'radioactivity',
+          cell: cellName,
+          player: ownerName,
+          card: cardName
+        }));
+      }
+
       if (grailCell.soldiers.length === 0) {
-        // Defender has no units left! Attacker captures the cell automatically
-        grailCell.owner = combat.attacker;
-        grailCell.soldiers = combat.attackerStack || [];
-        
-        state.pendingCombats.splice(combatIdx, 1);
-        
-        // Clear moving cards from movesThisTurn so they don't get merged at end_turn
-        state.movesThisTurn = (state.movesThisTurn || []).filter(m => m.to !== combat.cellKey);
+        if (grailCell.cellType !== 'home_base' && grailCell.cellType !== 'urban') {
+          grailCell.owner = null;
+        }
+      }
 
-        state.history.push(`⚔️ Combat at ${cellName} resolved: Defender (${combat.defender}) has no units left due to radioactivity. Attacker (${combat.attacker}) captures the cell with ${combat.attackerStack?.length || 0} unit(s).`);
-      } else {
-        // Just update the pending combat defender counts
-        combat.defenderRemainingCount = grailCell.soldiers.length;
-        combat.defenderTopCard = grailCell.soldiers[0] || null;
+      const combatIdx = state.pendingCombats.findIndex(c => c.cellKey === (state.grailCellKey || '0,0'));
+      if (combatIdx !== -1) {
+        const combat = state.pendingCombats[combatIdx];
+        if (grailCell.soldiers.length === 0) {
+          // Defender has no units left! Attacker captures the cell automatically
+          grailCell.owner = combat.attacker;
+          grailCell.soldiers = combat.attackerStack || [];
+          
+          state.pendingCombats.splice(combatIdx, 1);
+          
+          // Clear moving cards from movesThisTurn so they don't get merged at end_turn
+          state.movesThisTurn = (state.movesThisTurn || []).filter(m => m.to !== combat.cellKey);
+
+          state.history.push(`⚔️ Combat at ${cellName} resolved: Defender (${combat.defender}) has no units left due to radioactivity. Attacker (${combat.attacker}) captures the cell with ${combat.attackerStack?.length || 0} unit(s).`);
+        } else {
+          // Just update the pending combat defender counts
+          combat.defenderRemainingCount = grailCell.soldiers.length;
+          combat.defenderTopCard = grailCell.soldiers[0] || null;
+        }
       }
     }
   }
@@ -738,7 +749,7 @@ export function getSmartAiAction(state: HolyGrailGameState, player: PlayerPiece)
 
             const isGrailMove = state.grailCellKey === key;
             if (isGrailMove) {
-              if (usableCount === cell.soldiers.length && cell.soldiers.some(c => c.value === 13)) {
+              if (usableCount === cell.soldiers.length && cell.soldiers.some(c => c.value === 13) && neighbor.soldiers.length === 0) {
                 moves.push({
                   type: 'move',
                   from: key,
@@ -748,6 +759,11 @@ export function getSmartAiAction(state: HolyGrailGameState, player: PlayerPiece)
               }
             } else {
               for (let count = 1; count <= usableCount; count++) {
+                const movingStack = cell.soldiers.slice(0, count);
+                const isEnteringGrailCell = state.grailCellKey === nKey;
+                if (isEnteringGrailCell && !movingStack.some(c => c.value === 13)) {
+                  continue;
+                }
                 moves.push({
                   type: 'move',
                   from: key,
@@ -1179,6 +1195,7 @@ export const HolyGrailEngine = {
       if (hasMovedCard) {
         throw new Error('Some soldiers in this stack have already moved this turn');
       }
+
 
       // Mark moving cards as moved
       for (const card of movingStack) {

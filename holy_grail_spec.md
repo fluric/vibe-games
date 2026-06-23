@@ -104,10 +104,10 @@ If stacks from different cells are moved into the same destination cell in the s
 
 - **Initial State**: The Holy Grail is placed at `(0, 0)`.
 - **Radioactivity**: At the end of every round (after both players take their turn), the Grail emits radiation.
-  - One **random** card in the stack occupying the Grail's cell is **destroyed** (killed).
+  - Each card in the stack occupying the Grail's cell is permanently **destroyed** (killed) with a **50% chance**.
   - If the only King in the Grail's cell dies due to radioactivity, it prevents the Grail from being moved in the next round (since no King is present).
 - **Transporting the Grail**:
-  - The Grail moves immediately when a King moves from the cell with the Grail to an adjacent cell (and survives the combat/movement).
+  - The Grail moves immediately when a King moves from the cell with the Grail to an adjacent cell.
   - If two Kings move to two different adjacent cells from the Grail cell, the Grail moves to one of the destination cells at random.
 
 ---
@@ -140,7 +140,7 @@ If stacks from different cells are moved into the same destination cell in the s
 
 ### End of Round Resolution (After both players finish turns)
 1. **Apply Radiation**:
-   - 1 random soldier in the Grail's current cell is destroyed.
+   - Each soldier in the Grail's current cell is destroyed with a 50% chance.
 2. **Check Game Ending Conditions**:
    - **Victory**: A player has successfully moved the Grail onto their **Home Base** cell.
    - **Capture Defeat**: If a player's **Home Base** cell is captured/entered by an enemy stack, that player loses immediately.

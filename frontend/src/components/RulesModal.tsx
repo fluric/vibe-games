@@ -251,7 +251,7 @@ export function RulesModal({ isOpen, onClose }: RulesModalProps) {
                       <ul className="list-disc pl-5 mt-1 space-y-1 text-neutral-500">
                         <li>Moving units into an empty cell claims it immediately.</li>
                         <li>Moving units into an opponent's cell schedules a battle for their next turn.</li>
-                        <li><strong className="text-neutral-400">Grail Guard & Movement:</strong> Any soldiers present in the Grail's hex are bound to it and cannot leave it unless they move with the King (13) carrying the Grail. When moving from the Grail hex, you must move **all** soldiers together. If the King is destroyed, the Grail and all soldiers in the hex are locked in place until a new King arrives.</li>
+                        <li><strong className="text-neutral-400">Grail Guard & Movement:</strong> Any soldiers present in the Grail's hex are bound to it and cannot leave it unless they move with the King (13) carrying the Grail. When moving from the Grail hex, you must move **all** soldiers together.</li>
                       </ul>
                     </li>
                   </ol>
@@ -344,7 +344,7 @@ export function RulesModal({ isOpen, onClose }: RulesModalProps) {
                     <li>
                       <strong className="text-white text-sm">2. Grail Radiation (Radioactivity)</strong>
                       <p className="mt-1 leading-relaxed text-rose-400/90 font-medium">
-                        The Holy Grail emits raw holy energy! At the end of the round, one random card occupying the Grail's hex is permanently destroyed. If it was the last unit on the cell, the cell becomes neutral.
+                        The Holy Grail emits raw holy energy! At the end of the round, each soldier occupying the Grail's hex has a 50% chance of being permanently destroyed. If there are no units left on the cell, the cell becomes neutral.
                       </p>
                     </li>
                     <li>
