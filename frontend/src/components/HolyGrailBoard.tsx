@@ -1718,10 +1718,10 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
       {/* ── Main Board Canvas ── */}
       <div className="relative flex flex-col items-center gap-4 w-full max-w-full">
         {/* Pending combat alerts */}
-        {pendingCombats.length > 0 && (
+        {pendingCombats.length > 0 && !isReviewingLastTurn && (
           <div className="absolute top-2 left-1/2 -translate-x-1/2 z-10 flex flex-col gap-1.5 max-w-md w-full px-4">
             {pendingCombats.map((c, idx) => {
-              const isControllingReaction = phase === 'react' && c.defender === myPiece;
+              const isControllingReaction = phase === 'react' && c.defender === myPiece && !isReviewingLastTurn;
               return (
                 <div 
                   key={idx}
