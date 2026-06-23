@@ -109,11 +109,12 @@ export function createInitialState(): HolyGrailGameState {
 }
 
 // Count how many face cards are currently in play (hand + board) for a player
-export function countFaceCardsInPlay(state: HolyGrailGameState, player: PlayerPiece) {
+export function countFaceCardsInPlay(state: HolyGrailGameState, player: PlayerPiece, tempDrawn: HolyGrailCard[] = []) {
   const hand = state.hands[player] || [];
-  let kings = hand.filter(c => c.value === 13).length;
-  let queens = hand.filter(c => c.value === 12).length;
-  let jacks = hand.filter(c => c.value === 11).length;
+  const allHandCards = [...hand, ...tempDrawn];
+  let kings = allHandCards.filter(c => c.value === 13).length;
+  let queens = allHandCards.filter(c => c.value === 12).length;
+  let jacks = allHandCards.filter(c => c.value === 11).length;
 
   for (const cell of Object.values(state.board)) {
     if (cell.owner === player) {
@@ -140,9 +141,13 @@ export function countFaceCardsInPlay(state: HolyGrailGameState, player: PlayerPi
 }
 
 // Draw a single random card obeying face card limits
-export function drawRandomCard(state: HolyGrailGameState, player: PlayerPiece): HolyGrailCard {
+export function drawRandomCard(
+  state: HolyGrailGameState,
+  player: PlayerPiece,
+  tempDrawn: HolyGrailCard[] = []
+): HolyGrailCard {
   const value = Math.floor(Math.random() * 13) + 1; // 1 to 13 (Ace is replaced by 1)
-  const faceCounts = countFaceCardsInPlay(state, player);
+  const faceCounts = countFaceCardsInPlay(state, player, tempDrawn);
 
   if (value === 13 && faceCounts.kings >= 1) {
     return { value: Math.floor(Math.random() * 10) + 1, revealed: false }; // Redraw to number card (1..10)
@@ -185,7 +190,7 @@ export function runDeployDraw(state: HolyGrailGameState, player: PlayerPiece): H
 
   const drawn: HolyGrailCard[] = [];
   for (let i = 0; i < totalDraw; i++) {
-    drawn.push(drawRandomCard(state, player));
+    drawn.push(drawRandomCard(state, player, drawn));
   }
   return drawn;
 }
