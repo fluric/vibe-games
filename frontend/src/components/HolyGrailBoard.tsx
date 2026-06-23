@@ -2033,10 +2033,10 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
               const midX = (cx1 + cx2) / 2;
               const midY = (cy1 + cy2) / 2;
 
-              const colorClass = myPiece === 'X' ? 'stroke-blue-500/90' : 'stroke-rose-500/90';
-              const fillClass = myPiece === 'X' ? 'fill-blue-950 stroke-blue-400' : 'fill-rose-950 stroke-rose-400';
-              const textClass = myPiece === 'X' ? 'fill-blue-200' : 'fill-rose-200';
-              const markerId = myPiece === 'X' ? 'arrow-blue' : 'arrow-rose';
+              const colorClass = turn === 'X' ? 'stroke-blue-500/90' : 'stroke-rose-500/90';
+              const fillClass = turn === 'X' ? 'fill-blue-950 stroke-blue-400' : 'fill-rose-950 stroke-rose-400';
+              const textClass = turn === 'X' ? 'fill-blue-200' : 'fill-rose-200';
+              const markerId = turn === 'X' ? 'arrow-blue' : 'arrow-rose';
 
               return (
                 <g 
