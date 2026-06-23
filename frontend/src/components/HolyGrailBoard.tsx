@@ -936,6 +936,24 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
           const opponentDeploys: TempVisualDeploy[] = [];
           const opponentRadioactivity: TempVisualRadioactivity[] = [];
 
+          // Find the last index of the opponent's end_turn action in this slice
+          let lastOpponentEndTurnIdx = -1;
+          for (let i = history.length - 1; i >= sliceStart; i--) {
+            const log = history[i];
+            if (typeof log === 'string' && log.trim().startsWith('{')) {
+              try {
+                const action = JSON.parse(log);
+                const type = action.type || action.action;
+                if (action.player && action.player !== myPiece && type === 'end_turn') {
+                  lastOpponentEndTurnIdx = i;
+                  break;
+                }
+              } catch {
+                // ignore
+              }
+            }
+          }
+
           for (let i = sliceStart; i < history.length; i++) {
             const log = history[i];
             if (typeof log === 'string') {
@@ -944,13 +962,16 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
                   const action = JSON.parse(log);
                   const type = action.type || action.action;
                   if (type === 'radioactivity') {
-                    hasOppAction = true;
-                    const cellKey = action.cell === 'Grail Center' ? '0,0' : action.cell;
-                    opponentRadioactivity.push({
-                      cellKey,
-                      player: action.player,
-                      card: action.card
-                    });
+                    // Only display radioactivity deaths that occurred at the end of the round just completed (after opponent ended turn)
+                    if (lastOpponentEndTurnIdx === -1 || i > lastOpponentEndTurnIdx) {
+                      hasOppAction = true;
+                      const cellKey = action.cell === 'Grail Center' ? '0,0' : action.cell;
+                      opponentRadioactivity.push({
+                        cellKey,
+                        player: action.player,
+                        card: action.card
+                      });
+                    }
                   } else if (action.player && action.player !== myPiece) {
                     hasOppAction = true;
                     if (type === 'move' && action.from && action.to) {
@@ -980,15 +1001,17 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
                 // Parse text radioactivity log
                 const isRadio = log.includes('☢️') || log.toLowerCase().includes('radioactivity');
                 if (isRadio) {
-                  const info = parseRadioactiveText(log);
-                  if (info) {
-                    hasOppAction = true;
-                    const cellKey = info.cell === 'Grail Center' ? '0,0' : info.cell;
-                    opponentRadioactivity.push({
-                      cellKey,
-                      player: info.player as PlayerPiece,
-                      card: info.card
-                    });
+                  if (lastOpponentEndTurnIdx === -1 || i > lastOpponentEndTurnIdx) {
+                    const info = parseRadioactiveText(log);
+                    if (info) {
+                      hasOppAction = true;
+                      const cellKey = info.cell === 'Grail Center' ? '0,0' : info.cell;
+                      opponentRadioactivity.push({
+                        cellKey,
+                        player: info.player as PlayerPiece,
+                        card: info.card
+                      });
+                    }
                   }
                 }
 
