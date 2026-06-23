@@ -2033,6 +2033,11 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
               const midX = (cx1 + cx2) / 2;
               const midY = (cy1 + cy2) / 2;
 
+              const colorClass = myPiece === 'X' ? 'stroke-blue-500/90' : 'stroke-rose-500/90';
+              const fillClass = myPiece === 'X' ? 'fill-blue-950 stroke-blue-400' : 'fill-rose-950 stroke-rose-400';
+              const textClass = myPiece === 'X' ? 'fill-blue-200' : 'fill-rose-200';
+              const markerId = myPiece === 'X' ? 'arrow-blue' : 'arrow-rose';
+
               return (
                 <g 
                   key={`move-arrow-${idx}`}
@@ -2046,8 +2051,8 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
                     y1={startY}
                     x2={endX}
                     y2={endY}
-                    className="stroke-indigo-400/90 stroke-[3] [stroke-dasharray:4,3]"
-                    markerEnd="url(#arrow)"
+                    className={`${colorClass} stroke-[3] [stroke-dasharray:4,3]`}
+                    markerEnd={`url(#${markerId})`}
                   />
 
                   {/* Thick transparent interactive area for easier hover */}
@@ -2064,13 +2069,13 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
                     cx={midX}
                     cy={midY}
                     r="8"
-                    className="fill-indigo-950 stroke-indigo-400 stroke-[1.5]"
+                    className={`${fillClass} stroke-[1.5]`}
                   />
                   <text
                     x={midX}
                     y={midY + 3}
                     textAnchor="middle"
-                    className="text-[9px] font-black fill-indigo-200 select-none font-mono"
+                    className={`text-[9px] font-black ${textClass} select-none font-mono`}
                   >
                     {move.cards.length}
                   </text>
