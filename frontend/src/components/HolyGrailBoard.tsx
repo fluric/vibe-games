@@ -1242,16 +1242,16 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
   // If active combat is resolved or phase is not react, close modal
   useEffect(() => {
     if (activeCombatCellKey) {
-      if (phase !== 'react') {
-        setActiveCombatCellKey(null);
-        return;
-      }
       const exists = pendingCombats.some(c => c.cellKey === activeCombatCellKey);
       if (!exists) {
         const timer = setTimeout(() => {
           setActiveCombatCellKey(null);
         }, 1800);
         return () => clearTimeout(timer);
+      }
+      if (phase !== 'react') {
+        setActiveCombatCellKey(null);
+        return;
       }
     }
   }, [pendingCombats, activeCombatCellKey, phase]);
@@ -2408,7 +2408,7 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
         )}
 
         {/* Combat Reaction Modal Overlay / Panel */}
-        {phase === 'react' && activeCombatCellKey !== null && (
+        {activeCombatCellKey !== null && (
           <div className="fixed inset-0 bg-neutral-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
             {(() => {
               const combat = displayedCombat;
