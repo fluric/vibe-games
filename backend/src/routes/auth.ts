@@ -4,7 +4,7 @@ import jwt from 'jsonwebtoken';
 import { AppDataSource } from '../data-source';
 import { User } from '../entities/User';
 import { UserStats } from '../entities/UserStats';
-import { UserDto, AuthStatusResponse } from '@vibe-games/shared';
+import { UserDto, AuthStatusResponse, GameType, UserStatsDto } from '@vibe-games/shared';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'vibe-games-default-secret-key-do-not-use-in-prod';
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || process.env.VITE_GOOGLE_CLIENT_ID;
@@ -13,7 +13,22 @@ const googleClient = GOOGLE_CLIENT_ID ? new OAuth2Client(GOOGLE_CLIENT_ID) : nul
 
 async function toUserDto(user: User): Promise<UserDto> {
   const statsRepo = AppDataSource.getRepository(UserStats);
-  const stats = await statsRepo.findOneBy({ userId: user.id, gameType: 'mill' });
+  const allStats = await statsRepo.findBy({ userId: user.id });
+
+  const gameStats = {} as Record<GameType, UserStatsDto>;
+  const gameTypes: GameType[] = ['mill', 'connect_four', 'tic_tac_toe', 'holy_grail'];
+
+  for (const gt of gameTypes) {
+    const stats = allStats.find((s) => s.gameType === gt);
+    gameStats[gt] = {
+      elo: stats ? stats.elo : 1200,
+      wins: stats ? stats.wins : 0,
+      losses: stats ? stats.losses : 0,
+      draws: stats ? stats.draws : 0,
+    };
+  }
+
+  const millStats = gameStats['mill'];
 
   return {
     id: user.id,
@@ -21,10 +36,11 @@ async function toUserDto(user: User): Promise<UserDto> {
     createdAt: user.createdAt.toISOString(),
     avatarUrl: user.avatarUrl,
     email: user.email,
-    elo: stats ? stats.elo : 1200,
-    wins: stats ? stats.wins : 0,
-    losses: stats ? stats.losses : 0,
-    draws: stats ? stats.draws : 0,
+    elo: millStats.elo,
+    wins: millStats.wins,
+    losses: millStats.losses,
+    draws: millStats.draws,
+    gameStats,
   };
 }
 

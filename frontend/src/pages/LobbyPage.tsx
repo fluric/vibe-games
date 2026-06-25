@@ -962,13 +962,32 @@ export function LobbyPage() {
             </div>
             <div className="border-t border-neutral-800 pt-4 mt-6">
               <div className="flex justify-between items-center text-sm">
-                <span className="text-neutral-400">Nine Men's Morris Rating:</span>
-                <span className="font-bold text-indigo-400">{currentUser?.elo ?? 1200} ELO</span>
+                <span className="text-neutral-400">
+                  {activeGameTab === 'mill'
+                    ? "Nine Men's Morris Rating:"
+                    : activeGameTab === 'connect_four'
+                    ? 'Connect Four Rating:'
+                    : 'Grail Quest Rating:'}
+                </span>
+                <span className="font-bold text-indigo-400">
+                  {(() => {
+                    const stats = currentUser?.gameStats?.[activeGameTab] || currentUser;
+                    return stats?.elo ?? 1200;
+                  })()}{' '}
+                  ELO
+                </span>
               </div>
               <div className="flex gap-4 text-xs text-neutral-500 mt-2">
-                <span>Wins: <strong className="text-emerald-400">{currentUser?.wins ?? 0}</strong></span>
-                <span>Losses: <strong className="text-rose-500">{currentUser?.losses ?? 0}</strong></span>
-                <span>Draws: <strong className="text-neutral-400">{currentUser?.draws ?? 0}</strong></span>
+                {(() => {
+                  const stats = currentUser?.gameStats?.[activeGameTab] || currentUser;
+                  return (
+                    <>
+                      <span>Wins: <strong className="text-emerald-400">{stats?.wins ?? 0}</strong></span>
+                      <span>Losses: <strong className="text-rose-500">{stats?.losses ?? 0}</strong></span>
+                      <span>Draws: <strong className="text-neutral-400">{stats?.draws ?? 0}</strong></span>
+                    </>
+                  );
+                })()}
               </div>
             </div>
           </div>

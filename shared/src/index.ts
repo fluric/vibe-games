@@ -16,6 +16,13 @@ export interface HealthResponse {
 
 // ─── User ─────────────────────────────────────────────────────────────────────
 
+export interface UserStatsDto {
+  elo: number;
+  wins: number;
+  losses: number;
+  draws: number;
+}
+
 export interface UserDto {
   id: string;
   username: string;
@@ -26,6 +33,7 @@ export interface UserDto {
   wins?: number;
   losses?: number;
   draws?: number;
+  gameStats?: Record<GameType, UserStatsDto>;
 }
 
 export interface AuthStatusResponse {
