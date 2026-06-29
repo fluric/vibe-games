@@ -53,3 +53,9 @@ ai/.pytest_cache/
 # Trained model checkpoints (large binary files — store separately)
 # Milestone checkpoints committed intentionally are added with 'git add -f'
 ai/service/models/**/*.pt
+
+# Python virtual environment
+.venv
+.venv/
+__pycache__/
+*.pyc
