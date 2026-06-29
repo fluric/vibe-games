@@ -19,3 +19,7 @@
 
 ## Agent Notes
 - *(Leave blank until work begins)*
+
+## Agent Notes
+
+Extracted Auth logic into authService.ts. Routes in auth.ts now delegate to this service.

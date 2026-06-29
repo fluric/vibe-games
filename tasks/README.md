@@ -30,7 +30,7 @@ Numbers are sequential within each type. Always increment — never reuse an ID.
 
 
 
-| R007 | Extract Auth Service from Routes | P3 | [open/R007-extract-auth-service.md](open/R007-extract-auth-service.md) |
+
 
 ## In Progress
 
@@ -48,6 +48,7 @@ Numbers are sequential within each type. Always increment — never reuse an ID.
 | R004 | Refactor `holyGrailEngine.ts` into sub-modules | 2026-06-30 | [done/R004-extract-holygrail-engine.md](done/R004-extract-holygrail-engine.md) |
 | R005 | Refactor `minimaxAi.ts` into specific strategies | 2026-06-30 | [done/R005-refactor-minimax-ai.md](done/R005-refactor-minimax-ai.md) |
 | R006 | Split `GamePage.tsx` into specialized game views | 2026-06-30 | [done/R006-split-game-page.md](done/R006-split-game-page.md) |
+| R007 | Extract Auth Service from Routes | 2026-06-30 | [done/R007-extract-auth-service.md](done/R007-extract-auth-service.md) |
 | B002 | Fix AI Training Stuck (RL / ML model training) | 2026-06-30 | [done/B002-fix-ai-training-stuck.md](done/B002-fix-ai-training-stuck.md) |
 | R003 | Split `HolyGrailBoard.tsx` into focused components | 2026-06-30 | [done/R003-split-holygrail-board.md](done/R003-split-holygrail-board.md) |
 

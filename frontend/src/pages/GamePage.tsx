@@ -52,7 +52,7 @@ export function GamePage() {
         } else {
           navigate(`/?redirect=${encodeURIComponent(window.location.pathname + window.location.search)}`, { replace: true });
         }
-      } catch (err) {
+      } catch (err: unknown) {
         if (active) navigate(`/?redirect=${encodeURIComponent(window.location.pathname + window.location.search)}`, { replace: true });
       } finally {
         if (active) setCheckingAuth(false);
@@ -74,7 +74,7 @@ export function GamePage() {
           setGame(joined);
           setError(null);
           return;
-        } catch (joinErr) {}
+        } catch (joinErr: unknown) {}
       }
       if (game && game.status !== 'finished' && data.status === 'finished') {
         const myPiece = getMyPiece(data);
@@ -88,7 +88,7 @@ export function GamePage() {
       }
       setGame(data);
       setError(null);
-    } catch (err) {
+    } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to load game');
     } finally {
       setLoading(false);
@@ -111,7 +111,7 @@ export function GamePage() {
     return () => clearInterval(interval);
   }, [id, game?.status, game?.playerX?.id, game?.playerO?.id, fetchGame, checkingAuth]);
 
-  const handleBoardAction = async (action: string, params: any) => {
+  const handleBoardAction = async (action: string, params: unknown) => {
     if (!id || submittingMove) return;
     setSubmittingMove(true);
     try {
@@ -162,7 +162,7 @@ export function GamePage() {
           audio.playMillSound();
         }
       }
-    } catch (err) {
+    } catch (err: unknown) {
       alert(err instanceof Error ? err.message : 'Move rejected by server');
       setSubmittingMove(false);
     }
@@ -182,7 +182,7 @@ export function GamePage() {
       audio.playPlaceSound();
       await api.cancelGame(id);
       navigate('/');
-    } catch (err) {
+    } catch (err: unknown) {
       audio.playErrorSound();
       alert(err instanceof Error ? err.message : 'Failed to cancel game');
     } finally {
@@ -197,7 +197,7 @@ export function GamePage() {
       audio.playPlaceSound();
       const updated = await api.forfeitGame(id);
       setGame(updated);
-    } catch (err) {
+    } catch (err: unknown) {
       audio.playErrorSound();
       alert(err instanceof Error ? err.message : 'Failed to forfeit game');
     } finally {
