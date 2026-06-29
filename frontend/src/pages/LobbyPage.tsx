@@ -1243,7 +1243,8 @@ export function LobbyPage() {
                 );
               })}
             </div>
-          </div>
+            </div>
+          );
         })()}
 
         {/* Lobby and Invite Sections */}
