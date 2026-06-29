@@ -127,9 +127,17 @@ npm run dev
 ### Specs-first workflow
 1. **Read the relevant spec** in `specs/` before implementing anything.
 2. Find items marked `🔲 Planned` — these are approved requirements waiting for implementation.
-3. Implement each item and write tests for its Acceptance Criteria.
-4. Mark items `✅ Done` in the spec after verifying they pass.
-5. Commit with a message following the convention below.
+3. **Also check `specs/BACKLOG.md`** for open bugs (🔲 Open) — fix P1 bugs before adding new features.
+4. Implement each item and write tests for its Acceptance Criteria.
+5. After every code change, run `npm run test:quick` to verify nothing broke.
+6. Before committing a completed feature, run `npm run test:full`.
+7. Mark items `✅ Done` in the spec and in BACKLOG.md after verifying they pass.
+8. Commit with a message following the convention below.
+
+### Test tier reminder
+- `npm run test:quick` — ~5s, no DB needed — run after every change
+- `npm run test:full` — ~30s, needs DB — run before pushing
+- `npm run test:e2e` — minutes, needs full stack — run weekly or before releases
 
 ### What Antigravity handles autonomously
 - **Writing all code** — entities, routes, services, React components, types

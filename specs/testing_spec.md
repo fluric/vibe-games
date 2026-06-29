@@ -13,6 +13,35 @@ Tests are the safety net that allows agents to refactor and add features without
 
 ---
 
+## Test Tiers — Quick, Full, E2E
+
+Tests are split into three tiers based on how long they take and what infrastructure they need.
+This lets agents (and you) choose the right level of feedback for each situation.
+
+| Tier | Command | Duration | Needs DB? | Needs browser? | When to run |
+|---|---|---|---|---|---|
+| **Quick** | `npm run test:quick` | ~5s | ❌ No | ❌ No | After every code change |
+| **Full** | `npm run test:full` | ~30s | ✅ Yes | ❌ No | Every night / before pushing |
+| **E2E** | `npm run test:e2e` | Minutes | ✅ Yes | ✅ Yes | Weekly / before releases |
+
+### What each tier includes
+
+**Quick** (`npm run test:quick`):
+- All 4 backend engine unit tests (elo, mill, connectFour, holyGrail)
+- All frontend Vitest component tests
+
+**Full** (`npm run test:full`):
+- Everything in Quick, plus:
+- Backend API integration tests (authApi, gamesApi)
+- TypeScript type check + ESLint (`npm run lint`)
+- Production build verification (`npm run build`)
+
+**E2E** (`npm run test:e2e`):
+- Playwright browser tests — simulate real user flows
+- Requires both `npm run dev` and `npm run docker:up` running
+
+---
+
 ## 1. Test Layers
 
 ### 1.1 Backend Engine Unit Tests

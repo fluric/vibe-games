@@ -8,13 +8,16 @@
 
 1. [The Big Picture](#1-the-big-picture)
 2. [Your Role as Product Owner](#2-your-role-as-product-owner)
-3. [How to Write a Good Spec](#3-how-to-write-a-good-spec)
-4. [How to Talk to AI Agents](#4-how-to-talk-to-ai-agents)
-5. [Running Agents Overnight](#5-running-agents-overnight)
-6. [Local Setup — Keep Things Running](#6-local-setup--keep-things-running)
-7. [Running Tests Locally](#7-running-tests-locally)
-8. [Code Health & Refactoring](#8-code-health--refactoring)
-9. [Quick Reference](#9-quick-reference)
+3. [Task & Bug Tracking](#3-task--bug-tracking)
+4. [Choosing an AI Model](#4-choosing-an-ai-model)
+5. [How to Write a Good Spec](#5-how-to-write-a-good-spec)
+6. [How to Talk to AI Agents](#6-how-to-talk-to-ai-agents)
+7. [Running Agents Overnight](#7-running-agents-overnight)
+8. [Nightly Automation — Recurring Schedules](#8-nightly-automation--recurring-schedules)
+9. [Local Setup — Keep Things Running](#9-local-setup--keep-things-running)
+10. [Running Tests Locally](#10-running-tests-locally)
+11. [Code Health & Refactoring](#11-code-health--refactoring)
+12. [Quick Reference](#12-quick-reference)
 
 ---
 
@@ -58,7 +61,57 @@ If it's in the spec, it should be in the code and tested. If it's not in the spe
 
 ---
 
-## 3. How to Write a Good Spec
+## 3. Task & Bug Tracking
+
+All tasks, bugs, and refactoring ideas live in **[specs/BACKLOG.md](./specs/BACKLOG.md)**.
+This is the human-and-agent shared task queue.
+
+### How to report a bug
+1. Open `specs/BACKLOG.md`.
+2. Add a row to the **Bugs** table: a short description in plain English, a priority (`P1`/`P2`/`P3`), and today's date.
+3. Leave Status as `🔲 Open`.
+4. Tell the agent: *"Read specs/BACKLOG.md and fix all P1 and P2 open bugs."*
+
+**Priority guide:**
+| Priority | Meaning | Example |
+|---|---|---|
+| P1 | Broken, blocking — fix immediately | Game crashes on move submission |
+| P2 | Wrong but a workaround exists | ELO not updating after win |
+| P3 | Cosmetic or minor inconvenience | Wrong label text |
+
+### How to request a feature
+Add a row to the **Features** table in `specs/BACKLOG.md` and reference the spec file where the detailed description lives.
+
+### How agents close items
+When an agent finishes an item, it:
+1. Marks the row `✅ Done` in `BACKLOG.md`.
+2. Adds the completion date and commit hash.
+3. Commits with a message like `fix(auth): resolve B001 — remove duplicate spec file`.
+
+### Why not GitHub Issues?
+GitHub Issues are great for team projects. For this solo setup, a file-based backlog has one big advantage: agents can **read and write it directly** without needing API credentials. You can always link a GitHub Issue number in the description column if you want cross-referencing.
+
+---
+
+## 4. Choosing an AI Model
+
+The model selector is the **dropdown in the top-right of the Antigravity chat UI**. Here's how to choose:
+
+| Situation | Recommended model | Why |
+|---|---|---|
+| Overnight `/goal` run | **Claude Sonnet or Gemini Pro** | Better at long-horizon reasoning, following multi-step plans, not losing context |
+| Large refactoring | **Claude Sonnet (Thinking)** | Extended thinking handles complex dependency analysis |
+| Quick fix / typo / minor feature | **Gemini Flash** | 10× faster, cheaper, sufficient for small tasks |
+| Writing specs or docs | Either | Both work well for text generation |
+| Debugging tricky logic | **Claude Sonnet (Thinking)** | Thinking mode reasons step-by-step through edge cases |
+
+**Practical rule:** Switch to Flash during the day for interactive coding. Switch to Sonnet/Pro before kicking off an overnight run.
+
+**Where to switch:** Click the model name in the Antigravity header → select from the dropdown. The change takes effect on the next message.
+
+---
+
+## 5. How to Write a Good Spec
 
 A good spec answers three questions:
 1. **What does this feature do?** (plain English description)
@@ -108,7 +161,7 @@ so they can quickly return to an active match without remembering the game ID.
 
 ---
 
-## 4. How to Talk to AI Agents
+## 6. How to Talk to AI Agents
 
 ### Be goal-oriented, not instruction-oriented
 
@@ -130,7 +183,7 @@ Use the `/goal` slash command in the chat:
 
 ---
 
-## 5. Running Agents Overnight
+## 7. Running Agents Overnight
 
 ### Step 1 — Keep your Mac awake
 Open a terminal and run:
@@ -171,7 +224,57 @@ You wake up to a pushed commit and a summary.
 
 ---
 
-## 6. Local Setup — Keep Things Running
+## 8. Nightly Automation — Recurring Schedules
+
+Use the `/schedule` slash command in Antigravity to set up a recurring cron job. The agent wakes up on schedule, does the work, and goes back to sleep.
+
+> **Prerequisite:** Your Mac must be awake and `npm run dev` + `npm run docker:up` must be running.
+
+### Nightly test + backlog run (recommended starting point)
+
+Type this in Antigravity chat:
+```
+/schedule Run every night at 2am:
+1. Run npm run test:full. For any failure: read the relevant spec, fix the code, commit.
+2. Read specs/BACKLOG.md. Fix all P1 and P2 open items. Mark them done. Commit.
+3. Write a summary to test_report.md at the repo root. Push all changes.
+```
+
+### Nightly refactoring scan
+```
+/schedule Run every Sunday at 1am:
+Read specs/architecture_spec.md. Scan the codebase for files > 400 lines.
+For each oversized file: propose a split that matches the target structure in the spec.
+Implement the split if all existing tests still pass after the refactor.
+Commit each split separately. Push.
+```
+
+### Nightly spec alignment check
+```
+/schedule Run every night at 3am:
+For each spec file in specs/: find all items marked ✅ Done.
+Verify the implementation actually matches the spec description.
+If a test is missing for a Done item, write it.
+If the code doesn't match the spec, file a bug in specs/BACKLOG.md as P2.
+Commit any new tests. Push.
+```
+
+### Managing scheduled jobs
+- **To see running schedules:** Use `Manage Task → list` in the Antigravity UI.
+- **To cancel a schedule:** Use `Manage Task → kill <task-id>`.
+- **One-time variant:** Use `/goal` instead of `/schedule` for a single overnight run without recurrence.
+
+### Test tiers in automation
+
+| Automation type | Use this test command | Why |
+|---|---|---|
+| After every code change (agent) | `npm run test:quick` | Fast feedback, no DB dependency |
+| Nightly full regression | `npm run test:full` | Includes integration tests + build |
+| Before a release or major refactor | `npm run test:full && npm run test:e2e` | Full confidence |
+
+---
+
+## 9. Local Setup — Keep Things Running
 
 ### First-time setup
 ```bash
@@ -218,7 +321,21 @@ docker ps           # verify they are listed
 
 ---
 
-## 7. Running Tests Locally
+## 10. Running Tests Locally
+
+### Test tiers at a glance
+
+```bash
+npm run test:quick   # ~5s — engine unit tests + Vitest (no DB needed)
+npm run test:full    # ~30s — everything: unit + integration + lint + build
+npm run test:e2e     # minutes — Playwright browser tests (needs dev server)
+```
+
+### When to use each tier
+- **During active development** → `test:quick`. Run it before every commit.
+- **Before pushing** → `test:full`. Catches integration issues and type errors.
+- **Before a release or after a big refactor** → `test:full && test:e2e`.
+- **In overnight agent runs** → `test:full` by default; add `test:e2e` for weekly runs.
 
 All backend tests use `ts-node` (no test framework) and take ~1 second each.
 
@@ -268,7 +385,7 @@ echo "✅ All checks passed"
 
 ---
 
-## 8. Code Health & Refactoring
+## 11. Code Health & Refactoring
 
 ### Why code quality matters for agents
 AI agents work from context windows — they read a portion of your code and work within it. If files are 700 lines long with unrelated things mixed together, the agent sees half the file, misses context, and makes mistakes. Smaller, focused files = better, more accurate agents.
@@ -296,7 +413,7 @@ Before any refactor, agents must:
 
 ---
 
-## 9. Quick Reference
+## 12. Quick Reference
 
 ### Key URLs
 | Service | URL |
