@@ -2,6 +2,8 @@
 
 > **This file is read by AI coding assistants (Antigravity, Claude Code, Cursor, etc.) at the start of each session.**
 > Keep it updated as the project evolves. It is the single source of truth for project conventions.
+>
+> **Specs-first rule:** Before implementing any feature or making any non-trivial change, read the relevant file in `specs/`. The specs folder is the product owner's source of truth. Implement to match specs, not assumptions.
 
 ---
 
@@ -49,8 +51,19 @@ vibe-games/
 │   └── .env.example
 ├── shared/             # Shared TypeScript types & DTOs
 │   └── src/index.ts
+├── specs/              # ← Product specifications (source of truth)
+│   ├── README.md       # How to use the specs folder
+│   ├── auth_spec.md
+│   ├── lobby_spec.md
+│   ├── elo_spec.md
+│   ├── mill_spec.md
+│   ├── connect_four_spec.md
+│   ├── holy_grail_spec.md
+│   ├── testing_spec.md
+│   └── architecture_spec.md
 ├── docker-compose.yml
 ├── AGENTS.md           # ← You are here
+├── PLAYBOOK.md         # Developer & agent workflow guide
 └── package.json        # Root workspace
 ```
 
@@ -71,10 +84,24 @@ npm run dev:frontend    # Frontend only → http://localhost:5173
 
 # ── One-off commands (Antigravity runs these autonomously) ────────────────────
 npm run build                          # Build all packages
-npx tsc --noEmit                       # Type-check (run inside backend/ or frontend/)
+npm run lint                           # Type-check backend + ESLint frontend
 npm run migration:generate --name=Foo  # Generate a TypeORM migration
 npm run migration:run                  # Apply pending migrations
 npm run migration:revert               # Roll back last migration
+
+# ── Backend tests (no framework — plain ts-node, ~1s each) ────────────────────
+# Engine unit tests (no DB required)
+npx ts-node -r tsconfig-paths/register backend/src/game/elo.spec.ts
+npx ts-node -r tsconfig-paths/register backend/src/game/millEngine.spec.ts
+npx ts-node -r tsconfig-paths/register backend/src/game/connectFourEngine.spec.ts
+npx ts-node -r tsconfig-paths/register backend/src/game/holyGrailEngine.spec.ts
+# API integration tests (requires docker:up)
+npx ts-node -r tsconfig-paths/register backend/src/game/authApi.spec.ts
+npx ts-node -r tsconfig-paths/register backend/src/game/gamesApi.spec.ts
+
+# ── Frontend tests ─────────────────────────────────────────────────────────────
+npm run test -w frontend               # Vitest component tests (once configured)
+npm run test:e2e                       # Playwright E2E (requires dev server running)
 ```
 
 ---
@@ -95,10 +122,20 @@ npm run dev
 
 ## 🤖 Antigravity Vibe Coding Workflow
 
+> Full workflow guide: see [PLAYBOOK.md](./PLAYBOOK.md)
+
+### Specs-first workflow
+1. **Read the relevant spec** in `specs/` before implementing anything.
+2. Find items marked `🔲 Planned` — these are approved requirements waiting for implementation.
+3. Implement each item and write tests for its Acceptance Criteria.
+4. Mark items `✅ Done` in the spec after verifying they pass.
+5. Commit with a message following the convention below.
+
 ### What Antigravity handles autonomously
 - **Writing all code** — entities, routes, services, React components, types
 - **File management** — create, edit, delete, refactor across the monorepo
 - **One-off terminal commands** — `npm install`, `tsc --noEmit`, migrations, git commits
+- **Running tests** — engine specs, API integration tests, Vitest, Playwright
 - **Web research** — reading docs, checking changelogs, finding best practices
 - **Browser verification** — opening the running app to visually check UI changes
 - **Planning** — breaking down features into implementation plans before acting
@@ -161,16 +198,27 @@ For Google Cloud (when you want more control):
 - Entities live in `backend/src/entities/`, one file per entity.
 - Routes live in `backend/src/routes/`, one file per feature domain.
 - **No business logic in route handlers** — delegate to service functions.
+- Target: `backend/src/routes/games.ts` business logic should move to `backend/src/services/gameService.ts`.
 
 ### Frontend
 - React **functional components** with hooks only — no class components.
 - API calls go through a typed client in `frontend/src/api/`.
 - Use `@vibe-games/shared` types for all API shapes — never re-declare them in the frontend.
 - Tailwind utility classes for styling — avoid inline styles.
+- **File size limit:** target ≤ 300 lines per file. Files > 600 lines must be split.
 
 ### Shared Package
 - `@vibe-games/shared` contains **types and interfaces only** — no runtime code.
-- Group types by domain: `GameTypes.ts`, `UserTypes.ts`, etc.
+- All API shapes (request/response) live in `shared/src/index.ts`.
+
+### Commit message format
+```
+feat(scope): add feature X
+fix(scope): correct behaviour Y
+refactor(scope): extract Z to service
+test(scope): add missing test for W
+docs(specs): update lobby spec with active games panel
+```
 
 ---
 
