@@ -19,3 +19,7 @@
 
 ## Agent Notes
 - *(Leave blank until work begins)*
+
+## Agent Notes
+
+Extracted GameLayout, PlayerStats, and botUtils to bring GamePage.tsx down from 840 lines to ~315 lines.
