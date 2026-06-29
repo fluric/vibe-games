@@ -18,7 +18,7 @@
 
 Numbers are sequential within each type. Always increment — never reuse an ID.
 
-**Next available IDs:** B002 · F002 · R004 · T001
+**Next available IDs:** B002 · F002 · R003 · T002
 
 ---
 
@@ -26,8 +26,7 @@ Numbers are sequential within each type. Always increment — never reuse an ID.
 
 | ID | Title | Priority | File |
 |---|---|---|---|
-| R002 | Split `LobbyPage.tsx` into focused components | P2 | [open/R002-split-lobby-page.md](open/R002-split-lobby-page.md) |
-| R003 | Split `HolyGrailBoard.tsx` into sub-components | P3 | [open/R003-split-holy-grail-board.md](open/R003-split-holy-grail-board.md) |
+| R002 | Split `LobbyPage.tsx` into focused components | P3 | [open/R002-split-lobby-page.md](open/R002-split-lobby-page.md) |
 
 ## In Progress
 
@@ -40,6 +39,7 @@ Numbers are sequential within each type. Always increment — never reuse an ID.
 | B001 | Remove duplicate `holy_grail_spec.md` at repo root | 2026-06-29 | [done/B001-remove-duplicate-spec.md](done/B001-remove-duplicate-spec.md) |
 | R001 | Extract game service from `games.ts` | 2026-06-29 | [done/R001-extract-game-service.md](done/R001-extract-game-service.md) |
 | F001 | My Active Games panel in lobby | 2026-06-29 | [done/F001-active-games-panel.md](done/F001-active-games-panel.md) |
+| T001 | Add test case for full-board draw in Connect Four | 2026-06-30 | [done/T001-c4-draw-test.md](done/T001-c4-draw-test.md) |
 
 ---
 

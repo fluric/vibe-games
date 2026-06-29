@@ -9,6 +9,7 @@
 | Requirement | Task ID | Status |
 | :--- | :--- | :--- |
 | Initial Implementation | - | ✅ Implemented |
+| Add test case for full-board draw | T001 | ✅ Implemented |
 
 ---
 
@@ -64,5 +65,5 @@ Configured in `backend/src/game/aiConfig.json` under the `connect_four` key.
 ## 5. Open Questions / Future Work
 
 - 🔲 Add test case for diagonal win detection.
-- 🔲 Add test case for full-board draw.
+- ✅ Add test case for full-board draw.
 - 🔲 Verify that AI correctly blocks a human 3-in-a-row.

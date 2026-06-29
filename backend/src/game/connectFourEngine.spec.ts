@@ -97,6 +97,33 @@ async function runTests() {
   const aiAction = ConnectFourEngine.getAiAction(blockState, 'minimax', 3, null, 1000);
   assert.strictEqual(aiAction.column, 3);
 
+  // 8. Test Draw condition
+  console.log('👉 Testing: Full Board Draw');
+  let drawState = ConnectFourEngine.createInitialState();
+  // Fill the board with a draw pattern
+  // Columns 0, 1, 2: X, X, O, O, X, X
+  // Columns 3: O, O, X, X, O, O
+  // Columns 4, 5, 6: X, X, O, O, X, X
+  // This avoids any 4-in-a-row
+  for (let c = 0; c < 7; c++) {
+    for (let r = 5; r >= 0; r--) {
+      // Leave one cell empty to test the final move
+      if (c === 6 && r === 0) continue; 
+      
+      const piece = (c === 3) 
+        ? ((r === 0 || r === 1 || r === 4 || r === 5) ? 'O' : 'X')
+        : ((r === 0 || r === 1 || r === 4 || r === 5) ? 'X' : 'O');
+      drawState.board[r * 7 + c] = piece;
+    }
+  }
+  // The last empty cell is at (0, 6) which is top right.
+  // Actually, handleMove drops a piece, so if col 6 has 5 pieces, it drops to row 0.
+  // Wait, if the game wasn't won yet, we can drop the last piece.
+  // The piece expected for col 6 row 0 is 'X'
+  drawState.turn = 'X'; // Force turn for the final move
+  drawState = ConnectFourEngine.handleMove(drawState, { column: 6 }, 'X');
+  assert.strictEqual(drawState.winner, 'draw');
+
   console.log('✅ All Connect Four Engine tests passed successfully!');
 }
 
