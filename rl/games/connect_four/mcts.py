@@ -124,14 +124,14 @@ class MCTS:
 
             if node.env.is_terminal():
                 # Terminal node: back-propagate actual outcome
-                value = node.env.outcome(root.env.turn)
+                value = node.env.outcome(node.env.turn)
                 if value is None:
                     value = 0.0
             else:
                 # Expand and evaluate with NN
                 value = self._expand(node)
 
-            self._backpropagate(node, value, root.env.turn)
+            self._backpropagate(node, value)
 
         # Build policy from visit counts
         visits = np.array(
@@ -232,21 +232,15 @@ class MCTS:
             node = node.best_child(self.c_puct)
         return node
 
-    def _backpropagate(self, node: MCTSNode, value: float, root_player: int) -> None:
+    def _backpropagate(self, node: MCTSNode, value: float) -> None:
         """
         Propagate value back up the tree.
-        Value is from root_player's perspective; flip sign at each level since
-        the tree alternates between players.
+        `value` is from `node.env.turn`'s perspective.
         """
         current = node
-        # Determine if we need to flip based on whose turn it is at the node
-        # vs. whose turn it was at the root
         v = value
         while current is not None:
             current.visit_count += 1
-            # If this node's turn is the same as root player, add value; otherwise subtract
-            if current.env.turn == root_player:
-                current.value_sum += v
-            else:
-                current.value_sum -= v
+            current.value_sum += v
+            v = -v  # From the parent's perspective, the value is inverted
             current = current.parent

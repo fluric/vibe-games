@@ -1,5 +1,5 @@
 /**
- * HTTP client for the Python AI sidecar (localhost:8765).
+ * HTTP client for the Python RL sidecar (localhost:8765).
  *
  * The sidecar serves RL/ML bot predictions from trained AlphaZero models.
  * If the sidecar is not running, calls fall back gracefully (throws a clear error).
@@ -11,7 +11,7 @@
 
 import type { ConnectFourGameState, MillGameState } from '@vibe-games/shared';
 
-const SIDECAR_URL = process.env.AI_SIDECAR_URL ?? 'http://localhost:8765';
+const SIDECAR_URL = process.env.RL_SIDECAR_URL ?? 'http://localhost:8765';
 const SIDECAR_TIMEOUT_MS = 10_000; // 10s — generous for high-sim bots
 
 export interface RLPredictRequest {
@@ -83,14 +83,14 @@ export async function getRLAction(
     });
   } catch (err) {
     throw new Error(
-      `AI sidecar is not reachable at ${SIDECAR_URL}. ` +
-        `Start it with: cd ai && python -m uvicorn service.main:app --port 8765\n${err}`,
+      `RL sidecar is not reachable at ${SIDECAR_URL}. ` +
+        `Start it with: cd rl && python -m uvicorn service.main:app --port 8765\n${err}`,
     );
   }
 
   if (!res.ok) {
     const detail = await res.text();
-    throw new Error(`AI sidecar returned ${res.status}: ${detail}`);
+    throw new Error(`RL sidecar returned ${res.status}: ${detail}`);
   }
 
   const data = (await res.json()) as RLPredictResponse;

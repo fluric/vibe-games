@@ -36,7 +36,7 @@ from games.connect_four.mcts import MCTS
 
 SCRIPT_DIR = Path(__file__).parent
 REPO_ROOT = SCRIPT_DIR.parent.parent.parent  # vibe-games/
-MODELS_DIR = REPO_ROOT / "ai" / "service" / "models" / "connect_four"
+MODELS_DIR = REPO_ROOT / "rl" / "service" / "models" / "connect_four"
 REGISTRY_PATH = MODELS_DIR / "models_registry.json"
 CHAMPION_PATH = MODELS_DIR / "champion.pt"
 

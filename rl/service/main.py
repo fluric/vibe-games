@@ -5,7 +5,7 @@ Runs on localhost:8765. The Fastify backend calls this service to get
 move suggestions from trained neural network bots.
 
 Start:
-    cd ai
+    cd rl
     source .venv/bin/activate
     python -m uvicorn service.main:app --port 8765 --reload
 
@@ -26,9 +26,9 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-# ── Make sure we can import from the ai/ package root ─────────────────────────
-AI_ROOT = Path(__file__).parent.parent
-sys.path.insert(0, str(AI_ROOT))
+# ── Make sure we can import from the rl/ package root ─────────────────────────
+RL_ROOT = Path(__file__).parent.parent
+sys.path.insert(0, str(RL_ROOT))
 
 from games.connect_four.env import ConnectFourEnv
 from games.connect_four.net import ConnectFourNet, get_device, load_checkpoint
@@ -37,7 +37,7 @@ from games.connect_four.mcts import MCTS
 # ─── App ──────────────────────────────────────────────────────────────────────
 
 app = FastAPI(
-    title="Vibe Games AI Sidecar",
+    title="Vibe Games RL Sidecar",
     description="RL/ML bot inference service (AlphaZero-style)",
     version="0.1.0",
 )
@@ -51,7 +51,7 @@ app.add_middleware(
 
 # ─── State ────────────────────────────────────────────────────────────────────
 
-MODELS_DIR = AI_ROOT / "service" / "models"
+MODELS_DIR = RL_ROOT / "service" / "models"
 device = get_device()
 
 # { "connect_four": { "rl_novice": (net, num_sims), ... } }
@@ -99,7 +99,7 @@ def _load_game_models(game_type: str) -> None:
 
 @app.on_event("startup")
 async def startup_event() -> None:
-    print(f"\nAI Sidecar starting up — device: {device}")
+    print(f"\nRL Sidecar starting up — device: {device}")
     print(f"Loading models from: {MODELS_DIR}")
     _load_game_models("connect_four")
     # Future: _load_game_models("mill")
