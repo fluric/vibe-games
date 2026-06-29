@@ -3,6 +3,13 @@
 **Domain:** Mill game rules and backend engine
 **Status:** ✅ Core implemented · 🔲 Some edge cases and tests to add
 
+
+## Traceability Matrix
+
+| Requirement | Task ID | Status |
+| :--- | :--- | :--- |
+| Initial Implementation | - | ✅ Implemented |
+
 ---
 
 ## Overview

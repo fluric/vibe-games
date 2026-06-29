@@ -3,6 +3,13 @@
 **Domain:** Game lobby, game creation, active games, leaderboard, player profile
 **Status:** ✅ Core features implemented · 🔲 Several UX improvements planned
 
+
+## Traceability Matrix
+
+| Requirement | Task ID | Status |
+| :--- | :--- | :--- |
+| Initial Implementation | - | ✅ Implemented |
+
 ---
 
 ## Overview

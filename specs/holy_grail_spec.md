@@ -2,6 +2,13 @@
 
 A custom, hex-grid strategy game of tactical card combat and objective transport.
 
+
+## Traceability Matrix
+
+| Requirement | Task ID | Status |
+| :--- | :--- | :--- |
+| Initial Implementation | - | ✅ Implemented |
+
 ---
 
 ## 1. Board & Grid Representation

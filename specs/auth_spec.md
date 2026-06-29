@@ -3,6 +3,13 @@
 **Domain:** User accounts, login, session management
 **Status:** ✅ Core features implemented · 🔲 Some edge cases to add
 
+
+## Traceability Matrix
+
+| Requirement | Task ID | Status |
+| :--- | :--- | :--- |
+| Initial Implementation | - | ✅ Implemented |
+
 ---
 
 ## Overview

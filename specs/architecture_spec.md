@@ -3,6 +3,13 @@
 **Domain:** Module structure, file organization, code quality rules
 **Status:** 🔶 Partially enforced — technical debt noted
 
+
+## Traceability Matrix
+
+| Requirement | Task ID | Status |
+| :--- | :--- | :--- |
+| Initial Implementation | - | ✅ Implemented |
+
 ---
 
 ## Overview

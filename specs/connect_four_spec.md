@@ -3,6 +3,13 @@
 **Domain:** Connect Four game rules and backend engine
 **Status:** ✅ Core implemented
 
+
+## Traceability Matrix
+
+| Requirement | Task ID | Status |
+| :--- | :--- | :--- |
+| Initial Implementation | - | ✅ Implemented |
+
 ---
 
 ## Overview

@@ -3,6 +3,13 @@
 **Domain:** All automated tests across backend and frontend
 **Status:** 🔶 Partially implemented — gaps documented below
 
+
+## Traceability Matrix
+
+| Requirement | Task ID | Status |
+| :--- | :--- | :--- |
+| Initial Implementation | - | ✅ Implemented |
+
 ---
 
 ## Overview
