@@ -6,6 +6,11 @@ import * as audio from '../components/AudioEffects';
 import aiConfig from '../../../backend/src/game/aiConfig.json';
 import { ConfirmModal } from '../components/ConfirmModal';
 
+import { ActiveGamesPanel } from '../components/lobby/ActiveGamesPanel';
+import { JoinByCodePanel } from '../components/lobby/JoinByCodePanel';
+import { PublicLobbiesPanel } from '../components/lobby/PublicLobbiesPanel';
+import { LeaderboardPanel } from '../components/lobby/LeaderboardPanel';
+
 const typedConfig = aiConfig as unknown as Record<'mill' | 'connect_four' | 'holy_grail', Record<string, { id: string; username: string; elo: number; type: string }>>;
 
 
@@ -1155,97 +1160,16 @@ export function LobbyPage() {
         </div>
 
         {/* Active Matches Section */}
-        {(() => {
-          const filteredActiveGames = activeGames.filter(g => g.gameType === activeGameTab);
-          if (filteredActiveGames.length === 0) return null;
-          return (
-            <div className="bg-neutral-900/60 border border-neutral-800 rounded-2xl p-6 backdrop-blur-md flex flex-col gap-4">
-            <h3 className="text-lg font-bold text-white flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-blue-500 animate-pulse" />
-              Your Active Matches
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {filteredActiveGames.map((game) => {
-                const myPiece = game.playerX?.id === userId ? 'X' : 'O';
-                const opponentPlayer = myPiece === 'X' ? game.playerO : game.playerX;
-                const isWaiting = game.status === 'waiting';
-                const opponentName = opponentPlayer?.username || (isWaiting ? 'Waiting for opponent...' : 'Unknown Player');
-                const isMyTurn = game.state.turn === myPiece;
-
-                return (
-                  <div
-                    key={game.id}
-                    className="flex flex-col sm:flex-row justify-between sm:items-center p-4 rounded-xl bg-neutral-950 border border-neutral-800 hover:border-neutral-700 transition-all gap-4"
-                  >
-                    <div className="flex flex-col">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-semibold text-neutral-300">
-                          {isWaiting ? (
-                            <span className="text-indigo-400">Hosting {game.isPublic ? 'Public' : 'Private'} Lobby</span>
-                          ) : (
-                            <span>vs {opponentName}</span>
-                          )}
-                        </span>
-                        {!isWaiting && (
-                          <span
-                            className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
-                              isMyTurn
-                                ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                                : 'bg-neutral-800 text-neutral-400 border border-neutral-700/50'
-                            }`}
-                          >
-                            {isMyTurn ? '🟢 Your Turn' : '🕒 Opponent Turn'}
-                          </span>
-                        )}
-                      </div>
-                      <div className="text-[10px] text-neutral-500 font-mono mt-1">
-                        ID: {game.id.substring(0, 8)}...
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {isWaiting ? (
-                        <>
-                          <button
-                            type="button"
-                            onClick={() => handleCopyLink(game.id)}
-                            className="px-3 py-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-xs font-medium text-neutral-300 transition-all border border-neutral-700/50 hover:border-neutral-600 active:scale-95 flex items-center gap-1"
-                          >
-                            {copiedId === game.id ? '✓ Copied' : '🔗 Copy Link'}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleCancelGame(game.id)}
-                            className="px-3 py-1.5 rounded-lg bg-rose-950/40 hover:bg-rose-900/40 text-xs font-semibold text-rose-400 transition-all border border-rose-900/30 hover:border-rose-800/50 active:scale-95"
-                          >
-                            Cancel
-                          </button>
-                        </>
-                      ) : (
-                        <div className="flex items-center gap-2">
-                          <button
-                            type="button"
-                            onClick={() => navigate(`/game/${game.id}`)}
-                            className="px-4 py-1.5 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-xs font-bold text-white transition-all shadow-lg shadow-indigo-600/10 active:scale-95"
-                          >
-                            Resume Match
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleForfeitGame(game.id)}
-                            className="px-3 py-1.5 rounded-lg bg-rose-950/40 hover:bg-rose-900/40 text-xs font-semibold text-rose-400 transition-all border border-rose-900/30 hover:border-rose-800/50 active:scale-95"
-                          >
-                            Forfeit
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-            </div>
-          );
-        })()}
+        <ActiveGamesPanel
+          activeGames={activeGames}
+          activeGameTab={activeGameTab}
+          userId={userId}
+          copiedId={copiedId}
+          onCopyLink={handleCopyLink}
+          onCancelGame={handleCancelGame}
+          onForfeitGame={handleForfeitGame}
+          onNavigate={navigate}
+        />
 
         {/* Lobby and Invite Sections */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -1294,146 +1218,31 @@ export function LobbyPage() {
             </div>
 
             {lobbyTab === 'lobbies' ? (
-              <>
-                {lobbyError && (
-                  <div className="p-3 text-xs bg-rose-500/10 border border-rose-500/30 rounded-lg text-rose-400">
-                    {lobbyError}
-                  </div>
-                )}
-
-                <div className="flex flex-col gap-3 max-h-[300px] overflow-y-auto pr-1">
-                  {loadingLobby ? (
-                    <div className="text-center py-8 text-neutral-500 text-sm">
-                      Loading lobbies...
-                    </div>
-                  ) : filteredLobbies.length === 0 ? (
-                    <div className="text-center py-8 border border-dashed border-neutral-800 rounded-xl text-neutral-500 text-sm">
-                      No public games waiting. Create a game above to start!
-                    </div>
-                  ) : (
-                    filteredLobbies.map((game) => (
-                      <div
-                        key={game.id}
-                        className="flex justify-between items-center p-4 rounded-xl bg-neutral-950 border border-neutral-800 hover:border-neutral-700 transition-all"
-                      >
-                        <div>
-                          <div className="text-xs font-semibold text-neutral-300">
-                            {game.playerX?.username || 'Unknown Player'}'s Game
-                          </div>
-                          <div className="text-[10px] text-neutral-500 font-mono mt-0.5">
-                            ID: {game.id.substring(0, 8)}...
-                          </div>
-                        </div>
-                        <button
-                          onClick={() => handleJoinGame(game.id)}
-                          disabled={syncStatus === 'mismatch'}
-                          className="px-4 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 disabled:bg-neutral-800 disabled:text-neutral-600 disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none text-xs font-bold text-white transition-colors active:scale-95"
-                        >
-                          Join Match
-                        </button>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </>
+              <PublicLobbiesPanel
+                lobbyError={lobbyError}
+                loadingLobby={loadingLobby}
+                filteredLobbies={filteredLobbies}
+                syncStatus={syncStatus}
+                onJoinGame={handleJoinGame}
+              />
             ) : (
-              <>
-                {leaderboardError && (
-                  <div className="p-3 text-xs bg-rose-500/10 border border-rose-500/30 rounded-lg text-rose-400">
-                    {leaderboardError}
-                  </div>
-                )}
-
-                <div className="flex flex-col gap-2 max-h-[300px] overflow-y-auto pr-1">
-                  {loadingLeaderboard ? (
-                    <div className="text-center py-8 text-neutral-500 text-sm">
-                      Loading leaderboard...
-                    </div>
-                  ) : leaderboardEntries.length === 0 ? (
-                    <div className="text-center py-8 border border-dashed border-neutral-800 rounded-xl text-neutral-500 text-sm">
-                      No ranked players yet for this game type.
-                    </div>
-                  ) : (
-                    <table className="w-full text-left border-collapse text-xs text-neutral-300">
-                      <thead>
-                        <tr className="border-b border-neutral-800 text-neutral-500 font-semibold">
-                          <th className="py-2 px-3 w-12 text-center">Rank</th>
-                          <th className="py-2 px-3">Player</th>
-                          <th className="py-2 px-3 w-20 text-right">ELO</th>
-                          <th className="py-2 px-3 w-32 text-center">Record (W-L-D)</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {leaderboardEntries.map((entry, index) => {
-                          const isCurrentUser = entry.userId === currentUser?.id;
-                          return (
-                            <tr
-                              key={entry.userId}
-                              className={`border-b border-neutral-850 hover:bg-neutral-950/30 transition-all ${
-                                isCurrentUser ? 'bg-indigo-600/5 text-indigo-200' : ''
-                              }`}
-                            >
-                              <td className="py-2.5 px-3 text-center font-bold font-mono">
-                                {index + 1}
-                              </td>
-                              <td className="py-2.5 px-3 flex items-center gap-2">
-                                <span className="font-semibold text-neutral-200 flex items-center gap-1.5">
-                                  {entry.username}
-                                  {entry.isBot && (
-                                    <span className="text-[9px] font-extrabold px-1.5 py-0.5 rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
-                                      BOT
-                                    </span>
-                                  )}
-                                  {isCurrentUser && (
-                                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                                      YOU
-                                    </span>
-                                  )}
-                                </span>
-                              </td>
-                              <td className="py-2.5 px-3 text-right font-bold font-mono text-white">
-                                {entry.elo}
-                              </td>
-                              <td className="py-2.5 px-3 text-center font-mono text-neutral-400">
-                                {entry.wins} - {entry.losses} - {entry.draws}
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  )}
-                </div>
-              </>
+              <LeaderboardPanel
+                leaderboardError={leaderboardError}
+                loadingLeaderboard={loadingLeaderboard}
+                leaderboardEntries={leaderboardEntries}
+                currentUser={currentUser}
+              />
             )}
           </div>
 
           {/* Join Direct Code Card */}
-          <div className="md:col-span-1 bg-neutral-900/60 border border-neutral-800 rounded-2xl p-6 backdrop-blur-md flex flex-col justify-between gap-4">
-            <div>
-              <h3 className="text-lg font-bold text-white">Join by Code</h3>
-              <p className="text-xs text-neutral-400 mt-1">
-                Enter an invite code / game ID sent by a friend to join their private lobby.
-              </p>
-            </div>
-            <form onSubmit={handleJoinByCode} className="flex flex-col gap-3">
-              <input
-                type="text"
-                placeholder="Paste Game ID / Code"
-                value={inviteCode}
-                onChange={(e) => setInviteCode(e.target.value)}
-                disabled={syncStatus === 'mismatch'}
-                className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2.5 text-xs text-neutral-100 placeholder-neutral-600 focus:outline-none focus:border-neutral-700 transition-all font-mono disabled:opacity-50 disabled:cursor-not-allowed"
-              />
-              <button
-                type="submit"
-                disabled={joiningCode || !inviteCode.trim() || syncStatus === 'mismatch'}
-                className="w-full py-2.5 rounded-xl bg-neutral-100 hover:bg-white disabled:bg-neutral-800 disabled:text-neutral-600 disabled:opacity-50 disabled:cursor-not-allowed text-neutral-950 font-bold text-xs transition-all flex items-center justify-center gap-2"
-              >
-                {joiningCode ? 'Joining...' : 'Enter Game'}
-              </button>
-            </form>
-          </div>
+          <JoinByCodePanel
+            inviteCode={inviteCode}
+            setInviteCode={setInviteCode}
+            joiningCode={joiningCode}
+            syncStatus={syncStatus}
+            onJoinByCode={handleJoinByCode}
+          />
         </div>
       </div>
 
