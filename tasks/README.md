@@ -106,6 +106,8 @@ When the scheduled nightly run triggers, the agent MUST execute the following 4 
 3. For each task:
    - Implement the code and write accompanying tests.
    - Run `npm run test:quick` to verify.
+   - **MISSING SPECS / AMBIGUITY:** If the task lacks critical details in the specs to implement it correctly, DO NOT GUESS. Prepend `[CLARIFICATION NEEDED]` to the task title, write your exact questions in the Agent Notes, and immediately move on to the next task.
+   - **INFINITE LOOP PREVENTION:** If a task fails testing more than 3 times, prepend `[BLOCKED]` to the task title in the file, leave a summary in the Agent Notes detailing why it failed, and immediately move on to the next task.
    - Append a summary to the "Agent Notes" section of the task file.
    - Move the task file to `tasks/done/` (`git mv`) and update the Done table in this README.
    - Commit the changes using the conventional commit format (`feat/fix/refactor/test(scope): ...`).
