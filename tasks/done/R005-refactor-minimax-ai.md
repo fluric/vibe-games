@@ -20,3 +20,7 @@
 
 ## Agent Notes
 - *(Leave blank until work begins)*
+
+## Agent Notes
+
+Extracted generic Minimax logic to `ai/search.ts`. Extracted Mill heuristics to `ai/millHeuristics.ts` and Connect Four heuristics to `ai/connectFourHeuristics.ts`. Adapted both `minimaxAi.ts` and `connectFourAi.ts` to use the generic search engine.
