@@ -12,13 +12,13 @@
 | Prefix | Type | Example |
 |---|---|---|
 | `B` | Bug — something is broken or wrong | `B001` |
-| `F` | Feature — new functionality | `F001` |
+| `F` | Feature — new functionality | `F002` |
 | `R` | Refactoring — internal code improvement | `R001` |
 | `T` | Testing — add or fix a test | `T001` |
 
 Numbers are sequential within each type. Always increment — never reuse an ID.
 
-**Next available IDs:** B002 · F002 · R008 · T002
+**Next available IDs:** B003 · F002 · R008 · T002
 
 ---
 
@@ -26,8 +26,8 @@ Numbers are sequential within each type. Always increment — never reuse an ID.
 
 | ID | Title | Priority | File |
 |---|---|---|---|
-| R003 | Split `HolyGrailBoard.tsx` into focused components | P2 | [open/R003-split-holygrail-board.md](open/R003-split-holygrail-board.md) |
-| R004 | Refactor `holyGrailEngine.ts` into sub-modules | P2 | [open/R004-extract-holygrail-engine.md](open/R004-extract-holygrail-engine.md) |
+| F002 | [CLARIFICATION NEEDED] Active Matches on Main Page | P2 | [open/F002-active-matches-main-page.md](open/F002-active-matches-main-page.md) |
+
 | R005 | Refactor `minimaxAi.ts` into specific strategies | P3 | [open/R005-refactor-minimax-ai.md](open/R005-refactor-minimax-ai.md) |
 | R006 | Split `GamePage.tsx` into specialized game views | P3 | [open/R006-split-game-page.md](open/R006-split-game-page.md) |
 | R007 | Extract Auth Service from Routes | P3 | [open/R007-extract-auth-service.md](open/R007-extract-auth-service.md) |
@@ -45,6 +45,9 @@ Numbers are sequential within each type. Always increment — never reuse an ID.
 | F001 | My Active Games panel in lobby | 2026-06-29 | [done/F001-active-games-panel.md](done/F001-active-games-panel.md) |
 | T001 | Add test case for full-board draw in Connect Four | 2026-06-30 | [done/T001-c4-draw-test.md](done/T001-c4-draw-test.md) |
 | R002 | Split `LobbyPage.tsx` into focused components | 2026-06-30 | [done/R002-split-lobby-page.md](done/R002-split-lobby-page.md) |
+| R004 | Refactor `holyGrailEngine.ts` into sub-modules | 2026-06-30 | [done/R004-extract-holygrail-engine.md](done/R004-extract-holygrail-engine.md) |
+| B002 | Fix AI Training Stuck (RL / ML model training) | 2026-06-30 | [done/B002-fix-ai-training-stuck.md](done/B002-fix-ai-training-stuck.md) |
+| R003 | Split `HolyGrailBoard.tsx` into focused components | 2026-06-30 | [done/R003-split-holygrail-board.md](done/R003-split-holygrail-board.md) |
 
 ---
 

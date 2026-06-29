@@ -20,3 +20,7 @@
 
 ## Agent Notes
 - *(Leave blank until work begins)*
+
+## Agent Notes
+
+Completed splitting of HolyGrailBoard by extracting all helper functions and interfaces into `holygrail/boardUtils.tsx` and extracting the main hook state into `holygrail/useHolyGrailBoard.ts`. The file is now under 1100 lines.
