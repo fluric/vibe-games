@@ -71,8 +71,12 @@ export async function createGame(
   });
 }
 
-export async function listOpenGames(): Promise<GameDto[]> {
-  return request<GameDto[]>('/games');
+export async function listGames(gameType?: GameType, status?: string): Promise<GameDto[]> {
+  const params = new URLSearchParams();
+  if (gameType) params.append('gameType', gameType);
+  if (status) params.append('status', status);
+  const query = params.toString() ? `?${params.toString()}` : '';
+  return request<GameDto[]>(`/games${query}`);
 }
 
 export async function getGame(id: string): Promise<GameDto> {

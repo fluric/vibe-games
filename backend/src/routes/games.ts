@@ -123,18 +123,46 @@ export async function gameRoutes(server: FastifyInstance) {
   });
 
   // 2. Get Open Public Games
-  server.get('/', async (request, reply) => {
+  server.get<{ Querystring: { gameType?: string; status?: string } }>('/', async (request, reply) => {
+    const { gameType, status } = request.query;
     const gameRepo = AppDataSource.getRepository(Game);
-    const openGames = await gameRepo.find({
-      where: [
-        { status: 'waiting', isPublic: true, playerOId: IsNull() },
-        { status: 'waiting', isPublic: true, playerXId: IsNull() },
-      ],
-      relations: ['playerX', 'playerO'],
-      order: { createdAt: 'DESC' },
-    });
-
-    return reply.send(await Promise.all(openGames.map(g => toGameDto(g, request.user?.id))));
+    
+    let baseWhere: any = { isPublic: true };
+    if (gameType) {
+      baseWhere.gameType = gameType;
+    }
+    
+    if (status === 'waiting') {
+      const openGames = await gameRepo.find({
+        where: [
+          { ...baseWhere, status: 'waiting', playerOId: IsNull() },
+          { ...baseWhere, status: 'waiting', playerXId: IsNull() },
+        ],
+        relations: ['playerX', 'playerO'],
+        order: { createdAt: 'DESC' },
+      });
+      return reply.send(await Promise.all(openGames.map(g => toGameDto(g, request.user?.id))));
+    } else if (status === 'in_progress') {
+      const ongoingGames = await gameRepo.find({
+        where: { ...baseWhere, status: 'in_progress' },
+        relations: ['playerX', 'playerO'],
+        order: { updatedAt: 'DESC' },
+        take: 50
+      });
+      return reply.send(await Promise.all(ongoingGames.map(g => toGameDto(g, request.user?.id))));
+    } else {
+      const allGames = await gameRepo.find({
+        where: [
+          { ...baseWhere, status: 'waiting', playerOId: IsNull() },
+          { ...baseWhere, status: 'waiting', playerXId: IsNull() },
+          { ...baseWhere, status: 'in_progress' }
+        ],
+        relations: ['playerX', 'playerO'],
+        order: { updatedAt: 'DESC' },
+        take: 50
+      });
+      return reply.send(await Promise.all(allGames.map(g => toGameDto(g, request.user?.id))));
+    }
   });
 
   // Get User's Active Games
