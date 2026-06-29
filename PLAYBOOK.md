@@ -63,14 +63,14 @@ If it's in the spec, it should be in the code and tested. If it's not in the spe
 
 ## 3. Task & Bug Tracking
 
-All tasks, bugs, and refactoring ideas live in **[specs/BACKLOG.md](./specs/BACKLOG.md)**.
+All tasks, bugs, and refactoring ideas live in the **[`tasks/`](./tasks/)** directory.
 This is the human-and-agent shared task queue.
 
 ### How to report a bug
-1. Open `specs/BACKLOG.md`.
-2. Add a row to the **Bugs** table: a short description in plain English, a priority (`P1`/`P2`/`P3`), and today's date.
-3. Leave Status as `🔲 Open`.
-4. Tell the agent: *"Read specs/BACKLOG.md and fix all P1 and P2 open bugs."*
+1. Look at `tasks/README.md` to find the next available ID (e.g., `B002`).
+2. Create a file like `tasks/open/B002-short-name.md`. Use the template in the README.
+3. Update the Open table in `tasks/README.md`.
+4. Tell the agent: *"Read tasks/README.md and fix the P1 and P2 open bugs."*
 
 **Priority guide:**
 | Priority | Meaning | Example |
@@ -80,13 +80,14 @@ This is the human-and-agent shared task queue.
 | P3 | Cosmetic or minor inconvenience | Wrong label text |
 
 ### How to request a feature
-Add a row to the **Features** table in `specs/BACKLOG.md` and reference the spec file where the detailed description lives.
+Create a file `tasks/open/F001-name.md` and reference the spec file where the detailed description lives.
 
 ### How agents close items
 When an agent finishes an item, it:
-1. Marks the row `✅ Done` in `BACKLOG.md`.
-2. Adds the completion date and commit hash.
-3. Commits with a message like `fix(auth): resolve B001 — remove duplicate spec file`.
+1. Moves the task file from `tasks/in-progress/` to `tasks/done/`.
+2. Appends its notes to the "Agent Notes" section of the task file.
+3. Updates `tasks/README.md` by moving the task from the Open to the Done table.
+4. Commits with a message like `fix(auth): resolve B002 — remove duplicate spec file`.
 
 ### Why not GitHub Issues?
 GitHub Issues are great for team projects. For this solo setup, a file-based backlog has one big advantage: agents can **read and write it directly** without needing API credentials. You can always link a GitHub Issue number in the description column if you want cross-referencing.
@@ -236,7 +237,7 @@ Type this in Antigravity chat:
 ```
 /schedule Run every night at 2am:
 1. Run npm run test:full. For any failure: read the relevant spec, fix the code, commit.
-2. Read specs/BACKLOG.md. Fix all P1 and P2 open items. Mark them done. Commit.
+2. Read tasks/README.md. Fix open tasks following priority. Move completed tasks to tasks/done/. Commit.
 3. Write a summary to test_report.md at the repo root. Push all changes.
 ```
 
@@ -255,7 +256,7 @@ Commit each split separately. Push.
 For each spec file in specs/: find all items marked ✅ Done.
 Verify the implementation actually matches the spec description.
 If a test is missing for a Done item, write it.
-If the code doesn't match the spec, file a bug in specs/BACKLOG.md as P2.
+If the code doesn't match the spec, create a P2 Bug task in tasks/open/.
 Commit any new tests. Push.
 ```
 
