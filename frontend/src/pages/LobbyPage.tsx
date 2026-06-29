@@ -1155,14 +1155,17 @@ export function LobbyPage() {
         </div>
 
         {/* Active Matches Section */}
-        {activeGames.length > 0 && (
-          <div className="bg-neutral-900/60 border border-neutral-800 rounded-2xl p-6 backdrop-blur-md flex flex-col gap-4">
+        {(() => {
+          const filteredActiveGames = activeGames.filter(g => g.gameType === activeGameTab);
+          if (filteredActiveGames.length === 0) return null;
+          return (
+            <div className="bg-neutral-900/60 border border-neutral-800 rounded-2xl p-6 backdrop-blur-md flex flex-col gap-4">
             <h3 className="text-lg font-bold text-white flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full bg-blue-500 animate-pulse" />
               Your Active Matches
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {activeGames.map((game) => {
+              {filteredActiveGames.map((game) => {
                 const myPiece = game.playerX?.id === userId ? 'X' : 'O';
                 const opponentPlayer = myPiece === 'X' ? game.playerO : game.playerX;
                 const isWaiting = game.status === 'waiting';
@@ -1241,7 +1244,7 @@ export function LobbyPage() {
               })}
             </div>
           </div>
-        )}
+        })()}
 
         {/* Lobby and Invite Sections */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

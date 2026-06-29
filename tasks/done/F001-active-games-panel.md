@@ -13,12 +13,12 @@ A small panel should appear in the lobby showing any games the current player is
 
 ## Acceptance Criteria
 
-- [ ] A "My Active Games" section is visible in the lobby when the current player has at least 1 in-progress game.
-- [ ] The section is completely hidden when the player has no active games.
-- [ ] Each row shows: opponent name (or "Waiting for opponent"), game type icon, and whose turn it currently is.
-- [ ] Clicking a row navigates to the correct `/game/:id`.
-- [ ] The section refreshes automatically every 10 seconds (same polling interval as other lobby data).
-- [ ] The section is filtered by the active game tab (only shows games of the selected type).
+- [x] A "My Active Games" section is visible in the lobby when the current player has at least 1 in-progress game.
+- [x] The section is completely hidden when the player has no active games.
+- [x] Each row shows: opponent name (or "Waiting for opponent"), game type icon, and whose turn it currently is.
+- [x] Clicking a row navigates to the correct `/game/:id`.
+- [x] The section refreshes automatically every 10 seconds (same polling interval as other lobby data).
+- [x] The section is filtered by the active game tab (only shows games of the selected type).
 
 ## Technical Notes
 
@@ -32,3 +32,8 @@ A small panel should appear in the lobby showing any games the current player is
 ## Agent Notes
 
 *(append progress here when working on this task)*
+
+**2026-06-29:**
+- The `My Active Games` section was already partially built in `LobbyPage.tsx`, but it was displaying all games instead of filtering by the active game tab.
+- Added `filteredActiveGames = activeGames.filter(g => g.gameType === activeGameTab)` to correctly filter the matches.
+- Ran tests and verified successful `npm run test:quick`.
