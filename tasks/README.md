@@ -18,7 +18,7 @@
 
 Numbers are sequential within each type. Always increment — never reuse an ID.
 
-**Next available IDs:** B002 · F002 · R003 · T002
+**Next available IDs:** B002 · F002 · R008 · T002
 
 ---
 
@@ -26,6 +26,11 @@ Numbers are sequential within each type. Always increment — never reuse an ID.
 
 | ID | Title | Priority | File |
 |---|---|---|---|
+| R003 | Split `HolyGrailBoard.tsx` into focused components | P2 | [open/R003-split-holygrail-board.md](open/R003-split-holygrail-board.md) |
+| R004 | Refactor `holyGrailEngine.ts` into sub-modules | P2 | [open/R004-extract-holygrail-engine.md](open/R004-extract-holygrail-engine.md) |
+| R005 | Refactor `minimaxAi.ts` into specific strategies | P3 | [open/R005-refactor-minimax-ai.md](open/R005-refactor-minimax-ai.md) |
+| R006 | Split `GamePage.tsx` into specialized game views | P3 | [open/R006-split-game-page.md](open/R006-split-game-page.md) |
+| R007 | Extract Auth Service from Routes | P3 | [open/R007-extract-auth-service.md](open/R007-extract-auth-service.md) |
 
 ## In Progress
 
