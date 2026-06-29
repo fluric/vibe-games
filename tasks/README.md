@@ -82,17 +82,31 @@ No technical jargon needed — write it as you'd explain it to a colleague.
 
 ---
 
-## Agent instruction (nightly backlog run)
+## 🌙 Nightly Pipeline Instructions
 
-```
-Read tasks/README.md. For each file in tasks/open/ ordered by priority (P1 first, P3 last):
-1. Move the file to tasks/in-progress/ (git mv).
-2. Read the task file. Read the referenced spec if listed.
-3. Implement the change.
-4. Run npm run test:quick — must pass before continuing.
-5. Append a summary to the "Agent Notes" section of the task file.
-6. Move the file to tasks/done/ (git mv).
-7. Update tasks/README.md: remove from Open table, add to Done table with today's date and commit hash.
-8. Run npm run test:full before the final push.
-Commit each task separately. Push all at the end.
-```
+When the scheduled nightly run triggers, the agent MUST execute the following 4 phases sequentially:
+
+### Phase 1: Test & Bug Triage (Highest Priority - P1)
+1. Run the full test suite (`npm run test:full`).
+2. If any tests fail, investigate the root cause. 
+3. If it's a minor break, fix it immediately. If it requires significant architectural work, create a new bug task in `tasks/open/` (e.g., `B00X-description.md`), assign it **Priority P1**, and log it in this README.
+
+### Phase 2: Specification Alignment (Priority - P2)
+1. Read through the active specifications in `specs/`.
+2. Cross-reference the specs with the current codebase to identify missing features, unfulfilled Acceptance Criteria, or missing test coverage for specs.
+3. For any gaps found, create new task files in `tasks/open/` (prefix `F` for Feature or `T` for Test). Assign them **Priority P2**, pick the next available ID, and log them in this README.
+
+### Phase 3: Refactoring & Tech Debt (Priority - P3)
+1. Scan the codebase for technical debt (e.g., files exceeding 300 lines, violations of the Single Responsibility Principle, mixed concerns, or missing types).
+2. For each major refactoring opportunity, create a new task file in `tasks/open/` (prefix `R` for Refactor). Assign them **Priority P3**, pick the next available ID, and log them in this README.
+
+### Phase 4: Backlog Execution
+1. Once the backlog is fully triaged and sorted, begin working off the `tasks/open/` directory.
+2. ALWAYS execute in strict priority order: **P1 (Bugs)** > **P2 (Specs/Features)** > **P3 (Refactors)**.
+3. For each task:
+   - Implement the code and write accompanying tests.
+   - Run `npm run test:quick` to verify.
+   - Append a summary to the "Agent Notes" section of the task file.
+   - Move the task file to `tasks/done/` (`git mv`) and update the Done table in this README.
+   - Commit the changes using the conventional commit format (`feat/fix/refactor/test(scope): ...`).
+4. Run `npm run test:full` before the final push. Push all commits at the end.
