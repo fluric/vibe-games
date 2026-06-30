@@ -265,7 +265,32 @@
     "ui_locked": "Gesperrt",
     "ui_cleared_on": "Geschafft",
     "ui_back_to_lobby": "Zurück zur Lobby",
-    "ui_leaderboard": "Bestenliste"
+    "ui_leaderboard": "Bestenliste",
+    "room4": {
+      "name": "Das Antike Relikt",
+      "description": "Ein Steinsockel hält ein Raster aus 9 geschnitzten Symbolen. Die Wände sind mit alten Wandmalereien bedeckt.",
+      "atmosphere": "Staubkörner tanzen in einem Lichtstrahl. Die Luft ist alt.",
+      "clue1": "1. Der Vogel fliegt hoch.",
+      "clue2": "2. Er sucht das allsehende Auge.",
+      "clue3": "3. Über den Bergen.",
+      "clue4": "4. Unter dem Mond."
+    },
+    "room5": {
+      "name": "Der Heizungskeller",
+      "description": "Rohre säumen die Wände und zischen vor Dampf. Vier rostige Ventile steuern den Druck.",
+      "atmosphere": "Hitze strahlt aus. Metall ächzt. Balanciere das System aus.",
+      "valveA": "Haupt",
+      "valveB": "Aux",
+      "valveC": "Fluss",
+      "valveD": "Entl",
+      "clue1": "1. Fluss ist voll geöffnet (5).",
+      "clue2": "2. Haupt ist das Doppelte von Aux.",
+      "clue3": "3. Entl ist am niedrigsten, aber nicht geschlossen (0).",
+      "clue4": "4. Aux ist eins mehr als Entl."
+    },
+    "ui_entered_symbols": "Eingegebene Symbole",
+    "ui_reset": "Sequenz Zurücksetzen",
+    "ui_pressure_stable": "✓ DRUCK STABIL"
   },
   "game": {
     "waiting_for_opponent": "Warte auf Gegner...",

@@ -3,7 +3,8 @@ import { describe, it, expect, vi } from 'vitest';
 import { KeypadPuzzle } from '../components/escape/puzzles/KeypadPuzzle';
 import { CipherWheelPuzzle } from '../components/escape/puzzles/CipherWheelPuzzle';
 import { FuseBoxPuzzle } from '../components/escape/puzzles/FuseBoxPuzzle';
-
+import { SymbolGridPuzzle } from '../components/escape/puzzles/SymbolGridPuzzle';
+import { ValvesPuzzle } from '../components/escape/puzzles/ValvesPuzzle';
 // Mock react-i18next
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
@@ -163,3 +164,86 @@ describe('FuseBoxPuzzle', () => {
     }, { timeout: 1500 });
   });
 });
+
+describe('SymbolGridPuzzle', () => {
+  const mockConfig = {
+    puzzleType: 'symbol_grid' as const,
+    symbols: ['A', 'B', 'C'],
+    solutionSequence: [2, 0], // C then A
+    clues: ['C comes first'],
+  };
+
+  it('renders clues and symbols', () => {
+    render(<SymbolGridPuzzle config={mockConfig} onSolved={vi.fn()} />);
+    expect(screen.getByText('C comes first')).toBeDefined();
+    expect(screen.getByText('A')).toBeDefined();
+    expect(screen.getByText('B')).toBeDefined();
+    expect(screen.getByText('C')).toBeDefined();
+  });
+
+  it('solves when correct sequence is entered', async () => {
+    const onSolved = vi.fn();
+    render(<SymbolGridPuzzle config={mockConfig} onSolved={onSolved} />);
+    
+    // Click C (index 2)
+    fireEvent.click(screen.getByTestId('symbol-btn-2'));
+    // Click A (index 0)
+    fireEvent.click(screen.getByTestId('symbol-btn-0'));
+    
+    expect(screen.getByText('✓ Correct')).toBeDefined();
+    
+    await waitFor(() => {
+      expect(onSolved).toHaveBeenCalled();
+    }, { timeout: 1500 });
+  });
+
+  it('shakes on incorrect sequence', () => {
+    const onSolved = vi.fn();
+    render(<SymbolGridPuzzle config={mockConfig} onSolved={onSolved} />);
+    
+    // Click A (index 0) - incorrect first step
+    fireEvent.click(screen.getByTestId('symbol-btn-0'));
+    
+    expect(screen.queryByText('✓ Correct')).toBeNull();
+    expect(onSolved).not.toHaveBeenCalled();
+  });
+});
+
+describe('ValvesPuzzle', () => {
+  const mockConfig = {
+    puzzleType: 'valves' as const,
+    valves: [
+      { id: 'v1', label: 'Valve1' },
+      { id: 'v2', label: 'Valve2' },
+    ],
+    maxValue: 5,
+    solution: [1, 2],
+    clues: ['Set to 1 and 2'],
+  };
+
+  it('renders clues and valves', () => {
+    render(<ValvesPuzzle config={mockConfig} onSolved={vi.fn()} />);
+    expect(screen.getByText('Set to 1 and 2')).toBeDefined();
+    expect(screen.getByText('Valve1')).toBeDefined();
+    expect(screen.getByText('Valve2')).toBeDefined();
+  });
+
+  it('solves when correct values are set', async () => {
+    const onSolved = vi.fn();
+    render(<ValvesPuzzle config={mockConfig} onSolved={onSolved} />);
+    
+    // Increment v1 once
+    fireEvent.click(screen.getByTestId('valve-v1-inc'));
+    
+    // Increment v2 twice
+    fireEvent.click(screen.getByTestId('valve-v2-inc'));
+    fireEvent.click(screen.getByTestId('valve-v2-inc'));
+    
+    expect(screen.getByText('✓ PRESSURE STABLE')).toBeDefined();
+    
+    await waitFor(() => {
+      expect(onSolved).toHaveBeenCalled();
+    }, { timeout: 1500 });
+  });
+});
+

@@ -265,7 +265,32 @@
     "ui_locked": "Bloqueado",
     "ui_cleared_on": "Completado el",
     "ui_back_to_lobby": "Volver a la sala",
-    "ui_leaderboard": "Clasificación"
+    "ui_leaderboard": "Clasificación",
+    "room4": {
+      "name": "La Reliquia Antigua",
+      "description": "Un pedestal de piedra sostiene una cuadrícula de 9 símbolos tallados. Las paredes están cubiertas de murales antiguos.",
+      "atmosphere": "Motas de polvo bailan en un rayo de luz. El aire es viejo.",
+      "clue1": "1. El pájaro vuela alto.",
+      "clue2": "2. Busca el ojo que todo lo ve.",
+      "clue3": "3. Por encima de las montañas.",
+      "clue4": "4. Bajo la luna."
+    },
+    "room5": {
+      "name": "La Sala de Calderas",
+      "description": "Tuberías recubren las paredes, silbando con vapor. Cuatro válvulas oxidadas controlan la presión.",
+      "atmosphere": "Irradia calor. El metal gime. Equilibra el sistema.",
+      "valveA": "Prin",
+      "valveB": "Aux",
+      "valveC": "Flujo",
+      "valveD": "Vent",
+      "clue1": "1. Flujo está completamente abierto (5).",
+      "clue2": "2. Prin es el doble de Aux.",
+      "clue3": "3. Vent es el más bajo, pero no cerrado (0).",
+      "clue4": "4. Aux es uno más que Vent."
+    },
+    "ui_entered_symbols": "Símbolos Ingresados",
+    "ui_reset": "Reiniciar Secuencia",
+    "ui_pressure_stable": "✓ PRESIÓN ESTABLE"
   },
   "game": {
     "waiting_for_opponent": "Esperando al oponente...",

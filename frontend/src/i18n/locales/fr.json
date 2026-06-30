@@ -265,7 +265,32 @@
     "ui_locked": "Verrouillé",
     "ui_cleared_on": "Terminé le",
     "ui_back_to_lobby": "Retour au salon",
-    "ui_leaderboard": "Classement"
+    "ui_leaderboard": "Classement",
+    "room4": {
+      "name": "La Relique Antique",
+      "description": "Un piédestal en pierre contient une grille de 9 symboles sculptés. Les murs sont couverts de fresques anciennes.",
+      "atmosphere": "Des grains de poussière dansent dans un rayon de lumière. L'air est vieux.",
+      "clue1": "1. L'oiseau vole haut.",
+      "clue2": "2. Il cherche l'œil qui voit tout.",
+      "clue3": "3. Au-dessus des montagnes.",
+      "clue4": "4. Sous la lune."
+    },
+    "room5": {
+      "name": "La Chaufferie",
+      "description": "Des tuyaux tapissent les murs, sifflant avec la vapeur. Quatre valves rouillées contrôlent la pression.",
+      "atmosphere": "La chaleur irradie. Le métal gémit. Équilibrez le système.",
+      "valveA": "Prin",
+      "valveB": "Aux",
+      "valveC": "Débit",
+      "valveD": "Vent",
+      "clue1": "1. Débit est grand ouvert (5).",
+      "clue2": "2. Prin est le double de Aux.",
+      "clue3": "3. Vent est le plus bas, mais pas fermé (0).",
+      "clue4": "4. Aux est un de plus que Vent."
+    },
+    "ui_entered_symbols": "Symboles Entrés",
+    "ui_reset": "Réinitialiser la Séquence",
+    "ui_pressure_stable": "✓ PRESSION STABLE"
   },
   "game": {
     "waiting_for_opponent": "En attente de l'adversaire...",
