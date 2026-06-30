@@ -911,9 +911,9 @@ export function LobbyPage() {
           <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-200 text-sm flex items-start gap-3 shadow-lg shadow-amber-500/5">
             <span className="text-xl">⚙️</span>
             <div>
-              <p className="font-bold">System update in progress</p>
+              <p className="font-bold">{t('system_update_title', { defaultValue: 'System update in progress' })}</p>
               <p className="text-xs text-amber-300/80 mt-0.5">
-                The background system is being updated (running version {backendRevision?.substring(0, 7) || '?'}). Gameplay remains active.
+                {t('system_update_desc', { defaultValue: 'The background system is being updated (running version {{rev}}). Gameplay remains active.', replace: { rev: backendRevision?.substring(0, 7) || '?' } })}
               </p>
             </div>
           </div>
@@ -929,7 +929,7 @@ export function LobbyPage() {
                 : 'text-neutral-400 hover:text-white hover:bg-neutral-800/40'
             }`}
           >
-            ⚙️ Nine Men's Morris
+            ⚙️ {t('nine_mens_morris', { defaultValue: "Nine Men's Morris" })}
           </button>
           <button
             onClick={() => setActiveGameTab('connect_four')}
@@ -939,7 +939,7 @@ export function LobbyPage() {
                 : 'text-neutral-400 hover:text-white hover:bg-neutral-800/40'
             }`}
           >
-            🔴 Connect Four
+            🔴 {t('connect_four', { defaultValue: 'Connect Four' })}
           </button>
           <button
             onClick={() => setActiveGameTab('holy_grail')}
@@ -949,7 +949,7 @@ export function LobbyPage() {
                 : 'text-neutral-400 hover:text-white hover:bg-neutral-800/40'
             }`}
           >
-            🏆 Grail Quest
+            🏆 {t('grail_quest', { defaultValue: 'Grail Quest' })}
           </button>
           <button
             onClick={() => setActiveGameTab('escape')}
@@ -959,7 +959,7 @@ export function LobbyPage() {
                 : 'text-neutral-400 hover:text-white hover:bg-neutral-800/40'
             }`}
           >
-            🔐 Escape
+            🔐 {t('escape_room', { defaultValue: 'Escape' })}
           </button>
         </div>
 
@@ -973,7 +973,7 @@ export function LobbyPage() {
             <div>
               <h2 className="text-2xl font-bold text-white">Escape</h2>
               <p className="text-neutral-400 mt-2 max-w-md">
-                A solo puzzle adventure. Solve each room to unlock the next. How far can you get?
+                {t('escape_solo_desc', { defaultValue: 'A solo puzzle adventure. Solve each room to unlock the next. How far can you get?' })}
               </p>
             </div>
             <Link
@@ -981,7 +981,7 @@ export function LobbyPage() {
               id="escape-lobby-enter-btn"
               className="inline-flex items-center gap-2 bg-teal-600 hover:bg-teal-500 text-white font-bold py-3 px-8 rounded-xl transition-all active:scale-95 shadow-[0_0_24px_rgba(20,184,166,0.35)] hover:shadow-[0_0_32px_rgba(20,184,166,0.5)] text-base"
             >
-              Enter Escape →
+              {t('enter_escape', { defaultValue: 'Enter Escape →' })}
             </Link>
           </div>
         ) : (
@@ -991,7 +991,7 @@ export function LobbyPage() {
           <div className="md:col-span-1 bg-neutral-900/60 border border-neutral-800 rounded-2xl p-6 backdrop-blur-md flex flex-col justify-between">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <span className="text-xs font-semibold text-blue-400 uppercase tracking-widest">Active Player</span>
+                <span className="text-xs font-semibold text-blue-400 uppercase tracking-widest">{t('active_player', { defaultValue: 'Active Player' })}</span>
                 <h2 className="text-xl font-bold mt-1 text-white">{username}</h2>
                 <p className="text-xs text-neutral-500 font-mono mt-1 select-all">{userId.substring(0, 8)}...</p>
               </div>
@@ -1011,10 +1011,10 @@ export function LobbyPage() {
               <div className="flex justify-between items-center text-sm">
                 <span className="text-neutral-400">
                   {activeGameTab === 'mill'
-                    ? "Nine Men's Morris Rating:"
+                    ? t('morris_rating_label', { defaultValue: "Nine Men's Morris Rating:" })
                     : activeGameTab === 'connect_four'
-                    ? 'Connect Four Rating:'
-                    : 'Grail Quest Rating:'}
+                    ? t('c4_rating_label', { defaultValue: 'Connect Four Rating:' })
+                    : t('grail_rating_label', { defaultValue: 'Grail Quest Rating:' })}
                 </span>
                 <span className="font-bold text-indigo-400">
                   {(() => {
@@ -1031,9 +1031,9 @@ export function LobbyPage() {
                   const stats = currentUser?.gameStats?.[tab] || currentUser;
                   return (
                     <>
-                      <span>Wins: <strong className="text-emerald-400">{stats?.wins ?? 0}</strong></span>
-                      <span>Losses: <strong className="text-rose-500">{stats?.losses ?? 0}</strong></span>
-                      <span>Draws: <strong className="text-neutral-400">{stats?.draws ?? 0}</strong></span>
+                      <span>{t('wins', { defaultValue: 'Wins:' })} <strong className="text-emerald-400">{stats?.wins ?? 0}</strong></span>
+                      <span>{t('losses', { defaultValue: 'Losses:' })} <strong className="text-rose-500">{stats?.losses ?? 0}</strong></span>
+                      <span>{t('draws', { defaultValue: 'Draws:' })} <strong className="text-neutral-400">{stats?.draws ?? 0}</strong></span>
                     </>
                   );
                 })()}
@@ -1044,9 +1044,12 @@ export function LobbyPage() {
           {/* Creation Panel */}
           <div className="md:col-span-2 bg-neutral-900/60 border border-neutral-800 rounded-2xl p-6 backdrop-blur-md flex flex-col gap-5 justify-between">
             <div>
-              <h3 className="text-lg font-bold text-white">Create a New Match</h3>
+              <h3 className="text-lg font-bold text-white">{t('create_new_match', { defaultValue: 'Create a New Match' })}</h3>
               <p className="text-sm text-neutral-400 mt-1">
-                Launch a match of {activeGameTab === 'mill' ? "Nine Men's Morris" : activeGameTab === 'connect_four' ? 'Connect Four' : 'Grail Quest'} immediately.
+                {t('launch_match_desc', {
+                  defaultValue: 'Launch a match of {{game}} immediately.',
+                  game: activeGameTab === 'mill' ? t('nine_mens_morris', { defaultValue: "Nine Men's Morris" }) : activeGameTab === 'connect_four' ? t('connect_four', { defaultValue: 'Connect Four' }) : t('grail_quest', { defaultValue: 'Grail Quest' })
+                })}
               </p>
             </div>
             <div className="flex flex-col gap-4">
@@ -1066,7 +1069,7 @@ export function LobbyPage() {
                       : 'text-neutral-400 hover:text-white'
                   }`}
                 >
-                  🤖 vs AI
+                  🤖 {t('vs_ai', { defaultValue: 'vs AI' })}
                 </button>
                 <button
                   type="button"
@@ -1081,7 +1084,7 @@ export function LobbyPage() {
                       : 'text-neutral-400 hover:text-white'
                   }`}
                 >
-                  👥 vs Human
+                  👥 {t('vs_human', { defaultValue: 'vs Human' })}
                 </button>
               </div>
 
@@ -1091,7 +1094,7 @@ export function LobbyPage() {
                 {currentGameMode === 'ai' && (
                   <>
                     <label htmlFor="ai-bot-select" className="text-xs text-neutral-400 font-semibold">
-                      Select AI Opponent:
+                      {t('select_ai_opponent', { defaultValue: 'Select AI Opponent:' })}
                     </label>
                     <select
                       id="ai-bot-select"
@@ -1124,7 +1127,7 @@ export function LobbyPage() {
                 )}
 
                 <label className="text-xs text-neutral-400 font-semibold">
-                  Who Starts the Game?
+                  {t('who_starts', { defaultValue: 'Who Starts the Game?' })}
                 </label>
                 <div className="flex gap-2 mt-0.5">
                   <button
@@ -1140,7 +1143,7 @@ export function LobbyPage() {
                         : 'bg-neutral-950 border-neutral-800 text-neutral-400 hover:border-neutral-700'
                     }`}
                   >
-                    👤 You Start (First)
+                    👤 {t('you_start_first', { defaultValue: 'You Start (First)' })}
                   </button>
                   <button
                     type="button"
@@ -1155,7 +1158,7 @@ export function LobbyPage() {
                         : 'bg-neutral-950 border-neutral-800 text-neutral-400 hover:border-neutral-700'
                     }`}
                   >
-                    {currentGameMode === 'ai' ? '🤖 AI Starts (First)' : '🧑 Opponent Starts (First)'}
+                    {currentGameMode === 'ai' ? `🤖 ${t('ai_starts_first', { defaultValue: 'AI Starts (First)' })}` : `🧑 ${t('opponent_starts_first', { defaultValue: 'Opponent Starts (First)' })}`}
                   </button>
                 </div>
               </div>
@@ -1170,8 +1173,8 @@ export function LobbyPage() {
                   <div className="w-10 h-10 rounded-lg bg-indigo-500/10 flex items-center justify-center text-indigo-400 group-hover:scale-110 transition-transform">
                     🤖
                   </div>
-                  <span className="font-bold text-xs text-white">Play vs AI</span>
-                  <span className="text-[10px] text-neutral-500 text-center">Practice offline</span>
+                  <span className="font-bold text-xs text-white">{t('play_vs_ai', { defaultValue: 'Play vs AI' })}</span>
+                  <span className="text-[10px] text-neutral-500 text-center">{t('practice_offline', { defaultValue: 'Practice offline' })}</span>
                 </button>
               ) : (
                 <div className="grid grid-cols-2 gap-4">
@@ -1183,8 +1186,8 @@ export function LobbyPage() {
                     <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-400 group-hover:scale-110 transition-transform">
                       🌍
                     </div>
-                    <span className="font-bold text-xs text-white">Host Public</span>
-                    <span className="text-[10px] text-neutral-500 text-center">List in public lobby</span>
+                    <span className="font-bold text-xs text-white">{t('host_public', { defaultValue: 'Host Public' })}</span>
+                    <span className="text-[10px] text-neutral-500 text-center">{t('list_in_public_lobby', { defaultValue: 'List in public lobby' })}</span>
                   </button>
                   <button
                     onClick={() => handleCreateGame(false, false)}
@@ -1194,8 +1197,8 @@ export function LobbyPage() {
                     <div className="w-10 h-10 rounded-lg bg-rose-500/10 flex items-center justify-center text-rose-400 group-hover:scale-110 transition-transform">
                       🔗
                     </div>
-                    <span className="font-bold text-xs text-white">Host Private</span>
-                    <span className="text-[10px] text-neutral-500 text-center">Share direct link</span>
+                    <span className="font-bold text-xs text-white">{t('host_private', { defaultValue: 'Host Private' })}</span>
+                    <span className="text-[10px] text-neutral-500 text-center">{t('share_direct_link', { defaultValue: 'Share direct link' })}</span>
                   </button>
                 </div>
               )}
@@ -1218,9 +1221,9 @@ export function LobbyPage() {
         <div className="bg-neutral-900/60 border border-neutral-800 rounded-2xl p-6 backdrop-blur-md">
           <div className="flex items-center gap-2 mb-4 pb-2 border-b border-neutral-800">
             <span className="text-xl">📺</span>
-            <h3 className="text-lg font-bold text-white">Live Matches</h3>
+            <h3 className="text-lg font-bold text-white">{t('live_matches', { defaultValue: 'Live Matches' })}</h3>
             <span className="text-xs text-neutral-500 ml-auto bg-neutral-950 px-2 py-1 rounded-md border border-neutral-800">
-              Spectator Mode
+              {t('spectator_mode', { defaultValue: 'Spectator Mode' })}
             </span>
           </div>
           <OngoingMatchesPanel games={ongoingGames.filter(g => g.playerX?.id !== currentUser?.id && g.playerO?.id !== currentUser?.id)} onSpectate={(id) => navigate(`/game/${id}`)} />
@@ -1241,7 +1244,7 @@ export function LobbyPage() {
                       : 'text-neutral-400 border-transparent hover:text-white'
                   }`}
                 >
-                  🌍 Active Lobbies
+                  🌍 {t('active_lobbies', { defaultValue: 'Active Lobbies' })}
                 </button>
                 <button
                   onClick={() => setLobbyTab('leaderboard')}
@@ -1251,7 +1254,7 @@ export function LobbyPage() {
                       : 'text-neutral-400 border-transparent hover:text-white'
                   }`}
                 >
-                  🏆 ELO Leaderboard
+                  🏆 {t('elo_leaderboard', { defaultValue: 'ELO Leaderboard' })}
                 </button>
               </div>
 
@@ -1260,14 +1263,14 @@ export function LobbyPage() {
                   onClick={fetchLobby}
                   className="text-xs text-neutral-400 hover:text-white transition-colors"
                 >
-                  🔄 Refresh Lobbies
+                  🔄 {t('refresh_lobbies', { defaultValue: 'Refresh Lobbies' })}
                 </button>
               ) : (
                 <button
                   onClick={fetchLeaderboard}
                   className="text-xs text-neutral-400 hover:text-white transition-colors"
                 >
-                  🔄 Refresh Leaderboard
+                  🔄 {t('refresh_leaderboard', { defaultValue: 'Refresh Leaderboard' })}
                 </button>
               )}
             </div>
@@ -1306,9 +1309,9 @@ export function LobbyPage() {
       {/* Custom Confirmation Modals */}
       <ConfirmModal
         isOpen={cancelGameId !== null}
-        title="Cancel Game Lobby"
-        message="Are you sure you want to cancel this game lobby?"
-        confirmLabel="Cancel Game"
+        title={t('cancel_game_title', { ns: 'game', defaultValue: 'Cancel Game Lobby' })}
+        message={t('cancel_game_msg', { ns: 'game', defaultValue: 'Are you sure you want to cancel this game lobby?' })}
+        confirmLabel={t('cancel_game_btn', { ns: 'game', defaultValue: 'Cancel Game' })}
         onConfirm={executeCancelGame}
         onCancel={() => {
           actionPendingRef.current = false;
@@ -1318,9 +1321,9 @@ export function LobbyPage() {
 
       <ConfirmModal
         isOpen={forfeitGameId !== null}
-        title="Forfeit Match"
-        message="Are you sure you want to forfeit this match? This will count as a loss."
-        confirmLabel="Forfeit"
+        title={t('forfeit_match_title', { ns: 'game', defaultValue: 'Forfeit Match' })}
+        message={t('forfeit_match_msg', { ns: 'game', defaultValue: 'Are you sure you want to forfeit this match? This will count as a loss.' })}
+        confirmLabel={t('forfeit_match_btn', { ns: 'game', defaultValue: 'Forfeit' })}
         onConfirm={executeForfeitGame}
         onCancel={() => {
           actionPendingRef.current = false;
