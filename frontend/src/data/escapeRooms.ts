@@ -38,8 +38,8 @@ export interface FuseRoomConfig {
 export interface SymbolGridRoomConfig {
   puzzleType: 'symbol_grid';
   symbols: string[];
-  solutionSequence: number[]; // Array of indices (0-8)
-  clues: string[];
+  solutionSequence: number[]; // Initial sequence, but the puzzle will generate longer ones dynamically
+  clues: string[]; // Used for instructions now
 }
 
 export interface ValvesRoomConfig {
@@ -137,12 +137,12 @@ export function useEscapeRooms(): EscapeRoom[] {
       config: {
         puzzleType: 'symbol_grid',
         symbols: ['👁️', '🐍', '🐦', '☀️', '🌙', '⭐', '🌊', '🔥', '⛰️'],
-        solutionSequence: [2, 0, 8, 4], // 🐦, 👁️, ⛰️, 🌙
+        solutionSequence: [2, 0, 8], // Initial 3-step sequence
         clues: [
-          t('room4.clue1', { defaultValue: "1. The bird flies high." }),
-          t('room4.clue2', { defaultValue: "2. It seeks the all-seeing eye." }),
-          t('room4.clue3', { defaultValue: "3. Above the mountains." }),
-          t('room4.clue4', { defaultValue: "4. Under the moon." })
+          t('room4.clue1', { defaultValue: "1. The relic demands perfect memory." }),
+          t('room4.clue2', { defaultValue: "2. Watch the sequence." }),
+          t('room4.clue3', { defaultValue: "3. Repeat it to prove your worth." }),
+          t('room4.clue4', { defaultValue: "4. The sequence grows with each success." })
         ]
       },
     },
@@ -160,12 +160,12 @@ export function useEscapeRooms(): EscapeRoom[] {
           { id: 'D', label: t('room5.valveD', { defaultValue: 'Vent' }) }
         ],
         maxValue: 5,
-        solution: [4, 2, 5, 1],
+        solution: [4, 2, 5, 1], // The hidden code
         clues: [
-          t('room5.clue1', { defaultValue: "1. Flow is fully open (5)." }),
-          t('room5.clue2', { defaultValue: "2. Main is double Aux." }),
-          t('room5.clue3', { defaultValue: "3. Vent is the lowest, but not closed (0)." }),
-          t('room5.clue4', { defaultValue: "4. Aux is one more than Vent." })
+          t('room5.clue1', { defaultValue: "1. Set the valves and test the pressure." }),
+          t('room5.clue2', { defaultValue: "2. 🟢 = Correct pressure on the correct valve." }),
+          t('room5.clue3', { defaultValue: "3. 🟡 = Correct pressure, but on the wrong valve." }),
+          t('room5.clue4', { defaultValue: "4. You have 10 attempts to stabilize the system." })
         ]
       },
     },

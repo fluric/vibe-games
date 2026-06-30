@@ -169,7 +169,7 @@ describe('SymbolGridPuzzle', () => {
   const mockConfig = {
     puzzleType: 'symbol_grid' as const,
     symbols: ['A', 'B', 'C'],
-    solutionSequence: [2, 0], // C then A
+    solutionSequence: [2, 0, 1], // C then A then B (length 3 to match initial level)
     clues: ['C comes first'],
   };
 
@@ -189,6 +189,8 @@ describe('SymbolGridPuzzle', () => {
     fireEvent.click(screen.getByTestId('symbol-btn-2'));
     // Click A (index 0)
     fireEvent.click(screen.getByTestId('symbol-btn-0'));
+    // Click B (index 1)
+    fireEvent.click(screen.getByTestId('symbol-btn-1'));
     
     expect(screen.getByText('✓ Correct')).toBeDefined();
     
@@ -197,7 +199,7 @@ describe('SymbolGridPuzzle', () => {
     }, { timeout: 1500 });
   });
 
-  it('shakes on incorrect sequence', () => {
+  it('shakes on incorrect sequence', async () => {
     const onSolved = vi.fn();
     render(<SymbolGridPuzzle config={mockConfig} onSolved={onSolved} />);
     
@@ -206,6 +208,11 @@ describe('SymbolGridPuzzle', () => {
     
     expect(screen.queryByText('✓ Correct')).toBeNull();
     expect(onSolved).not.toHaveBeenCalled();
+    
+    // Check if Play Sequence is triggered on failure (button disables while playing)
+    await waitFor(() => {
+      expect(screen.getByText('Memorize...')).toBeDefined();
+    });
   });
 });
 
@@ -228,7 +235,7 @@ describe('ValvesPuzzle', () => {
     expect(screen.getByText('Valve2')).toBeDefined();
   });
 
-  it('solves when correct values are set', async () => {
+  it('solves when correct values are set and tested', async () => {
     const onSolved = vi.fn();
     render(<ValvesPuzzle config={mockConfig} onSolved={onSolved} />);
     
@@ -239,11 +246,35 @@ describe('ValvesPuzzle', () => {
     fireEvent.click(screen.getByTestId('valve-v2-inc'));
     fireEvent.click(screen.getByTestId('valve-v2-inc'));
     
+    // Click Test Pressure
+    fireEvent.click(screen.getByText('Test Pressure'));
+    
     expect(screen.getByText('✓ PRESSURE STABLE')).toBeDefined();
     
     await waitFor(() => {
       expect(onSolved).toHaveBeenCalled();
     }, { timeout: 1500 });
+  });
+
+  it('shows partial match on incorrect values', async () => {
+    const onSolved = vi.fn();
+    render(<ValvesPuzzle config={mockConfig} onSolved={onSolved} />);
+    
+    // Set v1 to 2
+    fireEvent.click(screen.getByTestId('valve-v1-inc'));
+    fireEvent.click(screen.getByTestId('valve-v1-inc'));
+    
+    // Set v2 to 1
+    fireEvent.click(screen.getByTestId('valve-v2-inc'));
+    
+    // Click Test Pressure
+    fireEvent.click(screen.getByText('Test Pressure'));
+    
+    expect(screen.queryByText('✓ PRESSURE STABLE')).toBeNull();
+    
+    // We expect 2 partial matches (value is right, position is wrong)
+    // The history should log '2-1'
+    expect(screen.getByText('2-1')).toBeDefined();
   });
 });
 

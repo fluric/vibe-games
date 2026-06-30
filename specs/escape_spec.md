@@ -47,6 +47,8 @@ There is **no opponent** and **no matchmaking** — Escape exists entirely outsi
 
 ## 2. Puzzle Definitions
 
+> **NOTE:** All escape room puzzles must be designed to be genuinely hard problems. They should challenge the player's deduction, memory, and logical reasoning. Trivial or overly easy puzzles are strictly not allowed.
+
 ### Room 1 — The Keypad
 
 - A 4-digit numeric PIN lock on the door.
@@ -84,9 +86,9 @@ There is **no opponent** and **no matchmaking** — Escape exists entirely outsi
 ### 3.2 Leaderboard Display
 
 - Accessible from the Lobby (new "🔐 Escape" entry in game navigation).
-- Sorted by: fewest hints used → then first-clear date ascending (earliest = better).
+- Sorted by: rooms cleared descending → then first-clear date ascending (earliest = better).
 - Columns: **Rank**, **Player**, **Rooms Cleared**, **Hints Used**, **Escaped On**.
-- Only shows players who have cleared **all currently available rooms** (full escapees).
+- Shows players who have cleared **at least 1 room**.
 
 ---
 

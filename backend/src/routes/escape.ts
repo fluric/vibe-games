@@ -101,8 +101,9 @@ export async function escapeRoutes(server: FastifyInstance): Promise<void> {
       .addSelect('MAX(ep.solvedAt)', 'firstClearedAt')
       .where('ep.solvedAt IS NOT NULL')
       .groupBy('ep.userId')
-      .having('COUNT(*) >= :total', { total: TOTAL_ROOMS })
-      .orderBy('"firstClearedAt"', 'ASC')
+      .having('COUNT(*) >= :total', { total: 1 })
+      .orderBy('"roomsCleared"', 'DESC')
+      .addOrderBy('"firstClearedAt"', 'ASC')
       .getRawMany<{ userId: string; roomsCleared: string; firstClearedAt: string }>();
 
     const userIds = rows.map((r) => r.userId);
