@@ -77,7 +77,7 @@
     "refresh_page": "Rafraîchir la page",
     "grail_quest": "Grail Quest",
     "active_player": "Joueur Actif",
-    "morris_rating_label": "Classement Mühle:",
+    "morris_rating_label": "Classement Moulin:",
     "c4_rating_label": "Classement Puissance 4:",
     "grail_rating_label": "Classement Graal:",
     "wins": "Victoires:",
@@ -107,7 +107,84 @@
     "escape_solo_desc": "Une aventure solo. Résolvez chaque salle pour débloquer la suivante.",
     "enter_escape": "Entrer dans Escape →",
     "system_update_title": "Mise à jour du système en cours",
-    "system_update_desc": "Le système est en cours de mise à jour (version {{rev}}). Le jeu reste actif."
+    "system_update_desc": "Le système est en cours de mise à jour (version {{rev}}). Le jeu reste actif.",
+    "bot_tag": {
+      "mill": {
+        "easy_random": "Jeu aléatoire",
+        "easy_cowardly": "Défense & Évitement",
+        "easy_greedy": "Chasseur de pièces",
+        "easy_aggressive": "Chasseur de moulins",
+        "medium_aggressive": "Matériel & Moulins",
+        "medium_defensive": "Blocage des menaces",
+        "medium_mobile": "Mobilité des pièces",
+        "hard_tactical": "Minimax Profondeur 4",
+        "expert_garry": "Minimax Profondeur 5",
+        "legendary_magnus": "Minimax Profondeur 6",
+        "perfect_oracle": "Ouvertures résolues & Recherche positionnelle"
+      },
+      "connect_four": {
+        "easy_random": "Jeu aléatoire",
+        "easy_cowardly": "Défense & Évitement",
+        "easy_greedy": "Chasseur de pièces",
+        "easy_aggressive": "Chasseur de lignes",
+        "medium_aggressive": "Contrôle central & Ouvertures",
+        "medium_defensive": "Blocage défensif",
+        "medium_mobile": "Alignement espacé",
+        "hard_tactical": "Minimax Profondeur 4",
+        "expert_garry": "Minimax Profondeur 5",
+        "legendary_magnus": "Minimax Profondeur 6",
+        "perfect_oracle": "Recherche d'alignement central",
+        "rl_novice": "Réseau neuronal (sans anticipation)",
+        "rl_intermediate": "Réseau neuronal + MCTS 50",
+        "rl_strong": "Réseau neuronal + MCTS 200",
+        "rl_master": "Réseau neuronal + MCTS 800"
+      },
+      "holy_grail": {
+        "easy_random": "Jeu aléatoire",
+        "medium_aggressive": "Positionnel & Combat",
+        "hard_tactical": "Recherche tactique",
+        "expert_smart": "Simulation 1 ply"
+      }
+    },
+    "bot_help": {
+      "mill": {
+        "easy_random": "Randy joue des coups complètement aléatoires. Parfait pour les débutants.",
+        "easy_cowardly": "Connie recherche superficiellement et déteste être bloquée. Facile à contourner.",
+        "easy_greedy": "Gordon valorise le matériel avant la sécurité. Peut être piégé.",
+        "easy_aggressive": "Arthur poursuit les structures de moulin, laissant souvent ses propres pièces exposées.",
+        "medium_aggressive": "Archie utilise 3 demi-coups, prioritisant les moulins et le comptage du matériel.",
+        "medium_defensive": "Debbie recherche 3 demi-coups en profondeur, prioritisant le blocage des menaces adverses.",
+        "medium_mobile": "Monty recherche 3 demi-coups, prioritisant la liberté de ses propres pièces.",
+        "hard_tactical": "Toby calcule 4 demi-coups à l'avance. Il punira les erreurs tactiques.",
+        "expert_garry": "Garry évalue 5 demi-coups avec des heuristiques positionnelles optimisées. Un vrai défi!",
+        "legendary_magnus": "Magnus calcule 6 demi-coups avec des poids extrêmement optimisés. Niveau légendaire!",
+        "perfect_oracle": "L'Oracle utilise une évaluation positionnelle profonde et des ouvertures résolues."
+      },
+      "connect_four": {
+        "easy_random": "Randy joue des coups complètement aléatoires. Parfait pour les débutants.",
+        "easy_cowardly": "Connie recherche superficiellement et déteste être bloquée.",
+        "easy_greedy": "Gordon valorise le matériel avant la sécurité.",
+        "easy_aggressive": "Arthur poursuit les structures de ligne.",
+        "medium_aggressive": "Archie recherche 3 demi-coups, prioritisant la connexion et l'alignement central.",
+        "medium_defensive": "Debbie recherche 3 demi-coups, se concentrant sur le blocage des alignements adverses.",
+        "medium_mobile": "Monty recherche 3 demi-coups, maintenant des connexions flexibles.",
+        "hard_tactical": "Toby calcule 4 demi-coups, créant des pièges d'alignement.",
+        "expert_garry": "Garry évalue 5 demi-coups avec des heuristiques positionnelles optimisées.",
+        "legendary_magnus": "Magnus calcule 6 demi-coups. Niveau légendaire!",
+        "perfect_oracle": "L'Oracle utilise une évaluation positionnelle profonde.",
+        "rl_novice": "⚡ Novice Neuronal utilise un réseau neuronal pur (sans anticipation).",
+        "rl_intermediate": "⚡ Scout Neuronal combine un réseau neuronal avec 50 simulations MCTS.",
+        "rl_strong": "⚡ Stratège Neuronal effectue 200 simulations MCTS.",
+        "rl_master": "⚡ Maître Neuronal effectue 800 simulations MCTS. Le bot le plus fort."
+      },
+      "holy_grail": {
+        "easy_random": "Randy HG joue des coups complètement aléatoires.",
+        "medium_aggressive": "Archie HG joue un jeu positionnel ciblant les fermes et les bases.",
+        "hard_tactical": "Toby HG calcule les coups et les séquences de combat.",
+        "expert_smart": "Sophia simule tous les coups possibles et évalue les positions."
+      }
+    },
+    "checking_credentials": "Vérification des identifiants..."
   },
   "escape": {
     "room1": {
@@ -315,6 +392,8 @@
     "victory_grail": "Graal atteint la base.",
     "defeat_base": "Base capturée.",
     "draw_condition": "400 tours.",
-    "got_it_play": "Compris !"
+    "got_it_play": "Compris !",
+    "c4_drop_red": "Cliquez sur une colonne pour poser votre pièce 🔴 Rouge",
+    "c4_drop_gold": "Cliquez sur une colonne pour poser votre pièce 🟡 Or"
   }
 }

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import type { PlayerPiece } from '@vibe-games/shared';
+import { useTranslation } from 'react-i18next';
 
 interface CellContentProps {
   value: PlayerPiece;
@@ -45,6 +46,7 @@ export const ConnectFourBoard: React.FC<ConnectFourBoardProps> = ({
   disabled,
   onAction,
 }) => {
+  const { t } = useTranslation('game');
   const [hoveredCol, setHoveredCol] = useState<number | null>(null);
 
   // Board dimensions
@@ -122,7 +124,9 @@ export const ConnectFourBoard: React.FC<ConnectFourBoardProps> = ({
             : 'opacity-0 scale-95 pointer-events-none select-none'
         }`}
       >
-        Click column to drop your {turn === 'X' ? '🔴 Red' : '🟡 Gold'} piece
+        {turn === 'X'
+          ? t('c4_drop_red', { defaultValue: 'Click column to drop your 🔴 Red piece' })
+          : t('c4_drop_gold', { defaultValue: 'Click column to drop your 🟡 Gold piece' })}
       </div>
 
       {/* Grid container */}

@@ -107,7 +107,84 @@
     "escape_solo_desc": "Una aventura en solitario. Resuelve cada sala para desbloquear la siguiente.",
     "enter_escape": "Entrar a Escape →",
     "system_update_title": "Actualización del sistema en curso",
-    "system_update_desc": "El sistema se está actualizando (versión {{rev}}). El juego sigue activo."
+    "system_update_desc": "El sistema se está actualizando (versión {{rev}}). El juego sigue activo.",
+    "bot_tag": {
+      "mill": {
+        "easy_random": "Juego aleatorio",
+        "easy_cowardly": "Evitación de bloqueos & Defensa",
+        "easy_greedy": "Cazador de material",
+        "easy_aggressive": "Cazador de molinos",
+        "medium_aggressive": "Material & Molinos",
+        "medium_defensive": "Bloqueo de amenazas",
+        "medium_mobile": "Movilidad de piezas",
+        "hard_tactical": "Minimax Profundidad 4",
+        "expert_garry": "Minimax Profundidad 5",
+        "legendary_magnus": "Minimax Profundidad 6",
+        "perfect_oracle": "Aperturas resueltas & Búsqueda posicional"
+      },
+      "connect_four": {
+        "easy_random": "Juego aleatorio",
+        "easy_cowardly": "Evitación de bloqueos & Defensa",
+        "easy_greedy": "Cazador de material",
+        "easy_aggressive": "Cazador de líneas",
+        "medium_aggressive": "Control central & Aperturas",
+        "medium_defensive": "Bloqueo defensivo",
+        "medium_mobile": "Alineación espaciada",
+        "hard_tactical": "Minimax Profundidad 4",
+        "expert_garry": "Minimax Profundidad 5",
+        "legendary_magnus": "Minimax Profundidad 6",
+        "perfect_oracle": "Búsqueda de alineación central",
+        "rl_novice": "Red neuronal (sin anticipación)",
+        "rl_intermediate": "Red neuronal + MCTS 50",
+        "rl_strong": "Red neuronal + MCTS 200",
+        "rl_master": "Red neuronal + MCTS 800"
+      },
+      "holy_grail": {
+        "easy_random": "Juego aleatorio",
+        "medium_aggressive": "Posicional & Combate",
+        "hard_tactical": "Búsqueda táctica",
+        "expert_smart": "Simulación 1 jugada"
+      }
+    },
+    "bot_help": {
+      "mill": {
+        "easy_random": "Randy juega movimientos completamente aleatorios. Ideal para principiantes.",
+        "easy_cowardly": "Connie busca superficialmente y odia ser bloqueada. Fácil de rodear.",
+        "easy_greedy": "Gordon valora el material sobre la seguridad. Puede ser atrapado.",
+        "easy_aggressive": "Arthur persigue estructuras de molino dejando sus piezas expuestas.",
+        "medium_aggressive": "Archie usa 3 semimovimientos priorizando molinos y conteo de material.",
+        "medium_defensive": "Debbie busca 3 semimovimientos priorizando bloquear amenazas del oponente.",
+        "medium_mobile": "Monty busca 3 semimovimientos priorizando la libertad de sus piezas.",
+        "hard_tactical": "Toby calcula 4 semimovimientos. Penalizará los errores tácticos.",
+        "expert_garry": "Garry evalúa 5 semimovimientos con heurísticas posicionales optimizadas. ¡Un reto!",
+        "legendary_magnus": "Magnus calcula 6 semimovimientos con pesos extremadamente optimizados. ¡Nivel legendario!",
+        "perfect_oracle": "El Oráculo usa evaluación posicional profunda y aperturas resueltas."
+      },
+      "connect_four": {
+        "easy_random": "Randy juega movimientos completamente aleatorios. Ideal para principiantes.",
+        "easy_cowardly": "Connie busca superficialmente y odia ser bloqueada.",
+        "easy_greedy": "Gordon valora el material sobre la seguridad.",
+        "easy_aggressive": "Arthur persigue estructuras de línea.",
+        "medium_aggressive": "Archie busca 3 semimovimientos priorizando conexión y alineación central.",
+        "medium_defensive": "Debbie busca 3 semimovimientos bloqueando amenazas de 3 en raya.",
+        "medium_mobile": "Monty busca 3 semimovimientos manteniendo conexiones flexibles.",
+        "hard_tactical": "Toby calcula 4 semimovimientos creando trampas de alineación.",
+        "expert_garry": "Garry evalúa 5 semimovimientos con heurísticas optimizadas.",
+        "legendary_magnus": "Magnus calcula 6 semimovimientos. ¡Nivel legendario!",
+        "perfect_oracle": "El Oráculo usa evaluación posicional profunda.",
+        "rl_novice": "⚡ Novato Neuronal usa una red neuronal pura (sin anticipación).",
+        "rl_intermediate": "⚡ Scout Neuronal combina una red neuronal con 50 simulaciones MCTS.",
+        "rl_strong": "⚡ Estratega Neuronal ejecuta 200 simulaciones MCTS.",
+        "rl_master": "⚡ Maestro Neuronal ejecuta 800 simulaciones MCTS. El bot más fuerte."
+      },
+      "holy_grail": {
+        "easy_random": "Randy HG juega movimientos completamente aleatorios.",
+        "medium_aggressive": "Archie HG juega un juego posicional apuntando a granjas y bases.",
+        "hard_tactical": "Toby HG calcula movimientos y secuencias de combate.",
+        "expert_smart": "Sophia simula todos los movimientos posibles y evalúa posiciones."
+      }
+    },
+    "checking_credentials": "Verificando credenciales..."
   },
   "escape": {
     "room1": {
@@ -315,6 +392,8 @@
     "victory_grail": "Grial en base.",
     "defeat_base": "Base perdida.",
     "draw_condition": "400 turnos.",
-    "got_it_play": "¡Jugar!"
+    "got_it_play": "¡Jugar!",
+    "c4_drop_red": "Haz clic en una columna para soltar tu pieza 🔴 Roja",
+    "c4_drop_gold": "Haz clic en una columna para soltar tu pieza 🟡 Dorada"
   }
 }

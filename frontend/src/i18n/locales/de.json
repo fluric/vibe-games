@@ -77,9 +77,9 @@
     "refresh_page": "Seite neu laden",
     "grail_quest": "Grail Quest",
     "active_player": "Aktiver Spieler",
-    "morris_rating_label": "Mühle Bewertung:",
-    "c4_rating_label": "4-Gewinnt Bewertung:",
-    "grail_rating_label": "Grals Bewertung:",
+    "morris_rating_label": "Mühle-Wertung:",
+    "c4_rating_label": "4-Gewinnt-Wertung:",
+    "grail_rating_label": "Grals-Wertung:",
     "wins": "Siege:",
     "losses": "Niederlagen:",
     "draws": "Unentschieden:",
@@ -107,7 +107,84 @@
     "escape_solo_desc": "Ein Solo-Abenteuer. Löse jeden Raum, um den nächsten freizuschalten.",
     "enter_escape": "Escape betreten →",
     "system_update_title": "Systemaktualisierung läuft",
-    "system_update_desc": "Das System wird aktualisiert (Version {{rev}}). Das Spiel bleibt aktiv."
+    "system_update_desc": "Das System wird aktualisiert (Version {{rev}}). Das Spiel bleibt aktiv.",
+    "bot_tag": {
+      "mill": {
+        "easy_random": "Zufälliges Spiel",
+        "easy_cowardly": "Blockierungs-Vermeidung & Verteidigung",
+        "easy_greedy": "Materialjäger",
+        "easy_aggressive": "Mühlenjäger",
+        "medium_aggressive": "Material & Mühlen",
+        "medium_defensive": "Bedrohungsblockierung",
+        "medium_mobile": "Figurenmobilität",
+        "hard_tactical": "Minimax Tiefe 4",
+        "expert_garry": "Minimax Tiefe 5",
+        "legendary_magnus": "Minimax Tiefe 6",
+        "perfect_oracle": "Gelöste Eröffnungen & Positionssuche"
+      },
+      "connect_four": {
+        "easy_random": "Zufälliges Spiel",
+        "easy_cowardly": "Blockierungs-Vermeidung & Verteidigung",
+        "easy_greedy": "Materialjäger",
+        "easy_aggressive": "Linienjäger",
+        "medium_aggressive": "Zentrumskontrolle & Eröffnungen",
+        "medium_defensive": "Defensives Blockieren",
+        "medium_mobile": "Ausgerichtete Ausrichtung",
+        "hard_tactical": "Minimax Tiefe 4",
+        "expert_garry": "Minimax Tiefe 5",
+        "legendary_magnus": "Minimax Tiefe 6",
+        "perfect_oracle": "Mittelpunktausrichtungssuche",
+        "rl_novice": "Neuronales Netz (Tiefe 0)",
+        "rl_intermediate": "Neuronales Netz + MCTS 50",
+        "rl_strong": "Neuronales Netz + MCTS 200",
+        "rl_master": "Neuronales Netz + MCTS 800"
+      },
+      "holy_grail": {
+        "easy_random": "Zufälliges Spiel",
+        "medium_aggressive": "Positionell & Kampf",
+        "hard_tactical": "Taktische Suche",
+        "expert_smart": "1-Zug-Simulation"
+      }
+    },
+    "bot_help": {
+      "mill": {
+        "easy_random": "Randy spielt völlig zufällige Züge. Ideal für absolute Anfänger.",
+        "easy_cowardly": "Connie sucht flach und hasst es, blockiert zu werden. Leicht zu umgehen.",
+        "easy_greedy": "Gordon bewertet Material über Sicherheit. Mit Vorausplanung fallbar.",
+        "easy_aggressive": "Arthur verfolgt einseitig Mühlenstrukturen, lässt oft eigene Steine exponiert.",
+        "medium_aggressive": "Archie verwendet 3 Halbzüge, priorisiert Mühlen und Materialzählung.",
+        "medium_defensive": "Debbie sucht 3 Halbzüge tief und priorisiert die Blockierung von Gegnern.",
+        "medium_mobile": "Monty sucht 3 Halbzüge, priorisiert die Freiheit seiner eigenen Steine.",
+        "hard_tactical": "Toby berechnet 4 Halbzüge im Voraus. Er bestraft taktische Fehler.",
+        "expert_garry": "Garry bewertet 5 Halbzüge mit optimierten positionellen Heuristiken. Eine echte Herausforderung!",
+        "legendary_magnus": "Magnus berechnet 6 Halbzüge mit extrem optimierten Gewichten. Legendäres Niveau!",
+        "perfect_oracle": "Das Orakel verwendet tiefe Positionsbewertung und gelöste Eröffnungen."
+      },
+      "connect_four": {
+        "easy_random": "Randy spielt völlig zufällige Züge. Ideal für absolute Anfänger.",
+        "easy_cowardly": "Connie sucht flach und hasst es, blockiert zu werden.",
+        "easy_greedy": "Gordon bewertet Material über Sicherheit.",
+        "easy_aggressive": "Arthur verfolgt Linienstrukturen.",
+        "medium_aggressive": "Archie sucht 3 Halbzüge, priorisiert Verbinden und Mittelpunktausrichtung.",
+        "medium_defensive": "Debbie sucht 3 Halbzüge, blockiert gegnerische 3-in-einer-Reihe-Bedrohungen.",
+        "medium_mobile": "Monty sucht 3 Halbzüge, erhält flexible Verbindungen.",
+        "hard_tactical": "Toby berechnet 4 Halbzüge, erstellt Ausrichtungsfallen.",
+        "expert_garry": "Garry bewertet 5 Halbzüge mit optimierten Heuristiken.",
+        "legendary_magnus": "Magnus berechnet 6 Halbzüge. Legendäres Niveau!",
+        "perfect_oracle": "Das Orakel verwendet tiefe Positionsbewertung.",
+        "rl_novice": "⚡ Neuronaler Neuling verwendet ein reines neuronales Netz (ohne Vorausschau).",
+        "rl_intermediate": "⚡ Neuronaler Pfadfinder kombiniert ein trainiertes neuronales Netz mit 50 MCTS-Simulationen.",
+        "rl_strong": "⚡ Neuronaler Stratege führt 200 MCTS-Simulationen durch.",
+        "rl_master": "⚡ Neuronaler Meister führt 800 MCTS-Simulationen durch. Der stärkste Bot."
+      },
+      "holy_grail": {
+        "easy_random": "Randy HG spielt völlig zufällige Züge.",
+        "medium_aggressive": "Archie HG spielt ein positionelles Spiel, zielt auf Farmen und Basen.",
+        "hard_tactical": "Toby HG berechnet Züge und Kampfsequenzen.",
+        "expert_smart": "Sophia simuliert alle möglichen Züge und bewertet Positionen."
+      }
+    },
+    "checking_credentials": "Anmeldedaten werden geprüft..."
   },
   "escape": {
     "room1": {
@@ -315,6 +392,8 @@
     "victory_grail": "Gral erreicht die Basis.",
     "defeat_base": "Heimatbasis erobert.",
     "draw_condition": "400 Züge gespielt.",
-    "got_it_play": "Verstanden, Los!"
+    "got_it_play": "Verstanden, Los!",
+    "c4_drop_red": "Spalte anklicken, um deinen 🔴 Roten Stein zu werfen",
+    "c4_drop_gold": "Spalte anklicken, um deinen 🟡 Gelben Stein zu werfen"
   }
 }

@@ -731,7 +731,7 @@ export function LobbyPage() {
       <div className="min-h-screen bg-neutral-950 text-neutral-100 flex items-center justify-center font-sans">
         <div className="flex flex-col items-center gap-4">
           <div className="w-12 h-12 rounded-full border-4 border-indigo-500/20 border-t-indigo-500 animate-spin" />
-          <p className="text-sm text-neutral-400 animate-pulse">Checking credentials...</p>
+          <p className="text-sm text-neutral-400 animate-pulse">{t('checking_credentials', { defaultValue: 'Checking credentials...' })}</p>
         </div>
       </div>
     );
@@ -1115,12 +1115,12 @@ export function LobbyPage() {
                         .sort((a, b) => a[1].elo - b[1].elo)
                         .map(([key, bot]) => (
                           <option key={key} value={key}>
-                            {BOT_EMOJIS[activeGameTab]?.[key] || "🤖"} {bot.username} — ELO {bot.elo} [{BOT_DESCRIPTIONS[activeGameTab]?.[key] || "AI Bot"}]
+                            {BOT_EMOJIS[activeGameTab]?.[key] || "🤖"} {bot.username} — ELO {bot.elo} [{t(`bot_tag.${activeGameTab}.${key}`, { defaultValue: BOT_DESCRIPTIONS[activeGameTab]?.[key] || 'AI Bot' })}]
                           </option>
                         ))}
                     </select>
                     <p className="text-[10px] text-neutral-500 mt-1">
-                      {BOT_HELP_TEXT[activeGameTab]?.[currentAiLevel] || "AI Bot will calculate moves based on difficulty."}
+                      {t(`bot_help.${activeGameTab}.${currentAiLevel}`, { defaultValue: BOT_HELP_TEXT[activeGameTab]?.[currentAiLevel] || 'AI Bot will calculate moves based on difficulty.' })}
                     </p>
                     <div className="border-t border-neutral-800/80 my-2"></div>
                   </>
