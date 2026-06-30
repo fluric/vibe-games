@@ -10,8 +10,8 @@ describe('OngoingMatchesPanel', () => {
     expect(screen.getByText('No active matches to spectate right now.')).toBeInTheDocument();
   });
 
-  it('renders a list of games with their types and players', () => {
-    const mockGames: GameDto[] = [
+  it('renders ongoing games correctly', () => {
+    const mockGames = [
       {
         id: 'game-1',
         gameType: 'connect_four',
@@ -32,7 +32,7 @@ describe('OngoingMatchesPanel', () => {
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       }
-    ];
+    ] as unknown as GameDto[];
 
     render(<OngoingMatchesPanel games={mockGames} onSpectate={vi.fn()} />);
     
@@ -48,7 +48,7 @@ describe('OngoingMatchesPanel', () => {
   });
 
   it('calls onSpectate with correct game ID when Spectate button is clicked', () => {
-    const mockGames: GameDto[] = [
+    const mockGames = [
       {
         id: 'game-1',
         gameType: 'connect_four',
@@ -59,7 +59,7 @@ describe('OngoingMatchesPanel', () => {
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       }
-    ];
+    ] as unknown as GameDto[];
     
     const mockOnSpectate = vi.fn();
     render(<OngoingMatchesPanel games={mockGames} onSpectate={mockOnSpectate} />);

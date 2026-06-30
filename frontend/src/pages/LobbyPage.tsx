@@ -281,7 +281,6 @@ export function LobbyPage() {
     localStorage.setItem('vibe-games-game-mode-holy_grail', gameModeHolyGrail);
   }, [gameModeHolyGrail]);
   const [leaderboardEntries, setLeaderboardEntries] = useState<LeaderboardEntryDto[]>([]);
-  const filteredLobbies = openGames.filter((g) => g.gameType === activeGameTab);
   const [loadingLeaderboard, setLoadingLeaderboard] = useState(false);
   const [leaderboardError, setLeaderboardError] = useState<string | null>(null);
 
