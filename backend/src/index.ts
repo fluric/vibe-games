@@ -109,6 +109,21 @@ async function bootstrap() {
       }
       request.user = user;
     }
+    // 3. Try Authorization: Bearer <token> header (used by escape API client)
+    const authHeader = request.headers['authorization'] as string;
+    if (authHeader?.startsWith('Bearer ')) {
+      const token = authHeader.slice(7);
+      try {
+        const decoded = jwt.verify(token, JWT_SECRET) as { userId: string };
+        const userRepo = AppDataSource.getRepository(User);
+        const user = await userRepo.findOneBy({ id: decoded.userId });
+        if (user) {
+          request.user = user;
+        }
+      } catch (err) {
+        // Invalid token — leave request.user unset
+      }
+    }
   });
 
   // ── Routes ─────────────────────────────────────────────────────────────────
