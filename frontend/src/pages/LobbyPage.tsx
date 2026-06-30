@@ -10,6 +10,7 @@ import { ActiveGamesPanel } from '../components/lobby/ActiveGamesPanel';
 import { JoinByCodePanel } from '../components/lobby/JoinByCodePanel';
 import { PublicLobbiesPanel } from '../components/lobby/PublicLobbiesPanel';
 import { LeaderboardPanel } from '../components/lobby/LeaderboardPanel';
+import { OngoingMatchesPanel } from '../components/lobby/OngoingMatchesPanel';
 
 const typedConfig = aiConfig as unknown as Record<'mill' | 'connect_four' | 'holy_grail', Record<string, { id: string; username: string; elo: number; type: string }>>;
 
@@ -155,6 +156,7 @@ export function LobbyPage() {
   const [forfeitGameId, setForfeitGameId] = useState<string | null>(null);
   const [openGames, setOpenGames] = useState<GameDto[]>([]);
   const [activeGames, setActiveGames] = useState<GameDto[]>([]);
+  const [ongoingGames, setOngoingGames] = useState<GameDto[]>([]);
   const [loadingLobby, setLoadingLobby] = useState(true);
   const [creatingGame, setCreatingGame] = useState(false);
   const [inviteCode, setInviteCode] = useState('');
@@ -367,10 +369,11 @@ export function LobbyPage() {
     if (!currentUser) return;
     try {
       const games = await api.listGames(undefined, "waiting");
-      
+      const ongoing = await api.listGames(undefined, "in_progress");
       
       // Filter out matches created by this player (since they can't play against themselves)
       setOpenGames(games.filter((g) => g.playerX?.id !== currentUser.id && g.playerO?.id !== currentUser.id));
+      setOngoingGames(ongoing);
       setLobbyError(null);
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Error updating lobby';
@@ -1173,6 +1176,18 @@ export function LobbyPage() {
           onNavigate={navigate}
         />
 
+        {/* Global Ongoing Matches (Spectate) */}
+        <div className="bg-neutral-900/60 border border-neutral-800 rounded-2xl p-6 backdrop-blur-md">
+          <div className="flex items-center gap-2 mb-4 pb-2 border-b border-neutral-800">
+            <span className="text-xl">📺</span>
+            <h3 className="text-lg font-bold text-white">Live Matches</h3>
+            <span className="text-xs text-neutral-500 ml-auto bg-neutral-950 px-2 py-1 rounded-md border border-neutral-800">
+              Spectator Mode
+            </span>
+          </div>
+          <OngoingMatchesPanel games={ongoingGames} onSpectate={(id) => navigate(`/game/${id}`)} />
+        </div>
+
         {/* Lobby and Invite Sections */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Public Lobby List */}
@@ -1223,7 +1238,7 @@ export function LobbyPage() {
               <PublicLobbiesPanel
                 lobbyError={lobbyError}
                 loadingLobby={loadingLobby}
-                filteredLobbies={filteredLobbies}
+                filteredLobbies={openGames}
                 syncStatus={syncStatus}
                 onJoinGame={handleJoinGame}
               />

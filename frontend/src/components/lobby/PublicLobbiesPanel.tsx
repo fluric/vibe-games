@@ -39,8 +39,13 @@ export function PublicLobbiesPanel({
               className="flex justify-between items-center p-4 rounded-xl bg-neutral-950 border border-neutral-800 hover:border-neutral-700 transition-all"
             >
               <div>
-                <div className="text-xs font-semibold text-neutral-300">
-                  {game.playerX?.username || 'Unknown Player'}'s Game
+                <div className="flex items-center gap-2">
+                  <div className="text-xs font-semibold text-neutral-300">
+                    {game.playerX?.username || 'Unknown Player'}'s Game
+                  </div>
+                  <span className="text-[9px] bg-neutral-800 text-neutral-400 px-1.5 py-0.5 rounded uppercase font-bold tracking-wider">
+                    {game.gameType.replace('_', ' ')}
+                  </span>
                 </div>
                 <div className="text-[10px] text-neutral-500 font-mono mt-0.5">
                   ID: {game.id.substring(0, 8)}...

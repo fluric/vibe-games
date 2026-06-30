@@ -66,4 +66,23 @@ test.describe('Vibe Games Landing Page', () => {
     expect(body.timestamp).toBeDefined();
     expect(body.database).toBe(true);
   });
+
+  test('should show Live Matches (Spectator Mode) panel', async ({ page }) => {
+    await page.goto('/');
+    
+    // Verify Live Matches heading exists
+    const liveMatchesHeading = page.locator('h3:has-text("Live Matches")');
+    await expect(liveMatchesHeading).toBeVisible();
+
+    // Verify Spectator Mode badge exists
+    const spectatorBadge = page.locator('text=Spectator Mode');
+    await expect(spectatorBadge).toBeVisible();
+
+    // Verify either games are listed or the fallback text is shown
+    const fallbackText = page.locator('text=No active matches to spectate right now.');
+    const spectateButton = page.locator('button:has-text("Spectate")').first();
+    
+    // Playwright locator OR condition
+    await expect(fallbackText.or(spectateButton)).toBeVisible();
+  });
 });
