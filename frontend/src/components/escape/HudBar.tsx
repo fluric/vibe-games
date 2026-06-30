@@ -1,4 +1,5 @@
 import { useEscapeRooms } from '../../data/escapeRooms';
+import { useTranslation } from 'react-i18next';
 
 interface Props {
   currentRoomId: number;
@@ -8,7 +9,8 @@ interface Props {
 
 /** Top HUD bar shown during an active room.
  *  Shows room title, progress dots, and a back button. */
-export function HudBar({ currentRoomId, roomsCleared, onBack }: Props) {
+export function HudBar({ roomsCleared, currentRoomId, onBack }: Props) {
+  const { t } = useTranslation('escape');
   const escapeRooms = useEscapeRooms();
   const room = escapeRooms.find((r) => r.id === currentRoomId);
 
@@ -20,7 +22,7 @@ export function HudBar({ currentRoomId, roomsCleared, onBack }: Props) {
         aria-label="Back to room selection"
         id="escape-hud-back-btn"
       >
-        ← Rooms
+        ← {t('rooms_btn', { defaultValue: 'Rooms' })}
       </button>
 
       <div className="escape-hud-center">

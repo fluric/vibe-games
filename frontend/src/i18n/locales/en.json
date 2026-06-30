@@ -153,7 +153,8 @@
     "no_one_escaped": "No one has fully escaped yet. Be the first!",
     "player_col": "Player",
     "rooms_col": "Rooms",
-    "escaped_on_col": "Escaped On"
+    "escaped_on_col": "Escaped On",
+    "rooms_btn": "Rooms"
   },
   "game": {
     "waiting_for_opponent": "Waiting for opponent to join...",

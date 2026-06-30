@@ -263,7 +263,8 @@
     "no_one_escaped": "Personne ne s'est encore évadé. Soyez le premier !",
     "player_col": "Joueur",
     "rooms_col": "Salles",
-    "escaped_on_col": "Évadé le"
+    "escaped_on_col": "Évadé le",
+    "rooms_btn": "Salles"
   },
   "game": {
     "waiting_for_opponent": "En attente de l'adversaire...",
