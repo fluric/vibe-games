@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-import type { CipherRoomConfig } from '../../data/escapeRooms';
+import type { CipherRoomConfig } from '../../../data/escapeRooms';
 
 const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 

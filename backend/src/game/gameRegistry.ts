@@ -80,4 +80,5 @@ export const ENGINES: Record<GameType, IGameEngine> = {
   connect_four: ConnectFourEngineWithRL,
   tic_tac_toe: null as any, // Placeholder for future games
   holy_grail: HolyGrailEngine,
+  escape: null as any, // Single player puzzle
 };

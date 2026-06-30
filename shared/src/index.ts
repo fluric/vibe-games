@@ -44,7 +44,7 @@ export interface AuthStatusResponse {
 
 // ─── Game ─────────────────────────────────────────────────────────────────────
 
-export type GameType = 'mill' | 'connect_four' | 'tic_tac_toe' | 'holy_grail';
+export type GameType = 'mill' | 'connect_four' | 'tic_tac_toe' | 'holy_grail' | 'escape';
 
 export type GameStatus = 'waiting' | 'in_progress' | 'finished';
 
@@ -150,4 +150,29 @@ export interface LeaderboardEntryDto {
 export interface LeaderboardResponse {
   gameType: GameType;
   entries: LeaderboardEntryDto[];
+}
+
+// ─── Escape ───────────────────────────────────────────────────────────────────
+
+export interface EscapeRoomProgressDto {
+  roomId: number;
+  solved: boolean;
+  solvedAt: string | null; // ISO 8601
+}
+
+export interface EscapeProgressResponse {
+  rooms: EscapeRoomProgressDto[];
+  roomsCleared: number;
+}
+
+export interface EscapeLeaderboardEntry {
+  userId: string;
+  username: string;
+  avatarUrl?: string | null;
+  roomsCleared: number;
+  firstClearedAt: string; // ISO 8601 — when the player first fully escaped
+}
+
+export interface EscapeLeaderboardResponse {
+  entries: EscapeLeaderboardEntry[];
 }

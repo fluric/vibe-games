@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { FuseRoomConfig } from '../../data/escapeRooms';
+import type { FuseRoomConfig } from '../../../data/escapeRooms';
 
 interface Props {
   config: FuseRoomConfig;
