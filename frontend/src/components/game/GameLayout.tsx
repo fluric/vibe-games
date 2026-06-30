@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import type { GameDto } from '@vibe-games/shared';
 import { PlayerStats } from './PlayerStats';
 import * as audio from '../AudioEffects';
+import { useTranslation } from 'react-i18next';
 
 interface GameLayoutProps {
   game: GameDto;
@@ -34,6 +35,7 @@ export function GameLayout({
   copiedLink,
   children
 }: GameLayoutProps) {
+  const { t } = useTranslation('game');
   const isHolyGrail = game.gameType === 'holy_grail';
 
   return (
@@ -49,7 +51,7 @@ export function GameLayout({
               onClick={() => audio.playPlaceSound()}
               className="flex items-center gap-2 text-sm text-neutral-400 hover:text-white transition-colors"
             >
-              ⬅️ Leave Match
+              {t('leave_match', { defaultValue: '⬅️ Leave Match' })}
             </Link>
 
             {game.status === 'waiting' && (game.playerX?.id === userId || game.playerO?.id === userId) && (
@@ -58,7 +60,7 @@ export function GameLayout({
                 onClick={onCancelGame}
                 className="px-3 py-1.5 rounded-lg bg-rose-950/40 hover:bg-rose-900/40 text-xs font-semibold text-rose-400 transition-all border border-rose-900/30 hover:border-rose-800/50 active:scale-95"
               >
-                Cancel Game
+                {t('cancel_game', { defaultValue: 'Cancel Game' })}
               </button>
             )}
 
@@ -68,7 +70,7 @@ export function GameLayout({
                 onClick={onForfeitGame}
                 className="px-3 py-1.5 rounded-lg bg-rose-950/40 hover:bg-rose-900/40 text-xs font-semibold text-rose-400 transition-all border border-rose-900/30 hover:border-rose-800/50 active:scale-95"
               >
-                Forfeit Match
+                {t('forfeit_match', { defaultValue: 'Forfeit Match' })}
               </button>
             )}
 
@@ -78,16 +80,16 @@ export function GameLayout({
                 onClick={onShowRules}
                 className="px-3 py-1.5 rounded-lg bg-indigo-950/40 hover:bg-indigo-900/40 text-xs font-semibold text-indigo-400 transition-all border border-indigo-900/30 hover:border-indigo-800/50 active:scale-95 flex items-center gap-1.5"
               >
-                ℹ️ Rules
+                {t('rules', { defaultValue: 'ℹ️ Rules' })}
               </button>
             )}
           </div>
           <div className="flex flex-col items-end gap-1">
             <div className="text-xs text-neutral-500 font-mono">
-              Game ID: {gameId.substring(0, 8)}...
+              {t('game_id', { defaultValue: 'Game ID:' })} {gameId.substring(0, 8)}...
             </div>
             <div className="text-[10px] text-neutral-600 font-mono">
-              Your ID: {userId.substring(0, 8)}...
+              {t('your_id', { defaultValue: 'Your ID:' })} {userId.substring(0, 8)}...
             </div>
           </div>
         </div>
@@ -131,9 +133,9 @@ export function GameLayout({
 
         {game.status === 'waiting' && (
           <div className="bg-neutral-900/50 border border-neutral-800 rounded-2xl p-6 mt-4 backdrop-blur-md flex flex-col items-center text-center gap-3">
-            <div className="text-sm font-bold text-white">Invite a Friend to Play</div>
+            <div className="text-sm font-bold text-white">{t('invite_friend', { defaultValue: 'Invite a Friend to Play' })}</div>
             <p className="text-xs text-neutral-400 max-w-sm">
-              Copy this link and send it to your opponent. When they open it, they will join the game as Player O.
+              {t('invite_desc', { defaultValue: 'Copy this link and send it to your opponent. When they open it, they will join the game as Player O.' })}
             </p>
             <div className="flex items-center gap-2 bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2 w-full max-w-md justify-between font-mono text-xs">
               <span className="text-neutral-500 truncate mr-2 select-all">
@@ -147,7 +149,7 @@ export function GameLayout({
                     : 'bg-neutral-800 text-neutral-300 hover:bg-neutral-700'
                 }`}
               >
-                {copiedLink ? '✓ Copied!' : 'Copy Link'}
+                {copiedLink ? t('copied', { defaultValue: '✓ Copied!' }) : t('copy_link', { defaultValue: 'Copy Link' })}
               </button>
             </div>
           </div>

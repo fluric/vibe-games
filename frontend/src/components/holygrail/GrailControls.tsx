@@ -1,5 +1,6 @@
-import type { HolyGrailCell } from '@vibe-games/shared';
 import { formatCardValue } from './utils';
+import { useTranslation } from 'react-i18next';
+import type { HolyGrailCell } from '@vibe-games/shared';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Combat = any;
@@ -72,6 +73,7 @@ export const GrailControls: React.FC<GrailControlsProps> = ({
   retreatTargetKey,
   setRetreatTargetKey
 }) => {
+  const { t } = useTranslation('game');
   const disabled = isBoardLocked;
 
   // Helpers copied directly from HolyGrailBoard because they are tightly coupled to the modal log UI
@@ -115,8 +117,8 @@ export const GrailControls: React.FC<GrailControlsProps> = ({
       {/* Move sliders / controllers */}
       {isMyTurn && phase === 'move' && selectedCellKey && !isReviewingLastTurn && (
         <div className="bg-neutral-900/80 border border-neutral-800 p-4 rounded-2xl backdrop-blur-md">
-          <h3 className="text-sm font-semibold text-neutral-400 mb-1 uppercase tracking-wider">Move Soldiers</h3>
-          <div className="text-xs text-neutral-500 mb-3">Origin: {selectedCellKey}</div>
+          <h3 className="text-sm font-semibold text-neutral-400 mb-1 uppercase tracking-wider">{t('move_soldiers', { defaultValue: 'Move Soldiers' })}</h3>
+          <div className="text-xs text-neutral-500 mb-3">{t('origin', { defaultValue: 'Origin:' })} {selectedCellKey}</div>
 
           {moveTargetKey ? (
             <div className="flex flex-col gap-4">
@@ -124,14 +126,14 @@ export const GrailControls: React.FC<GrailControlsProps> = ({
                 <div className="text-xs bg-amber-500/10 border border-amber-500/30 text-amber-400 p-3.5 rounded-xl flex items-start gap-2.5 shadow-lg">
                   <span className="text-base">⚠️</span>
                   <div className="leading-relaxed text-left">
-                    <strong className="text-white block mb-0.5 font-bold">Carrying the Grail!</strong>
-                    All {board[selectedCellKey]?.soldiers.length} units in this hex must be moved together. The stack must contain your King (K) to transport the Grail.
+                    <strong className="text-white block mb-0.5 font-bold">{t('carrying_grail', { defaultValue: 'Carrying the Grail!' })}</strong>
+                    {t('carrying_grail_desc', { defaultValue: 'All units in this hex must be moved together. The stack must contain your King (K) to transport the Grail.' }).replace('{count}', String(board[selectedCellKey]?.soldiers.length))}
                   </div>
                 </div>
               ) : (
                 <div>
                   <div className="flex justify-between text-sm text-neutral-300 mb-1">
-                    <span>Count to move:</span>
+                    <span>{t('count_to_move', { defaultValue: 'Count to move:' })}</span>
                     <span className="font-bold text-white">{moveCount} / {board[selectedCellKey]?.soldiers.length}</span>
                   </div>
                   <input
@@ -150,12 +152,12 @@ export const GrailControls: React.FC<GrailControlsProps> = ({
                 disabled={submittingMove || isBoardLocked}
                 className="w-full py-2.5 rounded-xl bg-indigo-600 text-white font-semibold hover:bg-indigo-500 disabled:opacity-40 transition-all"
               >
-                Move to {moveTargetKey}
+                {t('move_to', { defaultValue: 'Move to' })} {moveTargetKey}
               </button>
             </div>
           ) : (
             <div className="text-center py-4 text-xs text-neutral-500 italic border border-dashed border-neutral-800 rounded-xl">
-              Click an adjacent hex to set target destination.
+              {t('click_adjacent_to_move', { defaultValue: 'Click an adjacent hex to set target destination.' })}
             </div>
           )}
         </div>
@@ -297,22 +299,22 @@ export const GrailControls: React.FC<GrailControlsProps> = ({
                 </button>
 
                 <h3 className="text-xl font-bold text-white mb-1 flex items-center gap-2">
-                  <span>⚔️</span> Contested Combat Resolution
+                  <span>⚔️</span> {t('contested_combat_resolution', { defaultValue: 'Contested Combat Resolution' })}
                 </h3>
-                <div className="text-xs text-neutral-500 mb-4">Cell: {combat.cellKey} {isHill && '(Hill Defense Active ⛰️)'}</div>
+                <div className="text-xs text-neutral-500 mb-4">{t('cell', { defaultValue: 'Cell:' })} {combat.cellKey} {isHill && `(${t('hill_defense_active', { defaultValue: 'Hill Defense Active ⛰️' })})`}</div>
 
                 {/* Attacker vs Defender top cards visualization */}
                 <div className="flex items-center justify-around bg-neutral-950 p-5 rounded-2xl border border-neutral-800 mb-4">
                   {/* Attacker side */}
                   <div className="flex flex-col items-center gap-1">
-                    <span className={`text-[10px] font-semibold ${attLabelColor} uppercase tracking-widest`}>Attacker</span>
+                    <span className={`text-[10px] font-semibold ${attLabelColor} uppercase tracking-widest`}>{t('attacker', { defaultValue: 'Attacker' })}</span>
                     <div className={`w-16 h-22 border-2 ${attCardClass} rounded-xl flex items-center justify-center text-2xl font-black relative ${
                       (isRevealingAttacker || isTransitioningNext) ? 'animate-card-flip' : ''
                     }`}>
                       {displayedAttackerVal !== undefined ? formatCardValue(displayedAttackerVal) : '?'}
                       {displayedAttackerVal === 13 && <span className="absolute -top-3 text-sm">👑</span>}
                     </div>
-                    <span className="text-xs text-neutral-500">{combat.attackerRemainingCount} left</span>
+                    <span className="text-xs text-neutral-500">{combat.attackerRemainingCount} {t('left', { defaultValue: 'left' })}</span>
                     
                     {/* Remaining Attacker Stack Preview */}
                     <div className="flex gap-1 mt-1.5 max-w-[140px] overflow-x-auto justify-center">
@@ -345,7 +347,7 @@ export const GrailControls: React.FC<GrailControlsProps> = ({
 
                   {/* Defender side */}
                   <div className="flex flex-col items-center gap-1">
-                    <span className={`text-[10px] font-semibold ${defLabelColor} uppercase tracking-widest font-mono`}>Defender</span>
+                    <span className={`text-[10px] font-semibold ${defLabelColor} uppercase tracking-widest font-mono`}>{t('defender', { defaultValue: 'Defender' })}</span>
                     
                     <div className="flex gap-2">
                       {/* Card 1 */}
@@ -367,7 +369,7 @@ export const GrailControls: React.FC<GrailControlsProps> = ({
                       )}
                     </div>
                     
-                    <span className="text-xs text-neutral-500">{combat.defenderRemainingCount} left</span>
+                    <span className="text-xs text-neutral-500">{combat.defenderRemainingCount} {t('left', { defaultValue: 'left' })}</span>
 
                     {/* Remaining Defender Stack Preview */}
                     <div className="flex gap-1 mt-1.5 max-w-[140px] overflow-x-auto justify-center">
@@ -399,12 +401,12 @@ export const GrailControls: React.FC<GrailControlsProps> = ({
 
                 {/* Duel Resolution Log Panel */}
                 <div className="mb-4">
-                  <div className="text-[10px] font-semibold text-neutral-400 mb-1 uppercase tracking-wide">Combat Log</div>
+                  <div className="text-[10px] font-semibold text-neutral-400 mb-1 uppercase tracking-wide">{t('combat_log', { defaultValue: 'Combat Log' })}</div>
                   <div className="max-h-24 overflow-y-auto bg-neutral-950 border border-neutral-800/80 rounded-xl p-2.5 flex flex-col gap-1 shadow-inner scrollbar-thin">
                     {combatLogs.length > 0 ? (
                       combatLogs.map((log: any, idx: number) => renderCombatLogEntry(log, idx))
                     ) : (
-                      <div className="text-[10px] text-neutral-600 italic text-center py-2">No duels resolved yet in this combat.</div>
+                      <div className="text-[10px] text-neutral-600 italic text-center py-2">{t('no_duels_resolved', { defaultValue: 'No duels resolved yet in this combat.' })}</div>
                     )}
                   </div>
                 </div>
@@ -416,14 +418,14 @@ export const GrailControls: React.FC<GrailControlsProps> = ({
                     disabled={submittingMove || disabled || isAnimating}
                     className="w-full py-3 rounded-xl bg-red-600 hover:bg-red-500 font-bold text-white shadow-lg shadow-red-700/20 transition-all duration-200 hover:scale-[1.01] active:scale-95"
                   >
-                    Duel Top Cards!
+                    {t('duel_top_cards', { defaultValue: 'Duel Top Cards!' })}
                   </button>
 
                   {/* Retreat selection */}
                   <div className="border-t border-neutral-800/80 pt-3 mt-1">
-                    <div className="text-xs font-semibold text-neutral-400 mb-1.5 uppercase tracking-wide">Retreat to Friendly Cell</div>
+                    <div className="text-xs font-semibold text-neutral-400 mb-1.5 uppercase tracking-wide">{t('retreat_to_friendly_cell', { defaultValue: 'Retreat to Friendly Cell' })}</div>
                     {adjacentFriendly.length === 0 ? (
-                      <div className="text-xs text-neutral-600 italic">No friendly adjacent cells available for retreat.</div>
+                      <div className="text-xs text-neutral-600 italic">{t('no_friendly_adjacent', { defaultValue: 'No friendly adjacent cells available for retreat.' })}</div>
                     ) : (
                       <div className="flex flex-wrap gap-1.5">
                         {adjacentFriendly.map((key: string) => (
@@ -455,7 +457,7 @@ export const GrailControls: React.FC<GrailControlsProps> = ({
                             : 'border-rose-600/40 text-rose-400 hover:bg-rose-950/70'
                         }`}
                       >
-                        Execute Retreat to {retreatTargetKey}
+                        {t('execute_retreat_to', { defaultValue: 'Execute Retreat to' })} {retreatTargetKey}
                       </button>
                     )}
                   </div>

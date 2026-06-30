@@ -1,4 +1,5 @@
 import { formatCardValue } from './utils';
+import { useTranslation } from 'react-i18next';
 
 export interface CardHandProps {
   activeHand: { value: number; revealed: boolean }[];
@@ -30,19 +31,20 @@ export const CardHand: React.FC<CardHandProps> = ({
   onAction,
   setSelectedCellKey
 }) => {
+  const { t } = useTranslation('game');
   return (
     <div 
       className={`w-full max-w-[560px] bg-neutral-900/80 border border-neutral-800/80 px-5 py-3 rounded-2xl backdrop-blur-md flex flex-col items-center gap-3 shadow-xl min-h-[195px] h-[195px] justify-center transition-all duration-300 ${!canDeploy ? 'border-neutral-900/50 bg-neutral-900/40 opacity-70' : ''}`}
     >
       <div className="flex justify-between items-center w-full text-xs font-semibold text-neutral-400 px-1">
-        <span>YOUR HAND ({activeHand.length} cards)</span>
+        <span>{t('your_hand', { defaultValue: 'YOUR HAND' })} ({activeHand.length} {t('cards', { defaultValue: 'cards' })})</span>
         <div className="flex items-center gap-3">
           {!isMyTurn ? (
-            <span className="text-neutral-500 font-mono uppercase tracking-wider text-[10px]">Opponent's Turn</span>
+            <span className="text-neutral-500 font-mono uppercase tracking-wider text-[10px]">{t('opponents_turn', { defaultValue: 'Opponent\'s Turn' })}</span>
           ) : isReviewingLastTurn ? (
-            <span className="text-neutral-500 font-mono uppercase tracking-wider text-[10px]">Review Phase Active</span>
+            <span className="text-neutral-500 font-mono uppercase tracking-wider text-[10px]">{t('review_phase', { defaultValue: 'Review Phase Active' })}</span>
           ) : phase !== 'deploy' ? (
-            <span className="text-neutral-500 font-mono uppercase tracking-wider text-[10px]">Deploy Phase Only</span>
+            <span className="text-neutral-500 font-mono uppercase tracking-wider text-[10px]">{t('deploy_phase_only', { defaultValue: 'Deploy Phase Only' })}</span>
           ) : (
             <>
               {selectedCellKey && activeHand.length > 0 && (
@@ -61,16 +63,16 @@ export const CardHand: React.FC<CardHandProps> = ({
                   disabled={isBoardLocked || submittingMove}
                   className="px-2 py-1 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded text-[10px] transition-all cursor-pointer shadow-md hover:scale-105 active:scale-95"
                 >
-                  Deploy All to {selectedCellKey}
+                  {t('deploy_all_to', { defaultValue: 'Deploy All to' })} {selectedCellKey}
                 </button>
               )}
-              <span>{selectedCellKey ? `Click a card to deploy to ${selectedCellKey}` : 'Click a card, then click a highlighted cell'}</span>
+              <span>{selectedCellKey ? t('click_card_to_deploy', { defaultValue: 'Click a card to deploy to' }) + ` ${selectedCellKey}` : t('click_card_then_cell', { defaultValue: 'Click a card, then click a highlighted cell' })}</span>
             </>
           )}
         </div>
       </div>
       {activeHand.length === 0 ? (
-        <div className="text-center py-6 text-neutral-600 text-sm italic">Empty hand</div>
+        <div className="text-center py-6 text-neutral-600 text-sm italic">{t('empty_hand', { defaultValue: 'Empty hand' })}</div>
       ) : (
         <div className={`flex flex-nowrap overflow-x-auto justify-start gap-3 w-full pb-1.5 scrollbar-thin transition-all duration-300 ${!canDeploy ? 'opacity-30 grayscale saturate-0 pointer-events-none' : ''}`}>
           {activeHand.map((card, idx) => {
@@ -93,7 +95,7 @@ export const CardHand: React.FC<CardHandProps> = ({
                 <span className="text-[9px] font-bold self-start">{formatCardValue(card.value)}</span>
                 <span className="text-xl font-black">{formatCardValue(card.value)}</span>
                 <span className="text-[7px] uppercase font-bold tracking-tight text-neutral-500 self-end">
-                  {card.value === 13 ? 'King' : card.value === 12 ? 'Queen' : card.value === 11 ? 'Jack' : 'Sol'}
+                  {card.value === 13 ? t('king', { defaultValue: 'King' }) : card.value === 12 ? t('queen', { defaultValue: 'Queen' }) : card.value === 11 ? t('jack', { defaultValue: 'Jack' }) : t('sol', { defaultValue: 'Sol' })}
                 </span>
               </button>
             );
