@@ -74,7 +74,19 @@
     "subtitle": "Select a game and challenge players in real time",
     "player": "Player:",
     "version_mismatch_title": "Critical version mismatch detected",
-    "refresh_page": "Refresh Page"
+    "refresh_page": "Refresh Page",
+    "game_type": {
+      "mill": "Nine Men's Morris",
+      "connect_four": "Connect Four",
+      "tic_tac_toe": "Tic Tac Toe",
+      "holy_grail": "Holy Grail"
+    },
+    "your_turn": "Your Turn",
+    "opponent_turn": "Opponent Turn",
+    "copied": "Copied",
+    "copy_link": "Copy Link",
+    "resume_match": "Resume Match",
+    "forfeit": "Forfeit"
   },
   "escape": {
     "room1": {

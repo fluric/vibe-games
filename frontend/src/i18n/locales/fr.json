@@ -184,7 +184,19 @@
         "expert_smart": "Sophia simule tous les coups possibles et évalue les positions."
       }
     },
-    "checking_credentials": "Vérification des identifiants..."
+    "checking_credentials": "Vérification des identifiants...",
+    "game_type": {
+      "mill": "Moulin",
+      "connect_four": "Puissance 4",
+      "tic_tac_toe": "Morpion",
+      "holy_grail": "Graal"
+    },
+    "your_turn": "Ton Tour",
+    "opponent_turn": "Tour Adverse",
+    "copied": "Copié",
+    "copy_link": "Copier Lien",
+    "resume_match": "Reprendre Match",
+    "forfeit": "Forfait"
   },
   "escape": {
     "room1": {

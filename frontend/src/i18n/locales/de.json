@@ -184,7 +184,19 @@
         "expert_smart": "Sophia simuliert alle möglichen Züge und bewertet Positionen."
       }
     },
-    "checking_credentials": "Anmeldedaten werden geprüft..."
+    "checking_credentials": "Anmeldedaten werden geprüft...",
+    "game_type": {
+      "mill": "Mühle",
+      "connect_four": "4 Gewinnt",
+      "tic_tac_toe": "Tic-Tac-Toe",
+      "holy_grail": "Gral"
+    },
+    "your_turn": "Dein Zug",
+    "opponent_turn": "Gegner am Zug",
+    "copied": "Kopiert",
+    "copy_link": "Link kopieren",
+    "resume_match": "Fortsetzen",
+    "forfeit": "Aufgeben"
   },
   "escape": {
     "room1": {

@@ -46,7 +46,7 @@ export function PublicLobbiesPanel({
                     {t('players_game', { defaultValue: '{{name}}\'s Game', name: game.playerX?.username || t('unknown_player', { defaultValue: 'Unknown Player' }) })}
                   </div>
                   <span className="text-[9px] bg-neutral-800 text-neutral-400 px-1.5 py-0.5 rounded uppercase font-bold tracking-wider">
-                    {game.gameType.replace('_', ' ')}
+                    {t(`game_type.${game.gameType}`, { defaultValue: game.gameType.replace('_', ' ') })}
                   </span>
                 </div>
                 <div className="text-[10px] text-neutral-500 font-mono mt-0.5">

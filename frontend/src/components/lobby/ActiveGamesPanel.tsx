@@ -53,7 +53,7 @@ export function ActiveGamesPanel({
                     )}
                   </span>
                   <span className="text-[9px] bg-neutral-800 text-neutral-400 px-1.5 py-0.5 rounded uppercase font-bold tracking-wider">
-                    {game.gameType.replace('_', ' ')}
+                    {t(`game_type.${game.gameType}`, { defaultValue: game.gameType.replace('_', ' ') })}
                   </span>
                   {!isWaiting && (
                     <span
@@ -63,7 +63,7 @@ export function ActiveGamesPanel({
                           : 'bg-neutral-800 text-neutral-400 border border-neutral-700/50'
                       }`}
                     >
-                      {isMyTurn ? '🟢 Your Turn' : '🕒 Opponent Turn'}
+                    {isMyTurn ? `🟢 ${t('your_turn', { defaultValue: 'Your Turn' })}` : `🕒 ${t('opponent_turn', { defaultValue: 'Opponent Turn' })}`}
                     </span>
                   )}
                 </div>
@@ -79,14 +79,14 @@ export function ActiveGamesPanel({
                       onClick={() => onCopyLink(game.id)}
                       className="px-3 py-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-xs font-medium text-neutral-300 transition-all border border-neutral-700/50 hover:border-neutral-600 active:scale-95 flex items-center gap-1"
                     >
-                      {copiedId === game.id ? '✓ Copied' : '🔗 Copy Link'}
+                      {copiedId === game.id ? `✓ ${t('copied', { defaultValue: 'Copied' })}` : `🔗 ${t('copy_link', { defaultValue: 'Copy Link' })}`}
                     </button>
                     <button
                       type="button"
                       onClick={() => onCancelGame(game.id)}
                       className="px-3 py-1.5 rounded-lg bg-rose-950/40 hover:bg-rose-900/40 text-xs font-semibold text-rose-400 transition-all border border-rose-900/30 hover:border-rose-800/50 active:scale-95"
                     >
-                      Cancel
+                      {t('cancel', { defaultValue: 'Cancel' })}
                     </button>
                   </>
                 ) : (
@@ -96,14 +96,14 @@ export function ActiveGamesPanel({
                       onClick={() => onNavigate(`/game/${game.id}`)}
                       className="px-4 py-1.5 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-xs font-bold text-white transition-all shadow-lg shadow-indigo-600/10 active:scale-95"
                     >
-                      Resume Match
+                      {t('resume_match', { defaultValue: 'Resume Match' })}
                     </button>
                     <button
                       type="button"
                       onClick={() => onForfeitGame(game.id)}
                       className="px-3 py-1.5 rounded-lg bg-rose-950/40 hover:bg-rose-900/40 text-xs font-semibold text-rose-400 transition-all border border-rose-900/30 hover:border-rose-800/50 active:scale-95"
                     >
-                      Forfeit
+                      {t('forfeit', { defaultValue: 'Forfeit' })}
                     </button>
                   </div>
                 )}

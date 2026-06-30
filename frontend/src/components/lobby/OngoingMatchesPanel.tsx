@@ -23,7 +23,7 @@ export function OngoingMatchesPanel({ games, onSpectate }: OngoingMatchesPanelPr
           <div className="flex justify-between items-start">
             <div className="flex items-center gap-2">
               <span className="text-[10px] bg-neutral-800 text-neutral-400 px-2 py-0.5 rounded-full uppercase font-bold tracking-wider">
-                {g.gameType.replace('_', ' ')}
+                {t(`game_type.${g.gameType}`, { defaultValue: g.gameType.replace('_', ' ') })}
               </span>
               <span className="text-[10px] text-emerald-500 font-bold tracking-widest uppercase flex items-center gap-1">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>

@@ -184,7 +184,19 @@
         "expert_smart": "Sophia simula todos los movimientos posibles y evalúa posiciones."
       }
     },
-    "checking_credentials": "Verificando credenciales..."
+    "checking_credentials": "Verificando credenciales...",
+    "game_type": {
+      "mill": "Molino",
+      "connect_four": "4 en Raya",
+      "tic_tac_toe": "Tres en raya",
+      "holy_grail": "Grial"
+    },
+    "your_turn": "Tu Turno",
+    "opponent_turn": "Turno Oponente",
+    "copied": "Copiado",
+    "copy_link": "Copiar Enlace",
+    "resume_match": "Reanudar",
+    "forfeit": "Rendirse"
   },
   "escape": {
     "room1": {
