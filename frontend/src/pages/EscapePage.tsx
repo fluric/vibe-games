@@ -14,8 +14,6 @@ import { EscapeLeaderboard } from '../components/escape/EscapeLeaderboard';
 import { KeypadPuzzle } from '../components/escape/puzzles/KeypadPuzzle';
 import { CipherWheelPuzzle } from '../components/escape/puzzles/CipherWheelPuzzle';
 import { FuseBoxPuzzle } from '../components/escape/puzzles/FuseBoxPuzzle';
-import { SymbolGridPuzzle } from '../components/escape/puzzles/SymbolGridPuzzle';
-import { ValvesPuzzle } from '../components/escape/puzzles/ValvesPuzzle';
 
 import { useTranslation } from 'react-i18next';
 
@@ -117,10 +115,6 @@ export function EscapePage() {
           return <CipherWheelPuzzle config={room.config} onSolved={handlePuzzleSolved} />;
         case 'fuse':
           return <FuseBoxPuzzle config={room.config} onSolved={handlePuzzleSolved} />;
-        case 'symbol_grid':
-          return <SymbolGridPuzzle config={room.config} onSolved={handlePuzzleSolved} />;
-        case 'valves':
-          return <ValvesPuzzle config={room.config} onSolved={handlePuzzleSolved} />;
       }
     };
 

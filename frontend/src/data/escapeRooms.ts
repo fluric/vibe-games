@@ -129,45 +129,5 @@ export function useEscapeRooms(): EscapeRoom[] {
         ]
       },
     },
-    {
-      id: 4,
-      name: t('room4.name', { defaultValue: 'The Ancient Relic' }),
-      description: t('room4.description', { defaultValue: 'A stone pedestal holds a grid of 9 carved symbols. The walls are covered in ancient murals.' }),
-      atmosphere: t('room4.atmosphere', { defaultValue: 'Dust motes dance in a shaft of light. The air is old.' }),
-      config: {
-        puzzleType: 'symbol_grid',
-        symbols: ['👁️', '🐍', '🐦', '☀️', '🌙', '⭐', '🌊', '🔥', '⛰️'],
-        solutionSequence: [2, 0, 8], // Initial 3-step sequence
-        clues: [
-          t('room4.clue1', { defaultValue: "1. The relic demands perfect memory." }),
-          t('room4.clue2', { defaultValue: "2. Watch the sequence." }),
-          t('room4.clue3', { defaultValue: "3. Repeat it to prove your worth." }),
-          t('room4.clue4', { defaultValue: "4. The sequence grows with each success." })
-        ]
-      },
-    },
-    {
-      id: 5,
-      name: t('room5.name', { defaultValue: 'The Boiler Room' }),
-      description: t('room5.description', { defaultValue: 'Pipes line the walls, hissing with steam. Four rusty valves control the pressure.' }),
-      atmosphere: t('room5.atmosphere', { defaultValue: 'Heat radiates. Metal groans. Balance the system.' }),
-      config: {
-        puzzleType: 'valves',
-        valves: [
-          { id: 'A', label: t('room5.valveA', { defaultValue: 'Main' }) },
-          { id: 'B', label: t('room5.valveB', { defaultValue: 'Aux' }) },
-          { id: 'C', label: t('room5.valveC', { defaultValue: 'Flow' }) },
-          { id: 'D', label: t('room5.valveD', { defaultValue: 'Vent' }) }
-        ],
-        maxValue: 5,
-        solution: [4, 2, 5, 1], // The hidden code
-        clues: [
-          t('room5.clue1', { defaultValue: "1. Set the valves and test the pressure." }),
-          t('room5.clue2', { defaultValue: "2. 🟢 = Correct pressure on the correct valve." }),
-          t('room5.clue3', { defaultValue: "3. 🟡 = Correct pressure, but on the wrong valve." }),
-          t('room5.clue4', { defaultValue: "4. You have 10 attempts to stabilize the system." })
-        ]
-      },
-    },
   ], [t]);
 }

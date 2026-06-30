@@ -123,15 +123,18 @@ class MCTS:
             node = self._select(root)
 
             if node.env.is_terminal():
-                # Terminal node: back-propagate actual outcome
-                value = node.env.outcome(node.env.turn)
-                if value is None:
-                    value = 0.0
+                # Terminal node: The parent made the move that ended the game.
+                parent_turn = node.parent.env.turn if node.parent else node.env.turn
+                value_for_parent = node.env.outcome(parent_turn)
+                if value_for_parent is None:
+                    value_for_parent = 0.0
             else:
                 # Expand and evaluate with NN
-                value = self._expand(node)
+                value_from_child = self._expand(node)
+                # The parent's perspective is the opposite of the child's perspective
+                value_for_parent = -value_from_child
 
-            self._backpropagate(node, value)
+            self._backpropagate(node, value_for_parent)
 
         # Build policy from visit counts
         visits = np.array(
@@ -232,15 +235,15 @@ class MCTS:
             node = node.best_child(self.c_puct)
         return node
 
-    def _backpropagate(self, node: MCTSNode, value: float) -> None:
+    def _backpropagate(self, node: MCTSNode, value_for_parent: float) -> None:
         """
         Propagate value back up the tree.
-        `value` is from `node.env.turn`'s perspective.
+        `value_for_parent` is from the perspective of `node.parent.env.turn`.
         """
         current = node
-        v = value
+        v = value_for_parent
         while current is not None:
             current.visit_count += 1
             current.value_sum += v
-            v = -v  # From the parent's perspective, the value is inverted
+            v = -v  # Invert for the next level up
             current = current.parent
