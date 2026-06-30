@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import aiConfig from '../../../../backend/src/game/aiConfig.json';
 import { BOT_DESCRIPTIONS, BOT_EMOJIS, BOT_HELP_TEXT } from '../../data/bots';

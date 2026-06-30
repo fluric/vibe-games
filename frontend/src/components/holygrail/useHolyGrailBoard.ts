@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useReviewPhase } from './useReviewPhase';
 import { useParams } from 'react-router-dom';
-import type { HolyGrailCell, PlayerPiece, PendingCombat, HolyGrailCard } from '@vibe-games/shared';
-import { getAggregatedFriendlyMoves, getAggregatedReviewMoves, rollbackBoardAndGrail, parseCardLabel } from './boardUtils';
+import type { HolyGrailCell, PendingCombat, HolyGrailCard } from '@vibe-games/shared';
+import { getAggregatedFriendlyMoves, getAggregatedReviewMoves, parseCardLabel } from './boardUtils';
 import type { HolyGrailBoardProps } from './boardUtils';
 import { parseCombatText } from './historyUtils';
 

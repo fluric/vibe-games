@@ -52,6 +52,11 @@ Numbers are sequential within each type. Always increment — never reuse an ID.
 | F002 | Active Matches on Main Page | 2026-06-30 | [done/F002-active-matches-main-page.md](done/F002-active-matches-main-page.md) |
 | B002 | Fix AI Training Stuck (RL / ML model training) | 2026-06-30 | [done/B002-fix-ai-training-stuck.md](done/B002-fix-ai-training-stuck.md) |
 | R003 | Split `HolyGrailBoard.tsx` into focused components | 2026-06-30 | [done/R003-split-holygrail-board.md](done/R003-split-holygrail-board.md) |
+| R008 | Finish splitting `LobbyPage.tsx` | 2026-06-30 | [done/R008-finish-lobby-page-split.md](done/R008-finish-lobby-page-split.md) |
+| R009 | Refactor Holy Grail frontend components | 2026-06-30 | [done/R009-refactor-holygrail-frontend.md](done/R009-refactor-holygrail-frontend.md) |
+| R010 | Refactor `gameService.ts` into a factory pattern | 2026-06-30 | [done/R010-refactor-game-service.md](done/R010-refactor-game-service.md) |
+| T002 | `gameService.ts` unit tests | 2026-06-30 | [done/T002-test-game-service.md](done/T002-test-game-service.md) |
+| T003 | Escape Room puzzle components tests | 2026-06-30 | [done/T003-test-escape-puzzles.md](done/T003-test-escape-puzzles.md) |
 
 ---
 

@@ -1,22 +1,15 @@
-
-import type { 
-} from '@vibe-games/shared';
-import * as audio from './AudioEffects';
 import { useHolyGrailBoard } from './holygrail/useHolyGrailBoard';
-import { CardHand } from './holygrail/CardHand';
 import { HexGridRenderer } from './holygrail/HexGridRenderer';
 import { GrailControls } from './holygrail/GrailControls';
 import { GrailSidePanel } from './holygrail/GrailSidePanel';
+import { CardHand } from './holygrail/CardHand';
 
-import { formatCardValue, parseCardLabel } from './holygrail/boardUtils';
-import { getGroupedHistory } from './holygrail/historyUtils';
-import { renderGroupedHistoryEntry } from './holygrail/HistoryRenderer';
 import type { HolyGrailBoardProps } from './holygrail/boardUtils';
 
 export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = (props) => {
   const { state, myPiece, submittingMove, onAction } = props;
   const hook = useHolyGrailBoard(props);
-  const { hands, phase, turn, pendingCombats } = state;
+  const { phase, turn, pendingCombats } = state;
 
   const { activeHand } = hook;
   const { selectedHandCardIndex } = hook;

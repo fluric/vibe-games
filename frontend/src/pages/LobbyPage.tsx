@@ -1,12 +1,10 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import * as api from '../api/games';
-import { API_VERSION, type GameDto, type UserDto, type LeaderboardEntryDto } from '@vibe-games/shared';
+import { type GameDto, type UserDto, type LeaderboardEntryDto } from '@vibe-games/shared';
 import * as audio from '../components/AudioEffects';
-import aiConfig from '../../../backend/src/game/aiConfig.json';
 import { ConfirmModal } from '../components/ConfirmModal';
 import { useTranslation } from 'react-i18next';
-import { LanguageSwitcher } from '../components/LanguageSwitcher';
 
 import { ActiveGamesPanel } from '../components/lobby/ActiveGamesPanel';
 import { JoinByCodePanel } from '../components/lobby/JoinByCodePanel';
@@ -21,9 +19,6 @@ import { LobbyTabsSection } from '../components/lobby/LobbyTabsSection';
 import { VersionSyncBanners } from '../components/lobby/VersionSyncBanners';
 import { useVersionSync } from '../hooks/useVersionSync';
 import { useGameActions } from '../hooks/useGameActions';
-import { BOT_DESCRIPTIONS, BOT_EMOJIS, BOT_HELP_TEXT } from '../data/bots';
-
-const typedConfig = aiConfig as unknown as Record<'mill' | 'connect_four' | 'holy_grail', Record<string, { id: string; username: string; elo: number; type: string }>>;
 
 interface GoogleAccountsId {
   initialize: (config: {
@@ -490,11 +485,6 @@ export function LobbyPage() {
           <LobbyUserStats
             currentUser={currentUser!}
             activeGameTab={activeGameTab}
-            isEditingName={isEditingName}
-            editNameVal={editNameVal}
-            setEditNameVal={setEditNameVal}
-            setIsEditingName={setIsEditingName}
-            onSaveName={handleSaveName}
           />
 
           {/* Creation Panel */}

@@ -1,25 +1,14 @@
-import React from 'react';
 import { useTranslation } from 'react-i18next';
 import type { UserDto } from '@vibe-games/shared';
 
 interface Props {
   currentUser: UserDto;
   activeGameTab: 'mill' | 'connect_four' | 'holy_grail' | 'escape';
-  isEditingName: boolean;
-  editNameVal: string;
-  setEditNameVal: (val: string) => void;
-  setIsEditingName: (val: boolean) => void;
-  onSaveName: (e: React.FormEvent) => void;
 }
 
 export function LobbyUserStats({
   currentUser,
   activeGameTab,
-  isEditingName,
-  editNameVal,
-  setEditNameVal,
-  setIsEditingName,
-  onSaveName
 }: Props) {
   const { t } = useTranslation('lobby');
   const userId = currentUser.id || '';

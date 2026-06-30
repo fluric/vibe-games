@@ -1,4 +1,3 @@
-import { parseCardLabel } from './boardUtils';
 
 export interface GroupedLog {
   key: string;
