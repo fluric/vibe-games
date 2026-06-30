@@ -1,0 +1,111 @@
+/** Static configuration for all Escape rooms.
+ *  Adding a new room = adding a new entry here + bumping TOTAL_ROOMS in escape.ts.
+ */
+
+export type PuzzleType = 'keypad' | 'cipher' | 'fuse';
+
+export interface HotSpot {
+  id: string;
+  label: string;       // visible tooltip / aria-label
+  x: string;          // CSS left % position
+  y: string;          // CSS top % position
+  revealedClue: string; // text shown when tapped
+}
+
+export interface KeypadRoomConfig {
+  puzzleType: 'keypad';
+  solution: string;           // 4-digit string
+  visibleClues: { x: string; y: string; text: string; label: string }[];
+  hiddenHotspot: HotSpot;
+}
+
+export interface CipherRoomConfig {
+  puzzleType: 'cipher';
+  ciphertext: string;         // uppercase, e.g. "GRHHW"
+  shift: number;              // correct Caesar shift to reveal solution
+  solution: string;           // plaintext answer, uppercase
+  sceneClueText: string;      // e.g. "Count the candles on the table"
+}
+
+export interface FuseRoomConfig {
+  puzzleType: 'fuse';
+  // Each wire: its colour class and the label of its correct post
+  wires: { id: string; color: string; colorHex: string; targetPost: string }[];
+  posts: { id: string; label: string }[];
+  clues?: string[];
+}
+
+export type RoomConfig = KeypadRoomConfig | CipherRoomConfig | FuseRoomConfig;
+
+export interface EscapeRoom {
+  id: number;
+  name: string;
+  description: string;
+  atmosphere: string;  // one-line flavour text shown in room-select card
+  config: RoomConfig;
+}
+
+export const ESCAPE_ROOMS: EscapeRoom[] = [
+  {
+    id: 1,
+    name: 'The Keypad',
+    description: 'A dimly lit server room. A heavy steel door bars your exit. The PIN is hidden somewhere in the room.',
+    atmosphere: 'Server humming. Dust on every surface. One red light blinks.',
+    config: {
+      puzzleType: 'keypad',
+      solution: '4827',
+      visibleClues: [
+        { x: '12%', y: '30%', text: '4 _ _ _', label: 'Sticky note on monitor' },
+        { x: '72%', y: '18%', text: '_ _ 2 _', label: 'Whiteboard scrawl' },
+        { x: '55%', y: '72%', text: '_ _ _ 7', label: 'Label on server rack' },
+      ],
+      hiddenHotspot: {
+        id: 'lamp',
+        label: 'Dusty lamp shade',
+        x: '35%',
+        y: '45%',
+        revealedClue: '_ 8 _ _  (written under the shade)',
+      },
+    },
+  },
+  {
+    id: 2,
+    name: 'The Cipher Wheel',
+    description: 'A candlelit study. An ornate brass wheel dominates the far wall. A rolled scroll rests on the desk.',
+    atmosphere: 'Wax drips. Pages rustle. Something is encoded here.',
+    config: {
+      puzzleType: 'cipher',
+      ciphertext: 'JEVGF',
+      shift: 17,
+      solution: 'SNEPO',
+      sceneClueText: 'A grandfather clock is frozen at 5:00 PM. A dusty mirror hangs beside it.',
+    },
+  },
+  {
+    id: 3,
+    name: 'The Fuse Box',
+    description: 'A utility room reeking of ozone. The circuit board on the wall is a scrambled mess of wires.',
+    atmosphere: 'Sparks crackle. The lights flicker. Patch the circuit.',
+    config: {
+      puzzleType: 'fuse',
+      wires: [
+        { id: 'w1', color: 'Red',    colorHex: '#ef4444', targetPost: 'C' },
+        { id: 'w2', color: 'Blue',   colorHex: '#3b82f6', targetPost: 'B' },
+        { id: 'w3', color: 'Yellow', colorHex: '#eab308', targetPost: 'D' },
+        { id: 'w4', color: 'Green',  colorHex: '#22c55e', targetPost: 'A' },
+      ],
+      posts: [
+        { id: 'A', label: 'A · HIGH' },
+        { id: 'B', label: 'B · LOW'  },
+        { id: 'C', label: 'C · ALT'  },
+        { id: 'D', label: 'D · GND'  },
+      ],
+      clues: [
+        "1. The wire connected to HIGH is neither Blue nor Red.",
+        "2. The Red wire connects exactly one level above the Yellow wire.",
+        "3. The ALT post is not connected to the Green wire.",
+        "4. The Yellow wire connects to a post lower than the Blue wire's post."
+      ]
+    },
+  },
+];

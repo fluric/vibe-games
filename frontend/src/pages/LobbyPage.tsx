@@ -165,9 +165,9 @@ export function LobbyPage() {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   type BotLevel = 'easy_random' | 'easy_cowardly' | 'easy_greedy' | 'easy_aggressive' | 'medium_aggressive' | 'medium_defensive' | 'medium_mobile' | 'hard_tactical' | 'expert_garry' | 'legendary_magnus' | 'perfect_oracle' | 'expert_smart' | 'rl_novice' | 'rl_intermediate' | 'rl_strong' | 'rl_master';
 
-  const [activeGameTab, setActiveGameTab] = useState<'mill' | 'connect_four' | 'holy_grail'>(() => {
+  const [activeGameTab, setActiveGameTab] = useState<'mill' | 'connect_four' | 'holy_grail' | 'escape'>(() => {
     const saved = localStorage.getItem('vibe-games-active-tab');
-    return (saved === 'mill' || saved === 'connect_four' || saved === 'holy_grail') ? saved : 'mill';
+    return (saved === 'mill' || saved === 'connect_four' || saved === 'holy_grail' || saved === 'escape') ? saved : 'mill';
   });
 
   const [aiLevelMill, setAiLevelMill] = useState<BotLevel>(() => {
@@ -391,10 +391,11 @@ export function LobbyPage() {
   }, [currentUser]);
 
   const fetchLeaderboard = useCallback(async () => {
+    if (activeGameTab === 'escape') return; // Escape has its own leaderboard page
     setLoadingLeaderboard(true);
     setLeaderboardError(null);
     try {
-      const data = await api.getLeaderboard(activeGameTab);
+      const data = await api.getLeaderboard(activeGameTab as 'mill' | 'connect_four' | 'holy_grail');
       setLeaderboardEntries(data.entries);
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Failed to load leaderboard';
@@ -924,7 +925,7 @@ export function LobbyPage() {
                 : 'text-neutral-400 hover:text-white hover:bg-neutral-800/40'
             }`}
           >
-            🎮 Nine Men's Morris
+            ⚙️ Nine Men's Morris
           </button>
           <button
             onClick={() => setActiveGameTab('connect_four')}
@@ -946,8 +947,41 @@ export function LobbyPage() {
           >
             🏆 Grail Quest
           </button>
+          <button
+            onClick={() => setActiveGameTab('escape')}
+            className={`flex-1 py-3 text-sm rounded-xl font-bold transition-all active:scale-[0.98] ${
+              activeGameTab === 'escape'
+                ? 'bg-teal-600 shadow-[0_0_15px_rgba(20,184,166,0.4)] text-white'
+                : 'text-neutral-400 hover:text-white hover:bg-neutral-800/40'
+            }`}
+          >
+            🔐 Escape
+          </button>
         </div>
 
+
+        {/* Escape solo panel */}
+        {activeGameTab === 'escape' ? (
+          <div className="bg-gradient-to-br from-teal-950/40 to-neutral-900/60 border border-teal-700/30 rounded-2xl p-8 backdrop-blur-md flex flex-col items-center justify-center gap-6 text-center min-h-[280px]">
+            <div className="w-16 h-16 rounded-2xl bg-teal-600/10 border border-teal-600/30 flex items-center justify-center text-3xl">
+              🔐
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold text-white">Escape</h2>
+              <p className="text-neutral-400 mt-2 max-w-md">
+                A solo puzzle adventure. Solve each room to unlock the next. How far can you get?
+              </p>
+            </div>
+            <Link
+              to="/escape"
+              id="escape-lobby-enter-btn"
+              className="inline-flex items-center gap-2 bg-teal-600 hover:bg-teal-500 text-white font-bold py-3 px-8 rounded-xl transition-all active:scale-95 shadow-[0_0_24px_rgba(20,184,166,0.35)] hover:shadow-[0_0_32px_rgba(20,184,166,0.5)] text-base"
+            >
+              Enter Escape →
+            </Link>
+          </div>
+        ) : (
+        <>
         {/* User Card & Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="md:col-span-1 bg-neutral-900/60 border border-neutral-800 rounded-2xl p-6 backdrop-blur-md flex flex-col justify-between">
@@ -980,7 +1014,8 @@ export function LobbyPage() {
                 </span>
                 <span className="font-bold text-indigo-400">
                   {(() => {
-                    const stats = currentUser?.gameStats?.[activeGameTab] || currentUser;
+                    const tab = activeGameTab as 'mill' | 'connect_four' | 'holy_grail';
+                    const stats = currentUser?.gameStats?.[tab] || currentUser;
                     return stats?.elo ?? 1200;
                   })()}{' '}
                   ELO
@@ -988,7 +1023,8 @@ export function LobbyPage() {
               </div>
               <div className="flex gap-4 text-xs text-neutral-500 mt-2">
                 {(() => {
-                  const stats = currentUser?.gameStats?.[activeGameTab] || currentUser;
+                  const tab = activeGameTab as 'mill' | 'connect_four' | 'holy_grail';
+                  const stats = currentUser?.gameStats?.[tab] || currentUser;
                   return (
                     <>
                       <span>Wins: <strong className="text-emerald-400">{stats?.wins ?? 0}</strong></span>
@@ -1259,6 +1295,8 @@ export function LobbyPage() {
             onJoinByCode={handleJoinByCode}
           />
         </div>
+        </>
+        )} {/* end activeGameTab !== 'escape' */}
       </div>
 
       {/* Custom Confirmation Modals */}
