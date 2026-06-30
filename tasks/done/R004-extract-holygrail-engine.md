@@ -4,7 +4,7 @@
 - **ID**: R004
 - **Type**: Refactoring
 - **Priority**: P2
-- **Status**: Open
+- **Status**: Done
 - **Created**: 2026-06-30
 
 ## Description
@@ -19,4 +19,4 @@
 - [x] Ensure all engine unit tests pass via `npx ts-node -r tsconfig-paths/register backend/src/game/holyGrailEngine.spec.ts`.
 
 ## Agent Notes
-- *(Leave blank until work begins)*
+- **2026-06-30**: Refactored `holyGrailEngine.ts` into multiple sub-modules (`combatResolver`, `deckManager`, `gridUtils`). All tests passed successfully.
