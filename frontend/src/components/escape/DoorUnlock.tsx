@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface Props {
   isOpen: boolean;
@@ -8,6 +9,7 @@ interface Props {
 /** Animated door-unlock transition.
  *  When isOpen becomes true: plays a door-sweep animation, then calls onComplete. */
 export function DoorUnlock({ isOpen, onComplete }: Props) {
+  const { t } = useTranslation('escape');
   const [phase, setPhase] = useState<'idle' | 'unlocking' | 'done'>('idle');
 
   useEffect(() => {
@@ -31,7 +33,7 @@ export function DoorUnlock({ isOpen, onComplete }: Props) {
         <div className={`door-panel${phase === 'unlocking' ? ' swinging' : ''}`} />
         <div className="door-lock-icon">🔓</div>
       </div>
-      <p className="door-text">Access granted…</p>
+      <p className="door-text">{t('access_granted', { defaultValue: 'Access granted…' })}</p>
     </div>
   );
 }

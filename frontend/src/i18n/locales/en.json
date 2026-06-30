@@ -144,7 +144,8 @@
     "ui.locked": "Locked",
     "ui.cleared_on": "Cleared",
     "ui.back_to_lobby": "Back to Lobby",
-    "ui.leaderboard": "Leaderboard"
+    "ui.leaderboard": "Leaderboard",
+    "access_granted": "Access granted…"
   },
   "game": {
     "waiting_for_opponent": "Waiting for opponent to join...",

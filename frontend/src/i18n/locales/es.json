@@ -254,7 +254,8 @@
     "ui.locked": "Bloqueado",
     "ui.cleared_on": "Completado el",
     "ui.back_to_lobby": "Volver a la sala",
-    "ui.leaderboard": "Clasificación"
+    "ui.leaderboard": "Clasificación",
+    "access_granted": "Acceso concedido…"
   },
   "game": {
     "waiting_for_opponent": "Esperando al oponente...",

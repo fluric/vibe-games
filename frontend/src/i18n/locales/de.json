@@ -254,7 +254,8 @@
     "ui.locked": "Gesperrt",
     "ui.cleared_on": "Geschafft",
     "ui.back_to_lobby": "Zurück zur Lobby",
-    "ui.leaderboard": "Bestenliste"
+    "ui.leaderboard": "Bestenliste",
+    "access_granted": "Zugriff gewährt…"
   },
   "game": {
     "waiting_for_opponent": "Warte auf Gegner...",
