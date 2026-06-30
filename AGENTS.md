@@ -213,7 +213,7 @@ For Google Cloud (when you want more control):
 - API calls go through a typed client in `frontend/src/api/`.
 - Use `@vibe-games/shared` types for all API shapes — never re-declare them in the frontend.
 - Tailwind utility classes for styling — avoid inline styles.
-- **Internationalization (i18n):** All UI text must be translated using `react-i18next`. Never hardcode English strings in components. When adding a new page or component, wrap strings in `t('key', { defaultValue: 'English text' })` and immediately add the translation keys to `en.json`, `fr.json`, `de.json`, and `es.json` in `frontend/src/i18n/locales/`.
+- **Internationalization (i18n):** All UI text must be translated using `react-i18next`. Never hardcode English strings in components. When adding a new page or component, wrap strings in `t('key', { defaultValue: 'English text' })` and immediately add the translation keys to `en.json`, `fr.json`, `de.json`, and `es.json` in `frontend/src/i18n/locales/`. If you create a new logical section (e.g., a new top-level JSON key acting as a namespace), you MUST ensure it is registered in the `ns` array inside `frontend/src/i18n/index.ts`. New pages will automatically be translated when added using this pattern.
 - **File size limit:** target ≤ 300 lines per file. Files > 600 lines must be split.
 
 ### Shared Package

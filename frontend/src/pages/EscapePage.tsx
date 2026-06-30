@@ -95,7 +95,7 @@ export function EscapePage() {
     return (
       <div className="escape-loading-screen">
         <div className="escape-loading-spinner" />
-        <p>{t('ui.loading', { defaultValue: 'Loading…' })}</p>
+        <p>{t('ui_loading', { defaultValue: 'Loading…' })}</p>
       </div>
     );
   }
@@ -138,14 +138,14 @@ export function EscapePage() {
     <div className="escape-page">
       <nav className="escape-nav">
         <button className="escape-nav-back" onClick={() => navigate('/')} id="escape-back-to-lobby">
-          ← {t('ui.back_to_lobby', { defaultValue: 'Back to Lobby' })}
+          ← {t('ui_back_to_lobby', { defaultValue: 'Back to Lobby' })}
         </button>
         <button
           className={`escape-nav-tab${showLeaderboard ? ' active' : ''}`}
           onClick={() => setShowLeaderboard((v) => !v)}
           id="escape-leaderboard-toggle"
         >
-          🏆 {t('ui.leaderboard', { defaultValue: 'Leaderboard' })}
+          🏆 {t('ui_leaderboard', { defaultValue: 'Leaderboard' })}
         </button>
       </nav>
 

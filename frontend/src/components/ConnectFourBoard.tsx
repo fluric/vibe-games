@@ -59,7 +59,7 @@ export const ConnectFourBoard: React.FC<ConnectFourBoardProps> = ({
   // If the board is reset to completely empty, reset the initial board reference
   useEffect(() => {
     if (board.every(cell => cell === null)) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
+       
       setInitialBoard(board);
     }
   }, [board]);

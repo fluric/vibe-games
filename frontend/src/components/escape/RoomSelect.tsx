@@ -17,8 +17,8 @@ export function RoomSelect({ rooms, progress, maxAccessible, onSelectRoom }: Pro
   return (
     <div className="escape-room-select">
       <header className="escape-select-header">
-        <h1 className="escape-title">🔐 {t('ui.escape', { defaultValue: 'Escape' })}</h1>
-        <p className="escape-subtitle">{t('ui.escape_subtitle', { defaultValue: 'Solve the puzzles. Open the doors. Get out.' })}</p>
+        <h1 className="escape-title">🔐 {t('ui_escape', { defaultValue: 'Escape' })}</h1>
+        <p className="escape-subtitle">{t('ui_escape_subtitle', { defaultValue: 'Solve the puzzles. Open the doors. Get out.' })}</p>
       </header>
 
       <div className="escape-room-grid">
@@ -43,13 +43,13 @@ export function RoomSelect({ rooms, progress, maxAccessible, onSelectRoom }: Pro
               <h2 className="room-card-name">{room.name}</h2>
               <p className="room-card-atmosphere">{room.atmosphere}</p>
               <div className="room-card-status">
-                {isSolved && <span className="badge badge-solved">{t('ui.solved', { defaultValue: 'Solved' })}</span>}
-                {isAvailable && !isSolved && <span className="badge badge-available">{t('ui.enter', { defaultValue: 'Enter →' })}</span>}
-                {isLocked && <span className="badge badge-locked">{t('ui.locked', { defaultValue: 'Locked' })}</span>}
+                {isSolved && <span className="badge badge-solved">{t('ui_solved', { defaultValue: 'Solved' })}</span>}
+                {isAvailable && !isSolved && <span className="badge badge-available">{t('ui_enter', { defaultValue: 'Enter →' })}</span>}
+                {isLocked && <span className="badge badge-locked">{t('ui_locked', { defaultValue: 'Locked' })}</span>}
               </div>
               {isSolved && p?.solvedAt && (
                 <p className="room-card-date">
-                  {t('ui.cleared_on', { defaultValue: 'Cleared' })} {new Date(p.solvedAt).toLocaleDateString()}
+                  {t('ui_cleared_on', { defaultValue: 'Cleared' })} {new Date(p.solvedAt).toLocaleDateString()}
                 </p>
               )}
             </button>

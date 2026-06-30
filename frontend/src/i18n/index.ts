@@ -17,6 +17,8 @@ i18n
       fr: frLobby,
       es: esLobby,
     },
+    ns: ['lobby', 'game', 'escape'],
+    defaultNS: 'lobby',
     fallbackLng: 'en',
     interpolation: {
       escapeValue: false, // React already safes from xss

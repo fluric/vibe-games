@@ -64,7 +64,7 @@ export function KeypadPuzzle({ config, onSolved }: Props) {
 
       {/* Keypad */}
       <div className={`keypad-panel${shaking ? ' shake' : ''}${solved ? ' correct' : ''}`}>
-        <div className="keypad-display" aria-label={t('ui.entered_pin', { defaultValue: 'Entered PIN' })} aria-live="polite">
+        <div className="keypad-display" aria-label={t('ui_entered_pin', { defaultValue: 'Entered PIN' })} aria-live="polite">
           {Array.from({ length: 4 }).map((_, i) => (
             <span key={i} className={`keypad-digit${digits[i] ? ' filled' : ''}`}>
               {digits[i] ? '●' : '○'}
@@ -82,13 +82,13 @@ export function KeypadPuzzle({ config, onSolved }: Props) {
                 else if (key === '↵') pressConfirm();
                 else pressDigit(key);
               }}
-              aria-label={key === '⌫' ? t('ui.delete', { defaultValue: 'Delete' }) : key === '↵' ? t('ui.confirm', { defaultValue: 'Confirm' }) : key}
+              aria-label={key === '⌫' ? t('ui_delete', { defaultValue: 'Delete' }) : key === '↵' ? t('ui_confirm', { defaultValue: 'Confirm' }) : key}
             >
               {key}
             </button>
           ))}
         </div>
-        {solved && <p className="keypad-success">{t('ui.correct', { defaultValue: '✓ Correct' })}</p>}
+        {solved && <p className="keypad-success">{t('ui_correct', { defaultValue: '✓ Correct' })}</p>}
       </div>
     </div>
   );

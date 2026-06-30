@@ -4,6 +4,11 @@ import { EscapeProgress } from '../entities/EscapeProgress';
 import { User } from '../entities/User';
 import type { EscapeProgressResponse, EscapeLeaderboardResponse } from '@vibe-games/shared';
 
+declare module 'fastify' {
+  interface FastifyRequest {
+    user?: User;
+  }
+}
 /** Total number of rooms currently published. Bump this when new rooms are added. */
 const TOTAL_ROOMS = 3;
 

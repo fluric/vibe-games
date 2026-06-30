@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useReviewPhase } from './useReviewPhase';
 import { useParams } from 'react-router-dom';
 import type { HolyGrailCell, PlayerPiece, PendingCombat, HolyGrailCard } from '@vibe-games/shared';
-import { getAggregatedFriendlyMoves, getAggregatedReviewMoves, rollbackBoardAndGrail, parseRadioactiveText, parseRetreatText, parseCombatText, parseCardLabel } from './boardUtils';
-import type { TempVisualMove, TempVisualDeploy, TempVisualRadioactivity } from './boardUtils';
+import { getAggregatedFriendlyMoves, getAggregatedReviewMoves, rollbackBoardAndGrail, parseCardLabel } from './boardUtils';
 import type { HolyGrailBoardProps } from './boardUtils';
+import { parseCombatText } from './historyUtils';
 
 export function useHolyGrailBoard(props: HolyGrailBoardProps) {
   const { state, myPiece, disabled, submittingMove, onAction } = props;
@@ -11,15 +12,33 @@ export function useHolyGrailBoard(props: HolyGrailBoardProps) {
 
   const { id: gameId } = useParams<{ id: string }>();
 
-  const [isReviewingLastTurn, setIsReviewingLastTurn] = useState<boolean>(false);
-  const [reviewMoves, setReviewMoves] = useState<TempVisualMove[]>([]);
-  const [reviewDeploys, setReviewDeploys] = useState<TempVisualDeploy[]>([]);
-  const [reviewRadioactivity, setReviewRadioactivity] = useState<TempVisualRadioactivity[]>([]);
-  const [lastReviewedEndTurnIdx, setLastReviewedEndTurnIdx] = useState<number>(-1);
   const [isLogCollapsed, setIsLogCollapsed] = useState<boolean>(true);
-
   const isMyTurn = turn === myPiece && !winner;
   const history = useMemo(() => state.history || [], [state.history]);
+
+  const {
+    isReviewingLastTurn,
+    setIsReviewingLastTurn,
+    reviewMoves,
+    setReviewMoves,
+    reviewDeploys,
+    setReviewDeploys,
+    reviewRadioactivity,
+    setReviewRadioactivity,
+    lastReviewedEndTurnIdx,
+    setLastReviewedEndTurnIdx,
+    lastSelfEndTurnIdx,
+    board,
+    grailCellKey
+  } = useReviewPhase({
+    history,
+    stateBoard,
+    stateGrailCellKey,
+    myPiece,
+    turn,
+    winner: state.winner || null,
+    gameId
+  });
 
   const aggregatedFriendlyMoves = useMemo(() => {
     return getAggregatedFriendlyMoves(state.movesThisTurn || []);
@@ -28,201 +47,6 @@ export function useHolyGrailBoard(props: HolyGrailBoardProps) {
   const aggregatedReviewMoves = useMemo(() => {
     return getAggregatedReviewMoves(reviewMoves);
   }, [reviewMoves]);
-
-  // Find the last index of our own end_turn action
-  let lastSelfEndTurnIdx = -1;
-  for (let i = history.length - 1; i >= 0; i--) {
-    const log = history[i];
-    if (typeof log === 'string' && log.trim().startsWith('{')) {
-      try {
-        const action = JSON.parse(log);
-        if (action.player === myPiece && (action.type === 'end_turn' || action.action === 'end_turn')) {
-          lastSelfEndTurnIdx = i;
-          break;
-        }
-      } catch {
-        // ignore
-      }
-    }
-  }
-
-  // Cache is now updated at the end of our turn inside the endTurn handler to capture finalized user positions.
-
-  // Determine displaying board state
-  const { board, grailCellKey } = useMemo((): { board: Record<string, HolyGrailCell>; grailCellKey: string } => {
-    const defaultState = {
-      board: stateBoard,
-      grailCellKey: stateGrailCellKey || '0,0'
-    };
-
-    if (!isReviewingLastTurn) {
-      return defaultState;
-    }
-
-    // Attempt to load from sessionStorage
-    try {
-      const cached = sessionStorage.getItem(`pre-board-${gameId || 'default'}`);
-      if (cached) {
-        const parsed = JSON.parse(cached);
-        if (parsed && parsed.board) {
-          return {
-            board: parsed.board,
-            grailCellKey: parsed.grailCellKey || '0,0'
-          };
-        }
-      }
-    } catch {
-      // ignore
-    }
-
-    // Fallback: Rollback using history
-    const oppPiece = myPiece === 'X' ? 'O' : 'X';
-    return rollbackBoardAndGrail(stateBoard, stateGrailCellKey, reviewDeploys, reviewMoves, oppPiece);
-  }, [stateBoard, stateGrailCellKey, isReviewingLastTurn, gameId, reviewDeploys, reviewMoves, myPiece]);
-
-   
-  useEffect(() => {
-    if (!state.winner) {
-      if (isMyTurn) {
-        // Check if we are in the middle of our turn (already took deploy/move actions in current turn)
-        let isMiddleOfTurn = false;
-        for (let i = history.length - 1; i >= 0; i--) {
-          const log = history[i];
-          if (typeof log === 'string' && log.trim().startsWith('{')) {
-            try {
-              const action = JSON.parse(log);
-              if (action.player) {
-                if (action.player === myPiece) {
-                  if (action.type !== 'end_turn' && action.action !== 'end_turn') {
-                    isMiddleOfTurn = true;
-                  }
-                }
-                break; // Found the latest JSON action, stop searching
-              }
-            } catch {
-              // ignore
-            }
-          }
-        }
-
-        if (isMiddleOfTurn) {
-          setLastReviewedEndTurnIdx(lastSelfEndTurnIdx);
-          setIsReviewingLastTurn(false);
-          setReviewMoves([]);
-          setReviewDeploys([]);
-          setReviewRadioactivity([]);
-          return;
-        }
-
-        if (lastSelfEndTurnIdx > lastReviewedEndTurnIdx) {
-          // Check if there are any opponent JSON actions after our last end_turn
-          const sliceStart = lastSelfEndTurnIdx + 1;
-          let hasOppAction = false;
-          const opponentMoves: TempVisualMove[] = [];
-          const opponentDeploys: TempVisualDeploy[] = [];
-          const opponentRadioactivity: TempVisualRadioactivity[] = [];
-
-          for (let i = sliceStart; i < history.length; i++) {
-            const log = history[i];
-            if (typeof log === 'string') {
-              if (log.trim().startsWith('{')) {
-                try {
-                  const action = JSON.parse(log);
-                  const type = action.type || action.action;
-                  if (type === 'radioactivity') {
-                    hasOppAction = true;
-                    const cellKey = action.cell === 'Grail Center' ? '0,0' : action.cell;
-                    opponentRadioactivity.push({
-                      cellKey,
-                      player: action.player,
-                      card: action.card
-                    });
-                  } else if (action.player && action.player !== myPiece) {
-                    hasOppAction = true;
-                    if (type === 'move' && action.from && action.to) {
-                      opponentMoves.push({
-                        from: action.from,
-                        to: action.to,
-                        count: action.count || 1,
-                        player: action.player
-                      });
-                    } else if ((type === 'deploy' || type === 'deploy_all') && action.cellKey) {
-                      const existing = opponentDeploys.find(d => d.cellKey === action.cellKey);
-                      const count = action.count !== undefined ? action.count : 1;
-                      if (existing) {
-                        existing.count += count;
-                      } else {
-                        opponentDeploys.push({
-                          cellKey: action.cellKey,
-                          count
-                        });
-                      }
-                    }
-                  }
-                } catch {
-                  // ignore
-                }
-              } else {
-                // Parse text radioactivity log
-                const isRadio = log.includes('☢️') || log.toLowerCase().includes('radioactivity');
-                if (isRadio) {
-                  const info = parseRadioactiveText(log);
-                  if (info) {
-                    hasOppAction = true;
-                    const cellKey = info.cell === 'Grail Center' ? '0,0' : info.cell;
-                    opponentRadioactivity.push({
-                      cellKey,
-                      player: info.player as PlayerPiece,
-                      card: info.card
-                    });
-                  }
-                }
-
-                // Parse text retreat log
-                const isRetreat = log.includes('🏃') || log.toLowerCase().includes('retreat');
-                if (isRetreat) {
-                  const info = parseRetreatText(log);
-                  if (info.cell && info.retreatTo && info.defenderPiece && info.defenderCount > 0) {
-                    hasOppAction = true;
-                    opponentMoves.push({
-                      from: info.cell,
-                      to: info.retreatTo,
-                      count: info.defenderCount,
-                      player: info.defenderPiece as PlayerPiece,
-                      isRetreat: true
-                    });
-                  }
-                }
-              }
-            }
-          }
-
-          if (hasOppAction) {
-            setIsReviewingLastTurn(true);
-            setReviewMoves(opponentMoves);
-            setReviewDeploys(opponentDeploys);
-            setReviewRadioactivity(opponentRadioactivity);
-          } else {
-            setIsReviewingLastTurn(false);
-            setReviewMoves([]);
-            setReviewDeploys([]);
-            setReviewRadioactivity([]);
-            setLastReviewedEndTurnIdx(lastSelfEndTurnIdx);
-          }
-        } else {
-          setIsReviewingLastTurn(false);
-          setReviewMoves([]);
-          setReviewDeploys([]);
-          setReviewRadioactivity([]);
-        }
-      } else {
-        setIsReviewingLastTurn(false);
-        setReviewMoves([]);
-        setReviewDeploys([]);
-        setReviewRadioactivity([]);
-      }
-    }
-  }, [isMyTurn, history, myPiece, state.winner, lastSelfEndTurnIdx, lastReviewedEndTurnIdx]);
    
 
   const isBoardLocked = disabled || isReviewingLastTurn;
@@ -383,7 +207,7 @@ export function useHolyGrailBoard(props: HolyGrailBoardProps) {
         }
       }
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+   
   }, [state.history?.length, activeCombatCellKey]);
    
 

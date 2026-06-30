@@ -2,9 +2,9 @@ import { formatCardValue } from './utils';
 import { useTranslation } from 'react-i18next';
 import type { HolyGrailCell } from '@vibe-games/shared';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 type Combat = any;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 type GameState = any;
 
 export interface GrailControlsProps {
@@ -33,7 +33,7 @@ export interface GrailControlsProps {
   displayedAttackerVal?: number;
   displayedDefenderVal?: number;
   displayedDefenderVal2?: number;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   displayedDefenderStack: any[];
   executeFightReact: (combat: Combat) => void;
   executeRetreatReact: (combat: Combat) => void;

@@ -1,8 +1,9 @@
 import { AppDataSource } from '../data-source';
+import { IsNull, In } from 'typeorm';
 import { Game } from '../entities/Game';
 import { User } from '../entities/User';
 import { UserStats } from '../entities/UserStats';
-import { GameDto, UserDto, PlayerPiece, GameType } from '@vibe-games/shared';
+import { GameDto, UserDto, PlayerPiece, GameType, LeaderboardEntryDto, LeaderboardResponse } from '@vibe-games/shared';
 import { calculateElo } from '../game/elo';
 import { ENGINES } from '../game/gameRegistry';
 import { StrategyWeights } from '../game/minimaxAi';
@@ -402,4 +403,243 @@ export async function handleGameFinished(game: Game) {
       }
     }
   }
+}
+
+
+export async function createGame(user: User, gameType: GameType, isPublic: boolean, vsAi: boolean, aiLevel: string, aiStarts: boolean): Promise<Game> {
+  const engine = ENGINES[gameType];
+  if (!engine) throw new Error('Unsupported game type');
+
+  const gameRepo = AppDataSource.getRepository(Game);
+
+  let playerXId: string | null = user.id;
+  let playerOId: string | null = null;
+  let playerXEntity: User | null = user;
+  let playerOEntity: User | null = null;
+
+  if (vsAi) {
+    let botKey = aiLevel || 'medium_aggressive';
+    if (botKey === 'easy') botKey = 'easy_random';
+    else if (botKey === 'medium') botKey = 'medium_aggressive';
+    else if (botKey === 'hard') botKey = 'hard_tactical';
+
+    const gameBots = aiConfig[gameType] || aiConfig['mill'];
+    const botConfig = gameBots[botKey] || gameBots['medium_aggressive'];
+    const botUser = await getOrCreateUser(botConfig.id);
+
+    if (aiStarts) {
+      playerXId = botConfig.id;
+      playerOId = user.id;
+      playerXEntity = botUser;
+      playerOEntity = user;
+    } else {
+      playerXId = user.id;
+      playerOId = botConfig.id;
+      playerXEntity = user;
+      playerOEntity = botUser;
+    }
+  } else if (aiStarts) {
+    playerXId = null;
+    playerOId = user.id;
+    playerXEntity = null;
+    playerOEntity = user;
+  }
+
+  const game = gameRepo.create({
+    gameType,
+    status: vsAi ? 'in_progress' : 'waiting',
+    playerXId,
+    playerOId,
+    state: engine.createInitialState(),
+    isPublic,
+    playerX: playerXEntity,
+    playerO: playerOEntity,
+  });
+
+  if (vsAi && aiStarts) {
+    await runAiLoopIfNeeded(game);
+    if (game.status === 'finished') {
+      await handleGameFinished(game);
+    }
+  }
+
+  return await gameRepo.save(game);
+}
+
+export async function getOpenGames(gameType?: string, status: string = 'waiting'): Promise<Game[]> {
+  const gameRepo = AppDataSource.getRepository(Game);
+  let baseWhere: any = { isPublic: true };
+  if (gameType) baseWhere.gameType = gameType;
+  
+  if (status === 'waiting') {
+    return await gameRepo.find({
+      where: [
+        { ...baseWhere, status: 'waiting', playerOId: IsNull() },
+        { ...baseWhere, status: 'waiting', playerXId: IsNull() },
+      ],
+      relations: ['playerX', 'playerO'],
+      order: { createdAt: 'DESC' },
+    });
+  } else if (status === 'in_progress') {
+    return await gameRepo.find({
+      where: { ...baseWhere, status: 'in_progress' },
+      relations: ['playerX', 'playerO'],
+      order: { updatedAt: 'DESC' },
+      take: 50
+    });
+  } else {
+    return await gameRepo.find({
+      where: [
+        { ...baseWhere, status: 'waiting', playerOId: IsNull() },
+        { ...baseWhere, status: 'waiting', playerXId: IsNull() },
+        { ...baseWhere, status: 'in_progress' }
+      ],
+      relations: ['playerX', 'playerO'],
+      order: { updatedAt: 'DESC' },
+      take: 50
+    });
+  }
+}
+
+export async function getUserActiveGames(userId: string): Promise<Game[]> {
+  const gameRepo = AppDataSource.getRepository(Game);
+  return await gameRepo.find({
+    where: [
+      { playerXId: userId, status: In(['waiting', 'in_progress']) },
+      { playerOId: userId, status: In(['waiting', 'in_progress']) },
+    ],
+    relations: ['playerX', 'playerO'],
+    order: { updatedAt: 'DESC' },
+  });
+}
+
+export async function getLeaderboard(gameType: GameType): Promise<LeaderboardResponse> {
+  if (gameType !== 'mill' && gameType !== 'connect_four' && gameType !== 'holy_grail') {
+    throw new Error('Unsupported game type');
+  }
+
+  const statsRepo = AppDataSource.getRepository(UserStats);
+  const statsList = await statsRepo.find({
+    where: { gameType },
+    relations: ['user'],
+    order: { elo: 'DESC' },
+    take: 100,
+  });
+
+  const entries: LeaderboardEntryDto[] = statsList.map(stats => {
+    const isBot = BOTS_MAP.has(stats.userId);
+    let currentElo = stats.elo;
+    let username = stats.user ? stats.user.username : `Player_${stats.userId.substring(0, 5)}`;
+    if (isBot) {
+      const botInfo = BOTS_MAP.get(stats.userId);
+      if (botInfo) {
+        currentElo = botInfo.elo;
+        username = botInfo.username;
+      }
+    }
+
+    return {
+      userId: stats.userId,
+      username,
+      avatarUrl: stats.user ? stats.user.avatarUrl : null,
+      elo: currentElo,
+      wins: stats.wins,
+      losses: stats.losses,
+      draws: stats.draws,
+      isBot,
+    };
+  });
+
+  entries.sort((a, b) => b.elo - a.elo);
+
+  return { gameType, entries };
+}
+
+export async function joinGame(gameId: string, user: User): Promise<Game> {
+  const gameRepo = AppDataSource.getRepository(Game);
+  const game = await gameRepo.findOne({
+    where: { id: gameId },
+    relations: ['playerX', 'playerO'],
+  });
+
+  if (!game) throw new Error('Game not found');
+  if (game.status !== 'waiting') throw new Error('Game is not in a joinable status');
+  if (game.playerXId === user.id || game.playerOId === user.id) throw new Error('Cannot play against yourself');
+
+  if (game.playerXId === null) {
+    game.playerXId = user.id;
+    game.playerX = user;
+  } else {
+    game.playerOId = user.id;
+    game.playerO = user;
+  }
+  game.status = 'in_progress';
+
+  return await gameRepo.save(game);
+}
+
+export async function cancelGame(gameId: string, userId: string): Promise<void> {
+  const gameRepo = AppDataSource.getRepository(Game);
+  const game = await gameRepo.findOne({ where: { id: gameId } });
+
+  if (!game) throw new Error('Game not found');
+  if (game.playerXId !== userId && game.playerOId !== userId) throw new Error('Only the creator can cancel this game');
+  if (game.status !== 'waiting') throw new Error('Only games in waiting status can be cancelled');
+
+  await gameRepo.remove(game);
+}
+
+export async function forfeitGame(gameId: string, userId: string): Promise<Game> {
+  const gameRepo = AppDataSource.getRepository(Game);
+  const game = await gameRepo.findOne({
+    where: { id: gameId },
+    relations: ['playerX', 'playerO'],
+  });
+
+  if (!game) throw new Error('Game not found');
+  if (game.status !== 'in_progress') throw new Error('Only games in progress can be forfeited');
+  if (game.playerXId !== userId && game.playerOId !== userId) throw new Error('Only participants can forfeit this game');
+
+  game.status = 'finished';
+  const winnerPiece = game.playerXId === userId ? 'O' : 'X';
+  game.winnerId = game.playerXId === userId ? game.playerOId : game.playerXId;
+
+  game.state = { ...game.state, winner: winnerPiece };
+
+  await handleGameFinished(game);
+  return await gameRepo.save(game);
+}
+
+export async function submitMove(gameId: string, userId: string, movePayload: any): Promise<Game> {
+  const gameRepo = AppDataSource.getRepository(Game);
+  const game = await gameRepo.findOne({
+    where: { id: gameId },
+    relations: ['playerX', 'playerO'],
+  });
+
+  if (!game) throw new Error('Game not found');
+  if (game.status !== 'in_progress') throw new Error('Game is not in progress');
+
+  const playerPiece: PlayerPiece = game.playerXId === userId ? 'X' : game.playerOId === userId ? 'O' : (null as any);
+  if (!playerPiece) throw new Error('You are not a player in this game');
+
+  if (game.state.turn !== playerPiece) throw new Error(`It is not your turn (current turn: ${game.state.turn})`);
+
+  const engine = ENGINES[game.gameType];
+  if (!engine) throw new Error('Unsupported game type');
+
+  game.state = engine.handleMove(game.state, movePayload, playerPiece);
+
+  if (game.state.winner) {
+    game.status = 'finished';
+    game.winnerId = game.state.winner === 'draw' ? null : (game.state.winner === 'X' ? game.playerXId : game.playerOId);
+  }
+
+  await runAiLoopIfNeeded(game);
+
+  if (game.status === 'finished') {
+    await handleGameFinished(game);
+  }
+
+  return await gameRepo.save(game);
 }

@@ -98,7 +98,7 @@ export async function submitMove(
     from?: string | number;
     to?: string | number;
     column?: number;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     [key: string]: any;
   }
 ): Promise<GameDto> {

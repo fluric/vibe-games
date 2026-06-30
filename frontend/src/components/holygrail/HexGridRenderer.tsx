@@ -1,7 +1,7 @@
 import type { HolyGrailCell } from '@vibe-games/shared';
 import { getHexCenter, getHexPoints, formatCardValue, WIDTH, HEIGHT, HEX_SIZE } from './utils';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 type MoveDetails = any;
 
 export interface HexGridRendererProps {
