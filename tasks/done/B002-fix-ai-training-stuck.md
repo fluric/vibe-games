@@ -11,8 +11,10 @@ The AI training process (Reinforcement Learning / Machine Learning) is reportedl
 
 ## Acceptance Criteria
 
-- [ ] The AI training script no longer hangs or gets stuck.
-- [ ] The training makes forward progress and completes (or runs successfully without deadlocking).
-- [ ] Any incorrect terminology referring to "AI" in the codebase is corrected to the appropriate terminology (RL or ML) if necessary.
+- [x] The AI training script no longer hangs or gets stuck.
+- [x] The training makes forward progress and completes (or runs successfully without deadlocking).
+- [x] Any incorrect terminology referring to "AI" in the codebase is corrected to the appropriate terminology (RL or ML) if necessary.
 
 ## Agent Notes
+
+- **2026-06-30**: Fixed the MCTS backpropagation sign inversion (`v = -v`) which was causing the training to loop or produce invalid value estimations. Renamed the `ai/` directory to `rl/` to reflect that this is Reinforcement Learning (AlphaZero style) rather than generic ML.
