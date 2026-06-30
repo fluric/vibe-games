@@ -1184,7 +1184,7 @@ export function LobbyPage() {
               Spectator Mode
             </span>
           </div>
-          <OngoingMatchesPanel games={ongoingGames} onSpectate={(id) => navigate(`/game/${id}`)} />
+          <OngoingMatchesPanel games={ongoingGames.filter(g => g.playerX?.id !== currentUser?.id && g.playerO?.id !== currentUser?.id)} onSpectate={(id) => navigate(`/game/${id}`)} />
         </div>
 
         {/* Lobby and Invite Sections */}

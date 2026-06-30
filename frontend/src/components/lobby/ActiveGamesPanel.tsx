@@ -21,7 +21,7 @@ export function ActiveGamesPanel({
   onForfeitGame,
   onNavigate
 }: ActiveGamesPanelProps) {
-  const filteredActiveGames = activeGames.filter(g => g.gameType === activeGameTab);
+  const filteredActiveGames = activeGames;
   if (filteredActiveGames.length === 0) return null;
 
   return (
@@ -44,13 +44,16 @@ export function ActiveGamesPanel({
               className="flex flex-col sm:flex-row justify-between sm:items-center p-4 rounded-xl bg-neutral-950 border border-neutral-800 hover:border-neutral-700 transition-all gap-4"
             >
               <div className="flex flex-col">
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <span className="text-xs font-semibold text-neutral-300">
                     {isWaiting ? (
                       <span className="text-indigo-400">Hosting {game.isPublic ? 'Public' : 'Private'} Lobby</span>
                     ) : (
                       <span>vs {opponentName}</span>
                     )}
+                  </span>
+                  <span className="text-[9px] bg-neutral-800 text-neutral-400 px-1.5 py-0.5 rounded uppercase font-bold tracking-wider">
+                    {game.gameType.replace('_', ' ')}
                   </span>
                   {!isWaiting && (
                     <span
