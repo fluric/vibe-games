@@ -264,7 +264,10 @@
     "player_col": "Spieler",
     "rooms_col": "Räume",
     "escaped_on_col": "Entkommen am",
-    "rooms_btn": "Räume"
+    "rooms_btn": "Räume",
+    "ui": {
+      "loading": "Wird geladen…"
+    }
   },
   "game": {
     "waiting_for_opponent": "Warte auf Gegner...",

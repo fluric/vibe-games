@@ -264,7 +264,10 @@
     "player_col": "Jugador",
     "rooms_col": "Salas",
     "escaped_on_col": "Escapó el",
-    "rooms_btn": "Salas"
+    "rooms_btn": "Salas",
+    "ui": {
+      "loading": "Cargando…"
+    }
   },
   "game": {
     "waiting_for_opponent": "Esperando al oponente...",

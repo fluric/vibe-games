@@ -154,7 +154,10 @@
     "player_col": "Player",
     "rooms_col": "Rooms",
     "escaped_on_col": "Escaped On",
-    "rooms_btn": "Rooms"
+    "rooms_btn": "Rooms",
+    "ui": {
+      "loading": "Loading…"
+    }
   },
   "game": {
     "waiting_for_opponent": "Waiting for opponent to join...",

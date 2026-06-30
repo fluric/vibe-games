@@ -95,7 +95,7 @@ export function EscapePage() {
     return (
       <div className="escape-loading-screen">
         <div className="escape-loading-spinner" />
-        <p>Loading…</p>
+        <p>{t('ui.loading', { defaultValue: 'Loading…' })}</p>
       </div>
     );
   }

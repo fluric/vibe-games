@@ -264,7 +264,10 @@
     "player_col": "Joueur",
     "rooms_col": "Salles",
     "escaped_on_col": "Évadé le",
-    "rooms_btn": "Salles"
+    "rooms_btn": "Salles",
+    "ui": {
+      "loading": "Chargement…"
+    }
   },
   "game": {
     "waiting_for_opponent": "En attente de l'adversaire...",
