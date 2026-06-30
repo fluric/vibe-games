@@ -124,7 +124,7 @@ export async function gameRoutes(server: FastifyInstance) {
 
   // 2. Get Open Public Games
   server.get<{ Querystring: { gameType?: string; status?: string } }>('/', async (request, reply) => {
-    const { gameType, status } = request.query;
+    const { gameType, status = 'waiting' } = request.query;
     const gameRepo = AppDataSource.getRepository(Game);
     
     let baseWhere: any = { isPublic: true };

@@ -1,4 +1,3 @@
-import React from 'react';
 import type { GameDto, MillGameState } from '@vibe-games/shared';
 import { isBotId } from '../../utils/botUtils';
 

@@ -56,7 +56,7 @@ export const ConnectFourEngine = {
   },
 
   getAiAction(state: ConnectFourGameState, botType: string, depth: number, weights: any, timeLimitMs: number): any {
-    return getConnectFourAiAction(state, botType, depth, weights, timeLimitMs);
+    return getConnectFourAiAction(state, botType as any, depth, weights, timeLimitMs);
   }
 };
 

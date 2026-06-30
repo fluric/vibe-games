@@ -27,7 +27,9 @@ export function getAiAction(
   }
 
   if (type === 'minimax') {
-    return getBestMinimaxMove(state, depth, weights, timeLimitMs);
+    const move = getBestMinimaxMove(state, depth, weights || { material: 200, mill: 150, blocked: -80, threat: 60, positional: 15, fork: 100, mobility: 5 }, timeLimitMs);
+    if (move) return move;
+    return getValidActions(state)[0];
   }
 
   // Fallback to Heuristics (Medium)

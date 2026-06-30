@@ -1,4 +1,3 @@
-import React from 'react';
 
 import type { 
 } from '@vibe-games/shared';
@@ -8,30 +7,14 @@ import { CardHand } from './holygrail/CardHand';
 import { HexGridRenderer } from './holygrail/HexGridRenderer';
 import { GrailControls } from './holygrail/GrailControls';
 
-import {
-  formatCardValue,
-  parseCardLabel,
-  getGroupedHistory,
-  renderGroupedHistoryEntry,
-  HolyGrailBoardProps
-} from './holygrail/boardUtils';
+import { formatCardValue, parseCardLabel, getGroupedHistory, renderGroupedHistoryEntry } from './holygrail/boardUtils';
+import type { HolyGrailBoardProps } from './holygrail/boardUtils';
 
-export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
-  state,
-  myPiece,
-  disabled,
-  submittingMove,
-  onAction
-}) => {
+export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = (props) => {
+  const { state, myPiece, submittingMove, onAction } = props;
   const hook = useHolyGrailBoard(props);
-  const { state, myPiece, submittingMove, onAction } = props; // @ts-ignore
   const { hands, phase, turn, pendingCombats } = state;
-  const { setIsReviewingLastTurn } = hook;
-  const { setReviewMoves } = hook;
-  const { setReviewDeploys } = hook;
-  const { setReviewRadioactivity } = hook;
-  const { setLastReviewedEndTurnIdx } = hook;
-  const { setIsLogCollapsed } = hook;
+
   const { activeHand } = hook;
   const { selectedHandCardIndex } = hook;
   const { selectedCellKey } = hook;
@@ -67,7 +50,7 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
   const { executeFightReact } = hook;
   const { executeRetreatReact } = hook;
   const { canDeploy } = hook;
-  const { board, grailCellKey, isReviewingLastTurn, setIsReviewingLastTurn, setReviewMoves, setReviewDeploys, setReviewRadioactivity, setLastReviewedEndTurnIdx, isLogCollapsed, setIsLogCollapsed, isMyTurn, aggregatedFriendlyMoves, aggregatedReviewMoves } = hook;
+  const { board, grailCellKey, isReviewingLastTurn, setIsReviewingLastTurn, setReviewMoves, reviewDeploys, setReviewDeploys, reviewRadioactivity, setReviewRadioactivity, setLastReviewedEndTurnIdx, isLogCollapsed, setIsLogCollapsed, isMyTurn, aggregatedFriendlyMoves, aggregatedReviewMoves, lastSelfEndTurnIdx } = hook;
   return (
     <div className="flex flex-col xl:flex-row gap-6 w-full max-w-6xl items-start justify-center p-4">
       <style>{`
@@ -142,9 +125,9 @@ export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = ({
             <span className="text-white font-semibold text-lg capitalize">
               {isReviewingLastTurn ? 'Review Phase' : `${phase} Phase`}
             </span>
-            {isReviewingLastTurn && reviewRadioactivity.length > 0 && (
+            {isReviewingLastTurn && (reviewRadioactivity || []).length > 0 && (
               <div className="flex items-center gap-1.5 flex-wrap">
-                {reviewRadioactivity.map((rad, idx) => {
+                {reviewRadioactivity.map((rad: any, idx: number) => {
                   const isX = rad.player === 'X';
                   const playerColor = isX ? 'text-blue-400' : rad.player === 'O' ? 'text-rose-400' : 'text-neutral-400';
                   const cardVal = parseCardLabel(rad.card);

@@ -1,5 +1,4 @@
-import React from 'react';
-import { GameDto } from '@vibe-games/shared';
+import type { GameDto } from '@vibe-games/shared';
 
 interface PublicLobbiesPanelProps {
   lobbyError: string | null;

@@ -1,20 +1,13 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
-import { HolyGrailCell, PlayerPiece, PendingCombat, HolyGrailCard } from '@vibe-games/shared';
-import {
-  TempVisualMove,
-  TempVisualDeploy,
-  TempVisualRadioactivity,
-    getAggregatedFriendlyMoves,
-  getAggregatedReviewMoves,
-  rollbackBoardAndGrail,
-  } from './boardUtils';
-import { HolyGrailBoardProps } from './boardUtils';
+import type { HolyGrailCell, PlayerPiece, PendingCombat, HolyGrailCard } from '@vibe-games/shared';
+import { getAggregatedFriendlyMoves, getAggregatedReviewMoves, rollbackBoardAndGrail, parseRadioactiveText, parseRetreatText, parseCombatText, parseCardLabel } from './boardUtils';
+import type { TempVisualMove, TempVisualDeploy, TempVisualRadioactivity } from './boardUtils';
+import type { HolyGrailBoardProps } from './boardUtils';
 
 export function useHolyGrailBoard(props: HolyGrailBoardProps) {
   const { state, myPiece, disabled, submittingMove, onAction } = props;
-  const { board: stateBoard, phase, pendingCombats, grailCellKey: stateGrailCellKey = '0,0' } = state;
-  const { board: stateBoard, phase, pendingCombats, grailCellKey: stateGrailCellKey = '0,0' } = state;
+  const { board: stateBoard, phase, turn, winner, hands, pendingCombats, grailCellKey: stateGrailCellKey = '0,0' } = state;
 
   const { id: gameId } = useParams<{ id: string }>();
 

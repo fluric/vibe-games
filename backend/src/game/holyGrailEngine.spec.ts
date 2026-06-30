@@ -1,5 +1,8 @@
 import assert from 'assert';
-import { HolyGrailEngine, getDistance, isValidHex, getCellType, evaluateDuel, getNeighborIndex, reassembleCellStack, getFarmLandsCount, createInitialState, drawRandomCard } from './holyGrailEngine';
+import { HolyGrailEngine, createInitialState } from './holyGrailEngine';
+import { getDistance, isValidHex, getCellType, getNeighborIndex, getFarmLandsCount } from './holygrail/gridUtils';
+import { evaluateDuel, reassembleCellStack } from './holygrail/combatResolver';
+import { drawRandomCard } from './holygrail/deckManager';
 import { HolyGrailCard, HolyGrailGameState } from '@vibe-games/shared';
 
 async function runTests() {

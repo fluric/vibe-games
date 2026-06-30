@@ -1,5 +1,4 @@
-import React from 'react';
-import { LeaderboardEntryDto, UserDto } from '@vibe-games/shared';
+import type { LeaderboardEntryDto, UserDto } from '@vibe-games/shared';
 
 interface LeaderboardPanelProps {
   leaderboardError: string | null;

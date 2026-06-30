@@ -1,4 +1,3 @@
-import React from 'react';
 import type { GameDto } from '@vibe-games/shared';
 
 interface OngoingMatchesPanelProps {

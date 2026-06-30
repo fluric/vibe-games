@@ -154,7 +154,6 @@ export function LobbyPage() {
   const [cancelGameId, setCancelGameId] = useState<string | null>(null);
   const [forfeitGameId, setForfeitGameId] = useState<string | null>(null);
   const [openGames, setOpenGames] = useState<GameDto[]>([]);
-  const [ongoingGames, setOngoingGames] = useState<GameDto[]>([]);
   const [activeGames, setActiveGames] = useState<GameDto[]>([]);
   const [loadingLobby, setLoadingLobby] = useState(true);
   const [creatingGame, setCreatingGame] = useState(false);
@@ -368,8 +367,8 @@ export function LobbyPage() {
     if (!currentUser) return;
     try {
       const games = await api.listGames(undefined, "waiting");
-      const ongoing = await api.listGames(undefined, "in_progress");
-      setOngoingGames(ongoing);
+      
+      
       // Filter out matches created by this player (since they can't play against themselves)
       setOpenGames(games.filter((g) => g.playerX?.id !== currentUser.id && g.playerO?.id !== currentUser.id));
       setLobbyError(null);

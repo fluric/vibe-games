@@ -115,7 +115,7 @@ export function GamePage() {
     if (!id || submittingMove) return;
     setSubmittingMove(true);
     try {
-      const updated = await api.submitMove(id, { action, ...params });
+      const updated = await api.submitMove(id, { action, ...(params as Record<string, unknown>) });
       const oldBoard = game?.state.board;
       const newBoard = updated.state.board;
       const isAiGame = isGameAgainstAi(updated);
