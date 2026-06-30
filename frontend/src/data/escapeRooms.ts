@@ -45,67 +45,74 @@ export interface EscapeRoom {
   config: RoomConfig;
 }
 
-export const ESCAPE_ROOMS: EscapeRoom[] = [
-  {
-    id: 1,
-    name: 'The Keypad',
-    description: 'A dimly lit server room. A heavy steel door bars your exit. The PIN is hidden somewhere in the room.',
-    atmosphere: 'Server humming. Dust on every surface. One red light blinks.',
-    config: {
-      puzzleType: 'keypad',
-      solution: '4827',
-      visibleClues: [
-        { x: '12%', y: '30%', text: '4 _ _ _', label: 'Sticky note on monitor' },
-        { x: '72%', y: '18%', text: '_ _ 2 _', label: 'Whiteboard scrawl' },
-        { x: '55%', y: '72%', text: '_ _ _ 7', label: 'Label on server rack' },
-      ],
-      hiddenHotspot: {
-        id: 'lamp',
-        label: 'Dusty lamp shade',
-        x: '35%',
-        y: '45%',
-        revealedClue: '_ 8 _ _  (written under the shade)',
+import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
+
+export function useEscapeRooms(): EscapeRoom[] {
+  const { t } = useTranslation('escape');
+
+  return useMemo(() => [
+    {
+      id: 1,
+      name: t('room1.name', { defaultValue: 'The Keypad' }),
+      description: t('room1.description', { defaultValue: 'A dimly lit server room. A heavy steel door bars your exit. The PIN is hidden somewhere in the room.' }),
+      atmosphere: t('room1.atmosphere', { defaultValue: 'Server humming. Dust on every surface. One red light blinks.' }),
+      config: {
+        puzzleType: 'keypad',
+        solution: '4827',
+        visibleClues: [
+          { x: '12%', y: '30%', text: '4 _ _ _', label: t('room1.clue1', { defaultValue: 'Sticky note on monitor' }) },
+          { x: '72%', y: '18%', text: '_ _ 2 _', label: t('room1.clue2', { defaultValue: 'Whiteboard scrawl' }) },
+          { x: '55%', y: '72%', text: '_ _ _ 7', label: t('room1.clue3', { defaultValue: 'Label on server rack' }) },
+        ],
+        hiddenHotspot: {
+          id: 'plant',
+          label: t('room1.hotspotLabel', { defaultValue: 'Potted plant in the corner' }),
+          x: '85%',
+          y: '80%',
+          revealedClue: t('room1.hotspotClue', { defaultValue: 'Under the pot: _ 8 _ _' }),
+        },
       },
     },
-  },
-  {
-    id: 2,
-    name: 'The Cipher Wheel',
-    description: 'A candlelit study. An ornate brass wheel dominates the far wall. A rolled scroll rests on the desk.',
-    atmosphere: 'Wax drips. Pages rustle. Something is encoded here.',
-    config: {
-      puzzleType: 'cipher',
-      ciphertext: 'JEVGF',
-      shift: 17,
-      solution: 'SNEPO',
-      sceneClueText: 'A grandfather clock is frozen at 5:00 PM. A dusty mirror hangs beside it.',
+    {
+      id: 2,
+      name: t('room2.name', { defaultValue: 'The Cipher Wheel' }),
+      description: t('room2.description', { defaultValue: 'A dusty library. An ancient mechanical wheel sits on a pedestal.' }),
+      atmosphere: t('room2.atmosphere', { defaultValue: 'Wax drips. Pages rustle. Something is encoded here.' }),
+      config: {
+        puzzleType: 'cipher',
+        ciphertext: t('room2.ciphertext', { defaultValue: 'JEVGF' }),
+        shift: Number(t('room2.shift', { defaultValue: 17 })),
+        solution: t('room2.solution', { defaultValue: 'SNEPO' }),
+        sceneClueText: t('room2.clueText', { defaultValue: 'A grandfather clock is frozen at 5:00 PM. A dusty mirror hangs beside it.' }),
+      },
     },
-  },
-  {
-    id: 3,
-    name: 'The Fuse Box',
-    description: 'A utility room reeking of ozone. The circuit board on the wall is a scrambled mess of wires.',
-    atmosphere: 'Sparks crackle. The lights flicker. Patch the circuit.',
-    config: {
-      puzzleType: 'fuse',
-      wires: [
-        { id: 'w1', color: 'Red',    colorHex: '#ef4444', targetPost: 'C' },
-        { id: 'w2', color: 'Blue',   colorHex: '#3b82f6', targetPost: 'B' },
-        { id: 'w3', color: 'Yellow', colorHex: '#eab308', targetPost: 'D' },
-        { id: 'w4', color: 'Green',  colorHex: '#22c55e', targetPost: 'A' },
-      ],
-      posts: [
-        { id: 'A', label: 'A · HIGH' },
-        { id: 'B', label: 'B · LOW'  },
-        { id: 'C', label: 'C · ALT'  },
-        { id: 'D', label: 'D · GND'  },
-      ],
-      clues: [
-        "1. The wire connected to HIGH is neither Blue nor Red.",
-        "2. The Red wire connects exactly one level above the Yellow wire.",
-        "3. The ALT post is not connected to the Green wire.",
-        "4. The Yellow wire connects to a post lower than the Blue wire's post."
-      ]
+    {
+      id: 3,
+      name: t('room3.name', { defaultValue: 'The Fuse Box' }),
+      description: t('room3.description', { defaultValue: 'A utility room reeking of ozone. The circuit board on the wall is a scrambled mess of wires.' }),
+      atmosphere: t('room3.atmosphere', { defaultValue: 'Sparks crackle. The lights flicker. Patch the circuit.' }),
+      config: {
+        puzzleType: 'fuse',
+        wires: [
+          { id: 'w1', color: 'Red',    colorHex: '#ef4444', targetPost: 'C' },
+          { id: 'w2', color: 'Blue',   colorHex: '#3b82f6', targetPost: 'B' },
+          { id: 'w3', color: 'Yellow', colorHex: '#eab308', targetPost: 'D' },
+          { id: 'w4', color: 'Green',  colorHex: '#22c55e', targetPost: 'A' },
+        ],
+        posts: [
+          { id: 'A', label: 'A · HIGH' },
+          { id: 'B', label: 'B · LOW'  },
+          { id: 'C', label: 'C · ALT'  },
+          { id: 'D', label: 'D · GND'  },
+        ],
+        clues: [
+          t('room3.clue1', { defaultValue: "1. The wire connected to HIGH is neither Blue nor Red." }),
+          t('room3.clue2', { defaultValue: "2. The Red wire connects exactly one level above the Yellow wire." }),
+          t('room3.clue3', { defaultValue: "3. The ALT post is not connected to the Green wire." }),
+          t('room3.clue4', { defaultValue: "4. The Yellow wire connects to a post lower than the Blue wire's post." })
+        ]
+      },
     },
-  },
-];
+  ], [t]);
+}

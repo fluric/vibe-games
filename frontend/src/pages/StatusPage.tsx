@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { API_VERSION } from '@vibe-games/shared';
+import { useTranslation } from 'react-i18next';
 
 interface HealthState {
   loading: boolean;
@@ -12,6 +13,7 @@ interface HealthState {
 }
 
 export function StatusPage() {
+  const { t } = useTranslation('lobby');
   const [health, setHealth] = useState<HealthState>({
     loading: true,
     ok: null,
@@ -70,45 +72,45 @@ export function StatusPage() {
       {/* System Status Dashboard */}
       <div className="flex flex-col gap-3 p-6 rounded-2xl border border-solid border-neutral-800 bg-neutral-900/60 backdrop-blur-md shadow-2xl w-80 text-left z-10">
         <h3 className="text-base font-bold text-white border-b border-solid border-neutral-800 pb-2 mb-1">
-          System Connectivity
+          {t('system_connectivity', { defaultValue: 'System Connectivity' })}
         </h3>
         
         <div className="flex items-center justify-between text-sm py-1">
-          <span className="text-neutral-400">API Gateway:</span>
+          <span className="text-neutral-400">{t('api_gateway', { defaultValue: 'API Gateway:' })}</span>
           {health.loading ? (
-            <span className="text-neutral-500 animate-pulse">Checking...</span>
+            <span className="text-neutral-500 animate-pulse">{t('checking', { defaultValue: 'Checking...' })}</span>
           ) : health.ok ? (
             <span className="flex items-center gap-1.5 font-medium text-emerald-400">
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
               </span>
-              Online
+              {t('online', { defaultValue: 'Online' })}
             </span>
           ) : (
             <span className="flex items-center gap-1.5 font-medium text-rose-500">
               <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500"></span>
-              Offline
+              {t('offline', { defaultValue: 'Offline' })}
             </span>
           )}
         </div>
 
         <div className="flex items-center justify-between text-sm py-1">
-          <span className="text-neutral-400">PostgreSQL DB:</span>
+          <span className="text-neutral-400">{t('postgresql_db', { defaultValue: 'PostgreSQL DB:' })}</span>
           {health.loading ? (
-            <span className="text-neutral-500 animate-pulse">Checking...</span>
+            <span className="text-neutral-500 animate-pulse">{t('checking', { defaultValue: 'Checking...' })}</span>
           ) : health.database ? (
             <span className="flex items-center gap-1.5 font-medium text-emerald-400">
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
               </span>
-              Connected
+              {t('connected', { defaultValue: 'Connected' })}
             </span>
           ) : (
             <span className="flex items-center gap-1.5 font-medium text-rose-500">
               <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500"></span>
-              Disconnected
+              {t('disconnected', { defaultValue: 'Disconnected' })}
             </span>
           )}
         </div>
@@ -116,45 +118,45 @@ export function StatusPage() {
         {/* Version Synchronization Check Section */}
         <div className="border-t border-solid border-neutral-800/80 pt-3 mt-2 flex flex-col gap-2">
           <h4 className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest mb-1">
-            System Synchronization
+            {t('system_sync', { defaultValue: 'System Synchronization' })}
           </h4>
           
           <div className="flex items-center justify-between text-xs">
-            <span className="text-neutral-400">API Contract:</span>
+            <span className="text-neutral-400">{t('api_contract', { defaultValue: 'API Contract:' })}</span>
             {health.loading ? (
-              <span className="text-neutral-500 animate-pulse">Checking...</span>
+              <span className="text-neutral-500 animate-pulse">{t('checking', { defaultValue: 'Checking...' })}</span>
             ) : isApiCompatible ? (
-              <span className="text-emerald-400 font-medium">Compatible (v{frontendApiVersion})</span>
+              <span className="text-emerald-400 font-medium">{t('compatible', { defaultValue: 'Compatible (v{{version}})', version: frontendApiVersion })}</span>
             ) : (
               <span className="text-rose-400 font-bold flex items-center gap-1 bg-rose-500/10 px-2 py-0.5 rounded border border-rose-500/20">
-                🚨 Mismatch ({health.apiVersion || 'unknown'} vs {frontendApiVersion})
+                🚨 {t('mismatch', { defaultValue: 'Mismatch ({{api}} vs {{frontend}})', api: health.apiVersion || 'unknown', frontend: frontendApiVersion })}
               </span>
             )}
           </div>
 
           <div className="flex items-center justify-between text-xs">
-            <span className="text-neutral-400">Git Revision:</span>
+            <span className="text-neutral-400">{t('git_revision', { defaultValue: 'Git Revision:' })}</span>
             {health.loading ? (
-              <span className="text-neutral-500 animate-pulse">Checking...</span>
+              <span className="text-neutral-500 animate-pulse">{t('checking', { defaultValue: 'Checking...' })}</span>
             ) : isRevisionSynced ? (
-              <span className="text-emerald-400 font-medium">Synced ({frontendRevision.substring(0, 7)})</span>
+              <span className="text-emerald-400 font-medium">{t('synced', { defaultValue: 'Synced ({{rev}})', rev: frontendRevision.substring(0, 7) })}</span>
             ) : (
               <span className="text-amber-400 font-medium flex items-center gap-1 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
-                ⚠️ Out of Sync
+                ⚠️ {t('out_of_sync', { defaultValue: 'Out of Sync' })}
               </span>
             )}
           </div>
 
           {!health.loading && !isRevisionSynced && (
             <div className="text-[10px] text-amber-500 leading-normal bg-amber-500/5 border border-amber-500/10 rounded p-2 mt-1">
-              Backend is running {health.revision?.substring(0, 7) || 'unknown'} while frontend expects {frontendRevision.substring(0, 7)}. A server deployment may be in progress.
+              {t('sync_warning_msg', { defaultValue: 'Backend is running {{back}} while frontend expects {{front}}. A server deployment may be in progress.', back: health.revision?.substring(0, 7) || 'unknown', front: frontendRevision.substring(0, 7) })}
             </div>
           )}
         </div>
 
         {health.version && (
           <div className="flex items-center justify-between text-[10px] text-neutral-500 border-t border-solid border-neutral-800/80 pt-3 mt-1 font-mono">
-            <span>Package version:</span>
+            <span>{t('package_version', { defaultValue: 'Package version:' })}</span>
             <span>v{health.version}</span>
           </div>
         )}
@@ -164,7 +166,7 @@ export function StatusPage() {
         to="/"
         className="text-xs px-4 py-2.5 rounded-xl bg-neutral-900 border border-neutral-800 hover:border-neutral-700 text-neutral-300 font-semibold transition-all active:scale-95 z-10"
       >
-        Back to Dashboard
+        {t('back_to_dashboard', { defaultValue: 'Back to Dashboard' })}
       </Link>
     </div>
   );

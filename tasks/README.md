@@ -117,10 +117,21 @@ When the scheduled nightly run triggers, the agent MUST execute the following 4 
 2. ALWAYS execute in strict priority order: **P1 (Bugs)** > **P2 (Specs/Features)** > **P3 (Refactors)**.
 3. For each task:
    - Implement the code and write accompanying tests.
-   - Run `npm run test:quick` to verify.
+   - Run `npm run test:quick` to verify all existing tests still pass.
    - **MISSING SPECS / AMBIGUITY:** If the task lacks critical details in the specs to implement it correctly, DO NOT GUESS. Prepend `[CLARIFICATION NEEDED]` to the task title, write your exact questions in the Agent Notes, and immediately move on to the next task.
    - **INFINITE LOOP PREVENTION:** If a task fails testing more than 3 times, prepend `[BLOCKED]` to the task title in the file, leave a summary in the Agent Notes detailing why it failed, and immediately move on to the next task.
-   - Append a summary to the "Agent Notes" section of the task file.
+   - **Coverage sufficiency check** — after tests pass, open the relevant spec file(s) and verify each Acceptance Criterion is covered by at least one test:
+     - For backend logic (engines, services): check the corresponding `.spec.ts` file.
+     - For frontend components: check `frontend/src/__tests__/`.
+     - For API contracts: check `backend/src/game/*Api.spec.ts`.
+     - For any uncovered Acceptance Criterion: write a new test inline (preferred) **or** create a `T`-prefix task in `tasks/open/` if the test would require more than 30 minutes of work. Either way, do not leave the task without noting coverage status in the Agent Notes.
+     - Document your coverage verdict in the task's Agent Notes: list which Acceptance Criteria have tests and which do not, using the format:
+       ```
+       Coverage:
+       ✅ [Criterion text] — tested in <file>
+       ⚠️  [Criterion text] — no test exists → created T00X / added inline test
+       ```
+   - Append a summary (including the coverage verdict) to the "Agent Notes" section of the task file.
    - Move the task file to `tasks/done/` (`git mv`) and update the Done table in this README.
    - Commit the changes using the conventional commit format (`feat/fix/refactor/test(scope): ...`).
 4. Run `npm run test:full` before the final push. Push all commits at the end.

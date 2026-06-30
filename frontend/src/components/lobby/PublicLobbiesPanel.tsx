@@ -1,4 +1,5 @@
 import type { GameDto } from '@vibe-games/shared';
+import { useTranslation } from 'react-i18next';
 
 interface PublicLobbiesPanelProps {
   lobbyError: string | null;
@@ -15,6 +16,7 @@ export function PublicLobbiesPanel({
   syncStatus,
   onJoinGame
 }: PublicLobbiesPanelProps) {
+  const { t } = useTranslation('lobby');
   return (
     <>
       {lobbyError && (
@@ -26,11 +28,11 @@ export function PublicLobbiesPanel({
       <div className="flex flex-col gap-3 max-h-[300px] overflow-y-auto pr-1">
         {loadingLobby ? (
           <div className="text-center py-8 text-neutral-500 text-sm">
-            Loading lobbies...
+            {t('loading_lobbies', { defaultValue: 'Loading lobbies...' })}
           </div>
         ) : filteredLobbies.length === 0 ? (
           <div className="text-center py-8 border border-dashed border-neutral-800 rounded-xl text-neutral-500 text-sm">
-            No public games waiting. Create a game above to start!
+            {t('no_public_games', { defaultValue: 'No public games waiting. Create a game above to start!' })}
           </div>
         ) : (
           filteredLobbies.map((game) => (
@@ -41,7 +43,7 @@ export function PublicLobbiesPanel({
               <div>
                 <div className="flex items-center gap-2">
                   <div className="text-xs font-semibold text-neutral-300">
-                    {game.playerX?.username || 'Unknown Player'}'s Game
+                    {t('players_game', { defaultValue: '{{name}}\'s Game', name: game.playerX?.username || t('unknown_player', { defaultValue: 'Unknown Player' }) })}
                   </div>
                   <span className="text-[9px] bg-neutral-800 text-neutral-400 px-1.5 py-0.5 rounded uppercase font-bold tracking-wider">
                     {game.gameType.replace('_', ' ')}
@@ -56,7 +58,7 @@ export function PublicLobbiesPanel({
                 disabled={syncStatus === 'mismatch'}
                 className="px-4 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 disabled:bg-neutral-800 disabled:text-neutral-600 disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none text-xs font-bold text-white transition-colors active:scale-95"
               >
-                Join Match
+                {t('join_match_btn', { defaultValue: 'Join Match' })}
               </button>
             </div>
           ))

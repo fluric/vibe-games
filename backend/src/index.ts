@@ -7,6 +7,7 @@ import { AppDataSource } from './data-source';
 import { healthRoutes } from './routes/health';
 import { gameRoutes } from './routes/games';
 import { authRoutes } from './routes/auth';
+import { escapeRoutes } from './routes/escape';
 import { User } from './entities/User';
 
 declare module 'fastify' {
@@ -114,6 +115,7 @@ async function bootstrap() {
   await server.register(healthRoutes, { prefix: '/health' });
   await server.register(authRoutes, { prefix: '/auth' });
   await server.register(gameRoutes, { prefix: '/games' });
+  await server.register(escapeRoutes, { prefix: '/escape' });
 
   // ── Start ──────────────────────────────────────────────────────────────────
   await server.listen({ port: PORT, host: HOST });

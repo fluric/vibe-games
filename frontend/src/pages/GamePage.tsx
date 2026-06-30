@@ -10,6 +10,7 @@ import { ConfirmModal } from '../components/ConfirmModal';
 import { RulesModal } from '../components/RulesModal';
 import { isBotId } from '../utils/botUtils';
 import { GameLayout } from '../components/game/GameLayout';
+import { useTranslation } from 'react-i18next';
 
 function isGameAgainstAi(game?: GameDto | null): boolean {
   if (!game) return false;
@@ -17,6 +18,7 @@ function isGameAgainstAi(game?: GameDto | null): boolean {
 }
 
 export function GamePage() {
+  const { t } = useTranslation('game');
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [game, setGame] = useState<GameDto | null>(null);
@@ -216,34 +218,34 @@ export function GamePage() {
   let bannerMessage = '';
   let bannerSub = '';
   if (game.status === 'waiting') {
-    bannerMessage = 'Waiting for Player 2';
-    bannerSub = 'Share the invite link below so they can join.';
+    bannerMessage = t('waiting_for_opponent', { defaultValue: 'Waiting for opponent to join...' });
+    bannerSub = t('share_invite_link', { defaultValue: 'Share the invite link below so they can join.' });
   } else if (game.status === 'finished') {
-    if (game.state.winner === 'draw') bannerMessage = "It's a Draw!";
-    else bannerMessage = `${game.state.winner === 'X' ? game.playerX?.username : game.playerO?.username} Wins!`;
-    bannerSub = 'GG! Return to the lobby to host or join another match.';
+    if (game.state.winner === 'draw') bannerMessage = t('draw', { defaultValue: "It's a Draw!" });
+    else bannerMessage = t('winner', { defaultValue: '{{winner}} Wins!', winner: game.state.winner === 'X' ? game.playerX?.username : game.playerO?.username });
+    bannerSub = t('gg_return', { defaultValue: 'GG! Return to the lobby to host or join another match.' });
   } else if (game.status === 'in_progress') {
     if (isSpectator) {
-      bannerMessage = `Spectating: Turn belongs to ${game.state.turn}`;
-      bannerSub = 'Reviewing live moves in real time.';
+      bannerMessage = t('spectating_turn', { defaultValue: 'Spectating: Turn belongs to {{turn}}', turn: game.state.turn });
+      bannerSub = t('reviewing_live', { defaultValue: 'Reviewing live moves in real time.' });
     } else if (isMyTurn) {
       if (game.gameType === 'mill') {
         const millState = game.state as MillGameState;
-        if (millState.millFormedThisTurn) bannerMessage = 'Formed a Mill! 💥';
-        else if (millState.phase === 'placement') bannerMessage = 'Your Turn: Place Piece';
-        else if (millState.phase === 'movement') bannerMessage = 'Your Turn: Move Piece';
-        else if (millState.phase === 'flying') bannerMessage = 'Your Turn: Fly Piece ✈️';
+        if (millState.millFormedThisTurn) bannerMessage = t('mill_formed', { defaultValue: 'Formed a Mill! 💥' });
+        else if (millState.phase === 'placement') bannerMessage = t('your_turn_place', { defaultValue: 'Your Turn: Place Piece' });
+        else if (millState.phase === 'movement') bannerMessage = t('your_turn_move', { defaultValue: 'Your Turn: Move Piece' });
+        else if (millState.phase === 'flying') bannerMessage = t('your_turn_fly', { defaultValue: 'Your Turn: Fly Piece ✈️' });
       } else if (game.gameType === 'connect_four') {
-        bannerMessage = 'Your Turn: Drop Piece 🔴';
+        bannerMessage = t('your_turn_drop', { defaultValue: 'Your Turn: Drop Piece 🔴' });
       } else if (game.gameType === 'holy_grail') {
         const grailState = game.state as HolyGrailGameState;
-        if (grailState.phase === 'react') bannerMessage = 'Your Turn: React to Attack! ⚔️';
-        else if (grailState.phase === 'deploy') bannerMessage = 'Your Turn: Deploy Units 🛖';
-        else if (grailState.phase === 'move') bannerMessage = 'Your Turn: Move Units 🛡️';
+        if (grailState.phase === 'react') bannerMessage = t('your_turn_react', { defaultValue: 'Your Turn: React to Attack! ⚔️' });
+        else if (grailState.phase === 'deploy') bannerMessage = t('your_turn_deploy', { defaultValue: 'Your Turn: Deploy Units 🛖' });
+        else if (grailState.phase === 'move') bannerMessage = t('your_turn_move_units', { defaultValue: 'Your Turn: Move Units 🛡️' });
       }
     } else {
-      bannerMessage = `Opponent's Turn (${game.state.turn})`;
-      bannerSub = isGameAgainstAi(game) ? 'AI is calculating move...' : `Waiting for opponent to submit their action.`;
+      bannerMessage = t('opponents_turn', { defaultValue: 'Opponent\'s Turn ({{turn}})', turn: game.state.turn });
+      bannerSub = isGameAgainstAi(game) ? 'AI is calculating move...' : t('waiting_for_action', { defaultValue: 'Waiting for opponent to submit their action.' });
     }
   }
 
@@ -294,18 +296,18 @@ export function GamePage() {
 
       <ConfirmModal
         isOpen={showCancelConfirm}
-        title="Cancel Game Lobby"
-        message="Are you sure you want to cancel this game lobby?"
-        confirmLabel="Cancel Game"
+        title={t('cancel_game_title', { defaultValue: 'Cancel Game Lobby' })}
+        message={t('cancel_game_msg', { defaultValue: 'Are you sure you want to cancel this game lobby?' })}
+        confirmLabel={t('cancel_game_btn', { defaultValue: 'Cancel Game' })}
         onConfirm={executeCancelGame}
         onCancel={() => { actionPendingRef.current = false; setShowCancelConfirm(false); }}
       />
 
       <ConfirmModal
         isOpen={showForfeitConfirm}
-        title="Forfeit Match"
-        message="Are you sure you want to forfeit this match? This will count as a loss."
-        confirmLabel="Forfeit"
+        title={t('forfeit_match_title', { defaultValue: 'Forfeit Match' })}
+        message={t('forfeit_match_msg', { defaultValue: 'Are you sure you want to forfeit this match? This counts as a loss and your ELO will be updated.' })}
+        confirmLabel={t('forfeit_match_btn', { defaultValue: 'Forfeit Match' })}
         onConfirm={executeForfeitGame}
         onCancel={() => { actionPendingRef.current = false; setShowForfeitConfirm(false); }}
       />

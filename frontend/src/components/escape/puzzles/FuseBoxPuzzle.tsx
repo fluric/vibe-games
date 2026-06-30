@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { FuseRoomConfig } from '../../../data/escapeRooms';
 
 interface Props {
@@ -9,6 +10,7 @@ interface Props {
 /** Wire-pairing fuse box puzzle.
  *  Desktop: drag wire onto post. Mobile: tap wire then tap post. */
 export function FuseBoxPuzzle({ config, onSolved }: Props) {
+  const { t } = useTranslation('escape');
   // Map wireId → matched postId (null = unmatched)
   const [connections, setConnections] = useState<Record<string, string | null>>(
     () => Object.fromEntries(config.wires.map((w) => [w.id, null])),
@@ -86,13 +88,13 @@ export function FuseBoxPuzzle({ config, onSolved }: Props) {
     <div className={`escape-puzzle escape-fuse${solved ? ' solved' : ''}`}>
       <p className="fuse-instruction">
         {solved
-          ? '⚡ Circuit complete!'
-          : 'Connect each wire to its matching post. Tap the wire, then tap the post.'}
+          ? t('ui.circuit_complete', { defaultValue: '⚡ Circuit complete!' })
+          : t('ui.connect_wires', { defaultValue: 'Connect each wire to its matching post. Tap the wire, then tap the post.' })}
       </p>
 
       {!solved && config.clues && config.clues.length > 0 && (
         <div className="fuse-clues" style={{ marginBottom: '1.5rem', background: 'rgba(0,0,0,0.4)', padding: '1rem', borderRadius: '0.75rem', borderLeft: '4px solid #f59e0b', textAlign: 'left', fontSize: '0.875rem', color: '#cbd5e1' }}>
-          <h4 style={{ color: '#f59e0b', margin: '0 0 0.5rem 0', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Circuit Diagram Notes</h4>
+          <h4 style={{ color: '#f59e0b', margin: '0 0 0.5rem 0', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{t('ui.circuit_notes', { defaultValue: 'Circuit Diagram Notes' })}</h4>
           <ul style={{ margin: 0, paddingLeft: '1rem', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
             {config.clues.map((clue, idx) => (
               <li key={idx}>{clue}</li>
@@ -104,7 +106,7 @@ export function FuseBoxPuzzle({ config, onSolved }: Props) {
       <div className="fuse-panel">
         {/* Wires (left side) */}
         <div className="fuse-wires">
-          <h3 className="fuse-col-label">Wires</h3>
+          <h3 className="fuse-col-label">{t('ui.wires', { defaultValue: 'Wires' })}</h3>
           {config.wires.map((wire) => {
             const connected = connections[wire.id] != null;
             const isSelected = selectedWire === wire.id;
@@ -137,7 +139,7 @@ export function FuseBoxPuzzle({ config, onSolved }: Props) {
 
         {/* Posts (right side) */}
         <div className="fuse-posts">
-          <h3 className="fuse-col-label">Posts</h3>
+          <h3 className="fuse-col-label">{t('ui.posts', { defaultValue: 'Posts' })}</h3>
           {config.posts.map((post) => {
             const occupied = usedPosts.has(post.id);
             const connectedWire = config.wires.find((w) => connections[w.id] === post.id);
@@ -170,7 +172,7 @@ export function FuseBoxPuzzle({ config, onSolved }: Props) {
         style={{ marginTop: '1.5rem', width: '100%' }}
         id="test-circuit-btn"
       >
-        {solved ? '✓ Circuit Restored!' : 'Test Circuit'}
+        {solved ? t('ui.circuit_restored', { defaultValue: '✓ Circuit Restored!' }) : t('ui.test_circuit', { defaultValue: 'Test Circuit' })}
       </button>
     </div>
   );

@@ -5,6 +5,8 @@ import { API_VERSION, type GameDto, type UserDto, type LeaderboardEntryDto } fro
 import * as audio from '../components/AudioEffects';
 import aiConfig from '../../../backend/src/game/aiConfig.json';
 import { ConfirmModal } from '../components/ConfirmModal';
+import { useTranslation } from 'react-i18next';
+import { LanguageSwitcher } from '../components/LanguageSwitcher';
 
 import { ActiveGamesPanel } from '../components/lobby/ActiveGamesPanel';
 import { JoinByCodePanel } from '../components/lobby/JoinByCodePanel';
@@ -150,6 +152,7 @@ interface GoogleIdentity {
 }
 
 export function LobbyPage() {
+  const { t } = useTranslation('lobby');
   const navigate = useNavigate();
   const actionPendingRef = useRef(false);
   const [cancelGameId, setCancelGameId] = useState<string | null>(null);
@@ -800,12 +803,12 @@ export function LobbyPage() {
                 disabled={loggingIn || !devName.trim() || !devEmail.trim()}
                 className="w-full py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 disabled:from-neutral-800 disabled:to-neutral-800 disabled:text-neutral-600 text-white font-bold text-xs transition-all flex items-center justify-center gap-2 shadow-lg shadow-indigo-500/10 active:scale-[0.98]"
               >
-                {loggingIn ? 'Authenticating...' : 'Enter Vibe Games'}
+                {loggingIn ? t('authenticating', { defaultValue: 'Authenticating...' }) : t('log_in', { defaultValue: 'Enter Vibe Games' })}
               </button>
             </form>
           ) : !googleClientId ? (
             <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs text-center leading-normal">
-              🔒 Authentication is not configured. Please configure a Google Client ID in settings to enable sign-in.
+              🔒 {t('auth_not_configured', { defaultValue: 'Authentication is not configured. Please configure a Google Client ID in settings to enable sign-in.' })}
             </div>
           ) : null}
         </div>
@@ -829,13 +832,13 @@ export function LobbyPage() {
               Vibe Games
             </h1>
             <p className="text-neutral-400 text-sm mt-1">
-              Select a game and challenge players in real time
+              {t('subtitle', { defaultValue: 'Select a game and challenge players in real time' })}
             </p>
           </div>
           <div className="flex items-center gap-3">
             {currentUser && (
               <div className="flex items-center gap-2 bg-neutral-900/50 border border-neutral-800/85 px-3 py-1.5 rounded-xl text-xs w-fit">
-                <span className="text-neutral-500 font-medium">Player:</span>
+                <span className="text-neutral-500 font-medium">{t('player', { defaultValue: 'Player:' })}</span>
                 {isEditingName ? (
                   <form onSubmit={handleSaveName} className="flex items-center gap-1.5">
                     <input
@@ -859,24 +862,25 @@ export function LobbyPage() {
                       }}
                       className="text-indigo-400 hover:text-indigo-300 text-[11px] underline ml-1 cursor-pointer"
                     >
-                      Edit Name
+                      {t('edit_name')}
                     </button>
                   </div>
                 )}
               </div>
             )}
+            <LanguageSwitcher />
             <Link
               to="/status"
               className="text-xs px-3.5 py-2 rounded-lg bg-neutral-900 border border-neutral-800 hover:border-neutral-700 text-neutral-300 font-medium transition-all"
             >
-              System Health
+              {t('system_health')}
             </Link>
             {currentUser && (
               <button
                 onClick={handleLogout}
                 className="text-xs px-3.5 py-2 rounded-lg bg-rose-950/40 border border-rose-900/30 hover:bg-rose-900/40 text-rose-400 font-medium transition-all active:scale-95"
               >
-                Log Out
+                {t('log_out')}
               </button>
             )}
           </div>
@@ -888,9 +892,9 @@ export function LobbyPage() {
             <div className="flex items-center gap-3">
               <span className="text-xl">🚨</span>
               <div>
-                <p className="font-bold">Critical version mismatch detected</p>
+                <p className="font-bold">{t('version_mismatch_title', { defaultValue: 'Critical version mismatch detected' })}</p>
                 <p className="text-xs text-rose-300/80 mt-0.5">
-                  The server has been updated with a newer API version (v{backendApiVersion || '?'}). Please refresh the page to update your client.
+                  {t('version_mismatch_desc', { defaultValue: `The server has been updated with a newer API version (v${backendApiVersion || '?'}). Please refresh the page to update your client.` })}
                 </p>
               </div>
             </div>
@@ -898,7 +902,7 @@ export function LobbyPage() {
               onClick={() => window.location.reload()}
               className="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold rounded-xl transition-all shadow-md shadow-rose-600/20 active:scale-95 whitespace-nowrap self-start sm:self-auto"
             >
-              Refresh Page
+              {t('refresh_page', { defaultValue: 'Refresh Page' })}
             </button>
           </div>
         )}

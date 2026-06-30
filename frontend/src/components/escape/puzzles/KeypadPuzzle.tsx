@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import type { KeypadRoomConfig } from '../../../data/escapeRooms';
+import { useTranslation } from 'react-i18next';
 
 interface Props {
   config: KeypadRoomConfig;
@@ -9,6 +10,7 @@ interface Props {
 /** 4-digit PIN keypad puzzle.
  *  Three clues are visible in the scene; one is hidden behind a tappable hotspot. */
 export function KeypadPuzzle({ config, onSolved }: Props) {
+  const { t } = useTranslation('escape');
   const [digits, setDigits] = useState('');
   const [shaking, setShaking] = useState(false);
   const [revealedHotspot, setRevealedHotspot] = useState(false);
@@ -62,7 +64,7 @@ export function KeypadPuzzle({ config, onSolved }: Props) {
 
       {/* Keypad */}
       <div className={`keypad-panel${shaking ? ' shake' : ''}${solved ? ' correct' : ''}`}>
-        <div className="keypad-display" aria-label="Entered PIN" aria-live="polite">
+        <div className="keypad-display" aria-label={t('ui.entered_pin', { defaultValue: 'Entered PIN' })} aria-live="polite">
           {Array.from({ length: 4 }).map((_, i) => (
             <span key={i} className={`keypad-digit${digits[i] ? ' filled' : ''}`}>
               {digits[i] ? '●' : '○'}
@@ -80,13 +82,13 @@ export function KeypadPuzzle({ config, onSolved }: Props) {
                 else if (key === '↵') pressConfirm();
                 else pressDigit(key);
               }}
-              aria-label={key === '⌫' ? 'Delete' : key === '↵' ? 'Confirm' : key}
+              aria-label={key === '⌫' ? t('ui.delete', { defaultValue: 'Delete' }) : key === '↵' ? t('ui.confirm', { defaultValue: 'Confirm' }) : key}
             >
               {key}
             </button>
           ))}
         </div>
-        {solved && <p className="keypad-success">✓ Correct</p>}
+        {solved && <p className="keypad-success">{t('ui.correct', { defaultValue: '✓ Correct' })}</p>}
       </div>
     </div>
   );

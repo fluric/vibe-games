@@ -1,4 +1,5 @@
 import * as audio from './AudioEffects';
+import { useTranslation } from 'react-i18next';
 
 interface ConfirmModalProps {
   isOpen: boolean;
@@ -14,11 +15,15 @@ export function ConfirmModal({
   isOpen,
   title,
   message,
-  confirmLabel = 'Confirm',
-  cancelLabel = 'Cancel',
+  confirmLabel,
+  cancelLabel,
   onConfirm,
   onCancel,
 }: ConfirmModalProps) {
+  const { t } = useTranslation('lobby');
+  const finalConfirm = confirmLabel || t('confirm', { defaultValue: 'Confirm' });
+  const finalCancel = cancelLabel || t('cancel', { defaultValue: 'Cancel' });
+  
   if (!isOpen) return null;
 
   const handleCancel = () => {
@@ -49,14 +54,14 @@ export function ConfirmModal({
             onClick={handleCancel}
             className="px-4 py-2 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-xs font-semibold text-neutral-300 transition-all border border-neutral-700/50 hover:border-neutral-600 active:scale-95"
           >
-            {cancelLabel}
+            {finalCancel}
           </button>
           <button
             type="button"
             onClick={handleConfirm}
             className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-xs font-semibold text-white transition-all shadow-lg shadow-rose-700/20 active:scale-95"
           >
-            {confirmLabel}
+            {finalConfirm}
           </button>
         </div>
       </div>

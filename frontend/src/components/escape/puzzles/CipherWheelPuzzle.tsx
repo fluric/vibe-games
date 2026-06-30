@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import type { CipherRoomConfig } from '../../../data/escapeRooms';
+import { useTranslation } from 'react-i18next';
 
 const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
@@ -23,6 +24,7 @@ interface Props {
 /** Draggable cipher wheel puzzle.
  *  Player rotates two concentric rings to decode a ciphertext word. */
 export function CipherWheelPuzzle({ config, onSolved }: Props) {
+  const { t } = useTranslation('escape');
   const [shift, setShift] = useState(0);
   const [solved, setSolved] = useState(false);
   const [flash, setFlash] = useState(false);
@@ -92,14 +94,14 @@ export function CipherWheelPuzzle({ config, onSolved }: Props) {
       </div>
 
       <p className="cipher-instruction" style={{ fontSize: '0.85rem', color: '#9ca3af', margin: '0.5rem 0 1.5rem', textAlign: 'center', maxWidth: '400px', alignSelf: 'center' }}>
-        <strong>Hint:</strong> This is a Caesar cipher. By dragging the wheel, you shift every letter in the encoded message by a fixed number of spaces across the alphabet.
+        <strong>{t('ui.hint', { defaultValue: 'Hint:' })}</strong> {t('ui.cipher_instruction', { defaultValue: 'This is a Caesar cipher. By dragging the wheel, you shift every letter in the encoded message by a fixed number of spaces across the alphabet.' })}
       </p>
 
       {/* Ciphertext display */}
       <div className="cipher-scroll">
-        <span className="cipher-label">Encoded message:</span>
+        <span className="cipher-label">{t('ui.encoded_message', { defaultValue: 'Encoded message:' })}</span>
         <span className="cipher-ciphertext">{config.ciphertext}</span>
-        <span className="cipher-arrow">↓ shift = {shift}</span>
+        <span className="cipher-arrow">↓ {t('ui.shift', { defaultValue: 'shift' })} = {shift}</span>
         <span className={`cipher-decoded${solved ? ' match' : ''}`}>{decoded}</span>
       </div>
 
@@ -114,7 +116,7 @@ export function CipherWheelPuzzle({ config, onSolved }: Props) {
         aria-valuemin={0}
         aria-valuemax={25}
         aria-valuenow={shift}
-        aria-label="Cipher shift wheel — drag left or right"
+        aria-label={t('ui.cipher_wheel_aria', { defaultValue: 'Cipher shift wheel — drag left or right' })}
         tabIndex={0}
       >
         {/* Outer ring — ciphertext letters */}
@@ -142,7 +144,7 @@ export function CipherWheelPuzzle({ config, onSolved }: Props) {
           ))}
         </div>
         <div className="cipher-wheel-center">
-          <span>DRAG</span>
+          <span>{t('ui.drag', { defaultValue: 'DRAG' })}</span>
         </div>
       </div>
 
@@ -152,7 +154,7 @@ export function CipherWheelPuzzle({ config, onSolved }: Props) {
         disabled={solved || locked}
         id="cipher-confirm-btn"
       >
-        {solved ? '✓ Decoded!' : locked ? 'System Locked...' : 'Confirm Decoding'}
+        {solved ? t('ui.decoded', { defaultValue: '✓ Decoded!' }) : locked ? t('ui.system_locked', { defaultValue: 'System Locked...' }) : t('ui.confirm_decoding', { defaultValue: 'Confirm Decoding' })}
       </button>
     </div>
   );

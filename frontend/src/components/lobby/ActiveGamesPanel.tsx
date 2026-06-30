@@ -1,4 +1,5 @@
 import type { GameDto } from '@vibe-games/shared';
+import { useTranslation } from 'react-i18next';
 
 interface ActiveGamesPanelProps {
   activeGames: GameDto[];
@@ -19,6 +20,7 @@ export function ActiveGamesPanel({
   onForfeitGame,
   onNavigate
 }: ActiveGamesPanelProps) {
+  const { t } = useTranslation('lobby');
   const filteredActiveGames = activeGames;
   if (filteredActiveGames.length === 0) return null;
 
@@ -26,14 +28,14 @@ export function ActiveGamesPanel({
     <div className="bg-neutral-900/60 border border-neutral-800 rounded-2xl p-6 backdrop-blur-md flex flex-col gap-4">
       <h3 className="text-lg font-bold text-white flex items-center gap-2">
         <span className="w-2.5 h-2.5 rounded-full bg-blue-500 animate-pulse" />
-        Your Active Matches
+        {t('your_active_matches', { defaultValue: 'Your Active Matches' })}
       </h3>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {filteredActiveGames.map((game) => {
           const myPiece = game.playerX?.id === userId ? 'X' : 'O';
           const opponentPlayer = myPiece === 'X' ? game.playerO : game.playerX;
           const isWaiting = game.status === 'waiting';
-          const opponentName = opponentPlayer?.username || (isWaiting ? 'Waiting for opponent...' : 'Unknown Player');
+          const opponentName = opponentPlayer?.username || (isWaiting ? t('waiting_for_opponent', { defaultValue: 'Waiting for opponent...' }) : t('unknown_player', { defaultValue: 'Unknown Player' }));
           const isMyTurn = game.state.turn === myPiece;
 
           return (
@@ -45,7 +47,7 @@ export function ActiveGamesPanel({
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="text-xs font-semibold text-neutral-300">
                     {isWaiting ? (
-                      <span className="text-indigo-400">Hosting {game.isPublic ? 'Public' : 'Private'} Lobby</span>
+                      <span className="text-indigo-400">{t('hosting', { defaultValue: 'Hosting' })} {game.isPublic ? t('public', { defaultValue: 'Public' }) : t('private', { defaultValue: 'Private' })} {t('lobby', { defaultValue: 'Lobby' })}</span>
                     ) : (
                       <span>vs {opponentName}</span>
                     )}

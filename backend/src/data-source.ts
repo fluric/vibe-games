@@ -3,6 +3,7 @@ import { DataSource } from 'typeorm';
 import { User } from './entities/User';
 import { Game } from './entities/Game';
 import { UserStats } from './entities/UserStats';
+import { EscapeProgress } from './entities/EscapeProgress';
 
 export const AppDataSource = new DataSource({
   type: 'postgres',
@@ -19,7 +20,7 @@ export const AppDataSource = new DataSource({
   // Switch to migrations (migration:run) before any shared/prod environment.
   synchronize: process.env.NODE_ENV !== 'production',
   logging: process.env.NODE_ENV === 'development',
-  entities: [User, Game, UserStats],
+  entities: [User, Game, UserStats, EscapeProgress],
   migrations: [__dirname + '/migrations/*.{ts,js}'],
   ssl: process.env.DATABASE_URL ? { rejectUnauthorized: false } : false,
 });
