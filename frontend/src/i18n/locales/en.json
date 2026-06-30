@@ -145,7 +145,15 @@
     "ui.cleared_on": "Cleared",
     "ui.back_to_lobby": "Back to Lobby",
     "ui.leaderboard": "Leaderboard",
-    "access_granted": "Access granted…"
+    "access_granted": "Access granted…",
+    "leaderboard_error": "Could not load leaderboard.",
+    "loading_leaderboard": "Loading leaderboard…",
+    "hall_of_fame_title": "Escape — Hall of Fame",
+    "hall_of_fame_subtitle": "Players who fully escaped, ranked by first-clear date.",
+    "no_one_escaped": "No one has fully escaped yet. Be the first!",
+    "player_col": "Player",
+    "rooms_col": "Rooms",
+    "escaped_on_col": "Escaped On"
   },
   "game": {
     "waiting_for_opponent": "Waiting for opponent to join...",

@@ -255,7 +255,15 @@
     "ui.cleared_on": "Geschafft",
     "ui.back_to_lobby": "Zurück zur Lobby",
     "ui.leaderboard": "Bestenliste",
-    "access_granted": "Zugriff gewährt…"
+    "access_granted": "Zugriff gewährt…",
+    "leaderboard_error": "Bestenliste konnte nicht geladen werden.",
+    "loading_leaderboard": "Lade Bestenliste…",
+    "hall_of_fame_title": "Escape — Ruhmeshalle",
+    "hall_of_fame_subtitle": "Spieler, die vollständig entkommen sind, nach Datum sortiert.",
+    "no_one_escaped": "Niemand ist bisher entkommen. Sei der Erste!",
+    "player_col": "Spieler",
+    "rooms_col": "Räume",
+    "escaped_on_col": "Entkommen am"
   },
   "game": {
     "waiting_for_opponent": "Warte auf Gegner...",

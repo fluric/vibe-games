@@ -255,7 +255,15 @@
     "ui.cleared_on": "Completado el",
     "ui.back_to_lobby": "Volver a la sala",
     "ui.leaderboard": "Clasificación",
-    "access_granted": "Acceso concedido…"
+    "access_granted": "Acceso concedido…",
+    "leaderboard_error": "No se pudo cargar la clasificación.",
+    "loading_leaderboard": "Cargando clasificación…",
+    "hall_of_fame_title": "Escape — Salón de la Fama",
+    "hall_of_fame_subtitle": "Jugadores que escaparon, ordenados por fecha.",
+    "no_one_escaped": "Nadie ha escapado aún. ¡Sé el primero!",
+    "player_col": "Jugador",
+    "rooms_col": "Salas",
+    "escaped_on_col": "Escapó el"
   },
   "game": {
     "waiting_for_opponent": "Esperando al oponente...",

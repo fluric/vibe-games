@@ -255,7 +255,15 @@
     "ui.cleared_on": "Terminé le",
     "ui.back_to_lobby": "Retour au salon",
     "ui.leaderboard": "Classement",
-    "access_granted": "Accès autorisé…"
+    "access_granted": "Accès autorisé…",
+    "leaderboard_error": "Impossible de charger le classement.",
+    "loading_leaderboard": "Chargement du classement…",
+    "hall_of_fame_title": "Évasion — Panthéon",
+    "hall_of_fame_subtitle": "Joueurs évadés, classés par date de première réussite.",
+    "no_one_escaped": "Personne ne s'est encore évadé. Soyez le premier !",
+    "player_col": "Joueur",
+    "rooms_col": "Salles",
+    "escaped_on_col": "Évadé le"
   },
   "game": {
     "waiting_for_opponent": "En attente de l'adversaire...",
