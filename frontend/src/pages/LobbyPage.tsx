@@ -1166,7 +1166,6 @@ export function LobbyPage() {
         {/* Active Matches Section */}
         <ActiveGamesPanel
           activeGames={activeGames}
-          activeGameTab={activeGameTab}
           userId={userId}
           copiedId={copiedId}
           onCopyLink={handleCopyLink}

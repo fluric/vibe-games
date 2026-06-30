@@ -2,7 +2,6 @@ import type { GameDto } from '@vibe-games/shared';
 
 interface ActiveGamesPanelProps {
   activeGames: GameDto[];
-  activeGameTab: 'mill' | 'connect_four' | 'holy_grail';
   userId: string;
   copiedId: string | null;
   onCopyLink: (gameId: string) => void;
@@ -13,7 +12,6 @@ interface ActiveGamesPanelProps {
 
 export function ActiveGamesPanel({
   activeGames,
-  activeGameTab,
   userId,
   copiedId,
   onCopyLink,
