@@ -50,8 +50,12 @@ export function LobbyPage() {
   const [lobbyError, setLobbyError] = useState<string | null>(null);
 
   const [activeGameTab, setActiveGameTab] = useState<'mill' | 'connect_four' | 'holy_grail' | 'escape'>(() => {
-    const saved = localStorage.getItem('vibe-games-active-tab');
-    return (saved === 'mill' || saved === 'connect_four' || saved === 'holy_grail' || saved === 'escape') ? saved : 'mill';
+    try {
+      const saved = localStorage.getItem('vibe-games-active-tab');
+      return (saved === 'mill' || saved === 'connect_four' || saved === 'holy_grail' || saved === 'escape') ? saved : 'mill';
+    } catch {
+      return 'mill';
+    }
   });
 
   const [lobbyTab, setLobbyTab] = useState<'lobbies' | 'leaderboard'>('lobbies');

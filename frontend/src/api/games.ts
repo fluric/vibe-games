@@ -2,10 +2,19 @@ import type { GameDto, AuthStatusResponse, LeaderboardResponse, GameType } from 
 
 // Helper to get or generate a persistent local user ID
 export function getUserId(): string {
-  let id = localStorage.getItem('vibe-games-user-id');
+  let id = null;
+  try {
+    id = localStorage.getItem('vibe-games-user-id');
+  } catch {
+    // Ignore security errors in incognito
+  }
   if (!id) {
     id = (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : generateFallbackUuid();
-    localStorage.setItem('vibe-games-user-id', id);
+    try {
+      localStorage.setItem('vibe-games-user-id', id);
+    } catch {
+      // Ignore
+    }
   }
   return id;
 }
