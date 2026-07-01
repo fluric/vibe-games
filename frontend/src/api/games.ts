@@ -4,7 +4,7 @@ import type { GameDto, AuthStatusResponse, LeaderboardResponse, GameType } from 
 export function getUserId(): string {
   let id = localStorage.getItem('vibe-games-user-id');
   if (!id) {
-    id = crypto.randomUUID ? crypto.randomUUID() : generateFallbackUuid();
+    id = (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : generateFallbackUuid();
     localStorage.setItem('vibe-games-user-id', id);
   }
   return id;

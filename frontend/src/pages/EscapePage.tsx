@@ -14,6 +14,7 @@ import { EscapeLeaderboard } from '../components/escape/EscapeLeaderboard';
 import { KeypadPuzzle } from '../components/escape/puzzles/KeypadPuzzle';
 import { CipherWheelPuzzle } from '../components/escape/puzzles/CipherWheelPuzzle';
 import { FuseBoxPuzzle } from '../components/escape/puzzles/FuseBoxPuzzle';
+import { ImageKeypadPuzzle } from '../components/escape/puzzles/ImageKeypadPuzzle';
 
 import { useTranslation } from 'react-i18next';
 
@@ -115,6 +116,8 @@ export function EscapePage() {
           return <CipherWheelPuzzle config={room.config} onSolved={handlePuzzleSolved} />;
         case 'fuse':
           return <FuseBoxPuzzle config={room.config} onSolved={handlePuzzleSolved} />;
+        case 'image_keypad':
+          return <ImageKeypadPuzzle config={room.config} onSolved={handlePuzzleSolved} />;
       }
     };
 

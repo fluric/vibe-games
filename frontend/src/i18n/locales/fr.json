@@ -267,13 +267,13 @@
     "ui_back_to_lobby": "Retour au salon",
     "ui_leaderboard": "Classement",
     "room4": {
-      "name": "La Relique Antique",
-      "description": "Un piédestal en pierre contient une grille de 9 symboles sculptés. Les murs sont couverts de fresques anciennes.",
-      "atmosphere": "Des grains de poussière dansent dans un rayon de lumière. L'air est vieux.",
-      "clue1": "1. L'oiseau vole haut.",
-      "clue2": "2. Il cherche l'œil qui voit tout.",
-      "clue3": "3. Au-dessus des montagnes.",
-      "clue4": "4. Sous la lune."
+      "name": "Le Bureau de l'Illusionniste",
+      "description": "Un cylindre en métal poli repose sur un bureau ancien, entouré de dessins à l'encre déformés. La réalité semble tordue ici.",
+      "atmosphere": "Les miroirs trompent. Regardez de plus près le reflet.",
+      "clue1": "1. Le dessin n'a aucun sens, mais son reflet révèle une horloge.",
+      "clue2": "2. Ne vous laissez pas tromper par un coup d'œil rapide. Lisez attentivement les chiffres romains.",
+      "clue3": "3. Le cadran de l'horloge est inversé (I, II, III sont à gauche). Quelle est la véritable heure ?",
+      "trap_hint": "Êtes-vous sûr de cette heure ? Regardez attentivement les chiffres..."
     },
     "room5": {
       "name": "La Chaufferie",

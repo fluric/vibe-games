@@ -157,13 +157,13 @@
     "ui_back_to_lobby": "Back to Lobby",
     "ui_leaderboard": "Leaderboard",
     "room4": {
-      "name": "The Ancient Relic",
-      "description": "A stone pedestal holds a grid of 9 carved symbols. The walls are covered in ancient murals.",
-      "atmosphere": "Dust motes dance in a shaft of light. The air is old.",
-      "clue1": "1. The bird flies high.",
-      "clue2": "2. It seeks the all-seeing eye.",
-      "clue3": "3. Above the mountains.",
-      "clue4": "4. Under the moon."
+      "name": "The Illusionist's Desk",
+      "description": "A polished metal cylinder sits on an ancient desk, surrounded by warped ink drawings. Reality seems twisted here.",
+      "atmosphere": "Mirrors deceive. Look closer at the reflection.",
+      "clue1": "1. The drawing makes no sense, but its reflection reveals a clock.",
+      "clue2": "2. Don't be fooled by a quick glance. Read the Roman numerals carefully.",
+      "clue3": "3. The clock face is mirrored (I, II, III are on the left). What is the true time?",
+      "trap_hint": "Are you sure about that time? Look closely at the numbers..."
     },
     "room5": {
       "name": "The Boiler Room",

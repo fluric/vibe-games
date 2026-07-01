@@ -23,13 +23,14 @@ There is **no opponent** and **no matchmaking** — Escape exists entirely outsi
 
 ## 1. Rooms & Progression
 
-### 1.1 Room Catalogue (v1 — 3 rooms)
+### 1.1 Room Catalogue (v1 — 4 rooms)
 
 | Room # | Name | Puzzle Type |
 |---|---|---|
 | 1 | The Keypad | PIN deduction — 3 clues visible in the scene reveal 3 of the 4 digits; one is hidden behind a tappable object |
 | 2 | The Cipher Wheel | Letter substitution — a brass wheel on the wall can be rotated; a ciphertext scroll is shown; player decrypts and types the keyword |
 | 3 | The Fuse Box | Wire-pairing circuit — drag coloured wire ends to matching posts to complete the circuit and power the door |
+| 4 | The Illusionist's Desk | Anamorphic reflection — deduce the true time from a mirrored clock face reflected in a cylinder |
 
 ### 1.2 Room Gating
 

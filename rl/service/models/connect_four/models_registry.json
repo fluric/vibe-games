@@ -5,9 +5,9 @@
     "elo": 200
   },
   "rl_intermediate": {
-    "checkpoint": "connect_four_elo_600.pt",
+    "checkpoint": "connect_four_elo_400.pt",
     "num_simulations": 50,
-    "elo": 600
+    "elo": 400
   },
   "rl_strong": {
     "checkpoint": null,

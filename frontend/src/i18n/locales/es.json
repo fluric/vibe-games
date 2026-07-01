@@ -267,13 +267,13 @@
     "ui_back_to_lobby": "Volver a la sala",
     "ui_leaderboard": "Clasificación",
     "room4": {
-      "name": "La Reliquia Antigua",
-      "description": "Un pedestal de piedra sostiene una cuadrícula de 9 símbolos tallados. Las paredes están cubiertas de murales antiguos.",
-      "atmosphere": "Motas de polvo bailan en un rayo de luz. El aire es viejo.",
-      "clue1": "1. El pájaro vuela alto.",
-      "clue2": "2. Busca el ojo que todo lo ve.",
-      "clue3": "3. Por encima de las montañas.",
-      "clue4": "4. Bajo la luna."
+      "name": "El Escritorio del Ilusionista",
+      "description": "Un cilindro de metal pulido se asienta sobre un escritorio antiguo, rodeado de dibujos en tinta deformados. La realidad parece retorcida aquí.",
+      "atmosphere": "Los espejos engañan. Mira más de cerca el reflejo.",
+      "clue1": "1. El dibujo no tiene sentido, pero su reflejo revela un reloj.",
+      "clue2": "2. No te dejes engañar por un vistazo rápido. Lee los números romanos con cuidado.",
+      "clue3": "3. La esfera del reloj está reflejada (I, II, III están a la izquierda). ¿Cuál es la verdadera hora?",
+      "trap_hint": "¿Estás seguro de esa hora? Mira de cerca los números..."
     },
     "room5": {
       "name": "La Sala de Calderas",

@@ -267,13 +267,13 @@
     "ui_back_to_lobby": "Zurück zur Lobby",
     "ui_leaderboard": "Bestenliste",
     "room4": {
-      "name": "Das Antike Relikt",
-      "description": "Ein Steinsockel hält ein Raster aus 9 geschnitzten Symbolen. Die Wände sind mit alten Wandmalereien bedeckt.",
-      "atmosphere": "Staubkörner tanzen in einem Lichtstrahl. Die Luft ist alt.",
-      "clue1": "1. Der Vogel fliegt hoch.",
-      "clue2": "2. Er sucht das allsehende Auge.",
-      "clue3": "3. Über den Bergen.",
-      "clue4": "4. Unter dem Mond."
+      "name": "Der Schreibtisch des Illusionisten",
+      "description": "Ein polierter Metallzylinder steht auf einem alten Schreibtisch, umgeben von verzerrten Tuschezeichnungen. Die Realität scheint hier verdreht.",
+      "atmosphere": "Spiegel täuschen. Schau dir das Spiegelbild genauer an.",
+      "clue1": "1. Die Zeichnung ergibt keinen Sinn, aber ihr Spiegelbild offenbart eine Uhr.",
+      "clue2": "2. Lass dich nicht von einem flüchtigen Blick täuschen. Lies die römischen Ziffern sorgfältig.",
+      "clue3": "3. Das Zifferblatt ist spiegelverkehrt (I, II, III sind links). Was ist die wahre Zeit?",
+      "trap_hint": "Bist du dir bei dieser Uhrzeit sicher? Schau dir die Zahlen genau an..."
     },
     "room5": {
       "name": "Der Heizungskeller",
