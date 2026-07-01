@@ -434,7 +434,7 @@ export function LobbyPage() {
     );
   }
 
-  if (!currentUser && import.meta.env.MODE === 'development') {
+  if (!currentUser) {
     return (
       <LobbyAuthBlock
         devName={devName}
