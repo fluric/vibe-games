@@ -219,50 +219,6 @@ def evaluate_champion(
     return challenger_score / num_games
 
 
-def estimate_elo_vs_random(
-    net: ConnectFourNet,
-    device: torch.device,
-    num_games: int = 100,
-    num_simulations: int = 50,
-) -> float:
-    """
-    Rough ELO estimate: win rate vs. pure random play.
-    Random bot has ELO ≈ 0 by convention.
-    Uses the Elo formula: E = 400 * log10(W/(1-W)) (anchored at 0 for 50% win rate).
-    """
-    mcts = MCTS(net, device)
-    wins = 0
-    draws = 0
-
-    for game_idx in range(num_games):
-        env = ConnectFourEnv()
-        net_is_x = (game_idx % 2 == 0)
-
-        while not env.is_terminal():
-            is_net_turn = (
-                (env.turn == PLAYER_X and net_is_x) or
-                (env.turn == PLAYER_O and not net_is_x)
-            )
-            if is_net_turn:
-                action = mcts.best_action(env, num_simulations)
-            else:
-                # Random legal move
-                legal = env.legal_actions()
-                action = random.choice(legal)
-            env.step(action)
-
-        winner = env.winner
-        if winner == 0:
-            draws += 1
-        elif (winner == PLAYER_X and net_is_x) or (winner == PLAYER_O and not net_is_x):
-            wins += 1
-
-    win_rate = (wins + 0.5 * draws) / num_games
-    win_rate = max(0.01, min(0.99, win_rate))  # clamp to avoid log(0)
-    elo = 400 * np.log10(win_rate / (1 - win_rate))
-    return float(elo)
-
-
 # ─── Milestone Management ─────────────────────────────────────────────────────
 
 def load_registry() -> dict:
@@ -351,6 +307,8 @@ def train(
     buffer = ReplayBuffer(max_size=100_000)
     mcts = MCTS(challenger, device)
 
+    champion_elo = 0.0
+
     registry = load_registry()
     milestone_saved: set = set()
 
@@ -358,6 +316,11 @@ def train(
     for entry in registry.values():
         if "elo" in entry:
             milestone_saved.add(entry["elo"])
+
+    # Load starting champion ELO from registry if it exists
+    if resume and "rl_master" in registry and "elo" in registry["rl_master"]:
+        champion_elo = float(registry["rl_master"]["elo"])
+        print(f"Loaded champion ELO from registry: {champion_elo:.0f}")
 
     print(f"\n{'='*60}")
     print(f"Training: {num_iterations} iterations × {games_per_iter} games/iter")
@@ -406,15 +369,17 @@ def train(
                 champion = copy.deepcopy(challenger)
                 save_checkpoint(champion, str(CHAMPION_PATH))
 
-                # Estimate ELO and check milestones
-                print(f"  Estimating ELO vs. random...")
-                elo = estimate_elo_vs_random(champion, device, num_games=100, num_simulations=eval_sims)
-                rounded_elo = int(round(elo / 50) * 50)  # round to nearest 50
-                print(f"  ELO estimate: ~{elo:.0f} (rounded: {rounded_elo})")
+                # Calculate ELO gain based on win rate vs previous champion
+                # Clamp win_rate strictly for math safety, though it should be >= 0.55 here
+                clamped_win_rate = max(0.01, min(0.99, win_rate))
+                elo_gain = 400 * np.log10(clamped_win_rate / (1 - clamped_win_rate))
+                champion_elo += float(elo_gain)
+                rounded_elo = int(round(champion_elo / 50) * 50)
+                print(f"  ELO gain: +{elo_gain:.0f} → New ELO: ~{champion_elo:.0f} (rounded: {rounded_elo})")
 
                 # Save milestone if we've crossed a new threshold
                 for threshold in MILESTONE_ELOS:
-                    if elo >= threshold and threshold not in milestone_saved:
+                    if champion_elo >= threshold and threshold not in milestone_saved:
                         save_milestone(champion, threshold, registry)
                         milestone_saved.add(threshold)
 
@@ -422,7 +387,7 @@ def train(
                 registry["rl_master"] = {
                     "checkpoint": "champion.pt",
                     "num_simulations": 800,
-                    "elo": int(elo),
+                    "elo": int(champion_elo),
                 }
                 save_registry(registry)
             else:
