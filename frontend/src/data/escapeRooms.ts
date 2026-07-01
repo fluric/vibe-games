@@ -134,22 +134,6 @@ export function useEscapeRooms(): EscapeRoom[] {
           t('room3.clue4', { defaultValue: "4. The Yellow wire connects to a post lower than the Blue wire's post." })
         ]
       },
-    },
-    {
-      id: 4,
-      name: t('room4.name', { defaultValue: 'The Illusionist\'s Desk' }),
-      description: t('room4.description', { defaultValue: 'A polished metal cylinder sits on an ancient desk, surrounded by warped ink drawings. Reality seems twisted here.' }),
-      atmosphere: t('room4.atmosphere', { defaultValue: 'Mirrors deceive. Look closer at the reflection.' }),
-      config: {
-        puzzleType: 'image_keypad',
-        solution: '0340',
-        imageUrl: '/escape_anamorphosis.jpg',
-        clues: [
-          t('room4.clue1', { defaultValue: "1. The drawing makes no sense, but its reflection reveals a clock." }),
-          t('room4.clue2', { defaultValue: "2. Don't be fooled by a quick glance. Read the Roman numerals carefully." }),
-          t('room4.clue3', { defaultValue: "3. The clock face is mirrored (I, II, III are on the left). What is the true time?" })
-        ]
-      }
     }
   ], [t]);
 }

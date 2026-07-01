@@ -10,7 +10,7 @@ declare module 'fastify' {
   }
 }
 /** Total number of rooms currently published. Bump this when new rooms are added. */
-const TOTAL_ROOMS = 4;
+const TOTAL_ROOMS = 3;
 
 /** Fastify plugin exposing all /escape/* endpoints. */
 export async function escapeRoutes(server: FastifyInstance): Promise<void> {
