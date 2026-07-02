@@ -33,7 +33,7 @@
     "no_ranked_players": "No ranked players yet for this game type.",
     "rank": "Rank",
     "player_col": "Player",
-    "elo": "ELO",
+    "elo": "Leaderscore",
     "record": "Record (W-L-D)",
     "bot": "BOT",
     "you": "YOU",
@@ -204,7 +204,7 @@
     "cancel_game_msg": "Are you sure you want to cancel this game lobby?",
     "cancel_game_btn": "Cancel Game",
     "forfeit_match_title": "Forfeit Match",
-    "forfeit_match_msg": "Are you sure you want to forfeit this match? This counts as a loss and your ELO will be updated.",
+    "forfeit_match_msg": "Are you sure you want to forfeit this match? This counts as a loss and your Leaderscore will be updated.",
     "forfeit_match_btn": "Forfeit Match"
   }
 }

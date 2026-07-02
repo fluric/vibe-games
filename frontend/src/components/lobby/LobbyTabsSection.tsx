@@ -1,9 +1,11 @@
 import { useTranslation } from 'react-i18next';
 import { PublicLobbiesPanel } from './PublicLobbiesPanel';
 import { LeaderboardPanel } from './LeaderboardPanel';
-import type { GameDto, LeaderboardEntryDto, UserDto } from '@vibe-games/shared';
+import { EscapeLeaderboardTable } from './EscapeLeaderboardTable';
+import type { GameDto, LeaderboardEntryDto, UserDto, EscapeLeaderboardEntry } from '@vibe-games/shared';
 
 interface Props {
+  activeGameTab: 'mill' | 'connect_four' | 'holy_grail' | 'escape';
   lobbyTab: 'lobbies' | 'leaderboard';
   setLobbyTab: (tab: 'lobbies' | 'leaderboard') => void;
   fetchLobby: () => void;
@@ -16,10 +18,12 @@ interface Props {
   leaderboardError: string | null;
   loadingLeaderboard: boolean;
   leaderboardEntries: LeaderboardEntryDto[];
+  escapeLeaderboardEntries: EscapeLeaderboardEntry[];
   currentUser: UserDto | null;
 }
 
 export function LobbyTabsSection({
+  activeGameTab,
   lobbyTab,
   setLobbyTab,
   fetchLobby,
@@ -32,6 +36,7 @@ export function LobbyTabsSection({
   leaderboardError,
   loadingLeaderboard,
   leaderboardEntries,
+  escapeLeaderboardEntries,
   currentUser
 }: Props) {
   const { t } = useTranslation('lobby');
@@ -59,7 +64,7 @@ export function LobbyTabsSection({
                 : 'text-neutral-400 border-transparent hover:text-white'
             }`}
           >
-            🏆 {t('elo_leaderboard', { defaultValue: 'ELO Leaderboard' })}
+            🏆 {t('elo_leaderboard', { defaultValue: 'Leaderboard' })}
           </button>
         </div>
 
@@ -87,6 +92,13 @@ export function LobbyTabsSection({
           filteredLobbies={openGames}
           syncStatus={syncStatus}
           onJoinGame={handleJoinGame}
+        />
+      ) : activeGameTab === 'escape' ? (
+        <EscapeLeaderboardTable
+          leaderboardError={leaderboardError}
+          loadingLeaderboard={loadingLeaderboard}
+          leaderboardEntries={escapeLeaderboardEntries}
+          currentUser={currentUser}
         />
       ) : (
         <LeaderboardPanel

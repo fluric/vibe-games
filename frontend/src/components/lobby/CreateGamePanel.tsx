@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import aiConfig from '../../../../backend/src/game/aiConfig.json';
@@ -48,7 +49,28 @@ export function CreateGamePanel({ activeGameTab, creatingGame, syncStatus, onCre
   useEffect(() => { localStorage.setItem('gameMode_connect_four', JSON.stringify(gameModeConnectFour)); }, [gameModeConnectFour]);
   useEffect(() => { localStorage.setItem('gameMode_holy_grail', JSON.stringify(gameModeHolyGrail)); }, [gameModeHolyGrail]);
 
-  if (activeGameTab === 'escape') return null; // Escape has no create game panel
+  if (activeGameTab === 'escape') {
+    return (
+      <div className="md:col-span-2 bg-gradient-to-br from-teal-950/40 to-neutral-900/60 border border-teal-700/30 rounded-2xl p-8 backdrop-blur-md flex flex-col items-center justify-center gap-6 text-center">
+        <div className="w-16 h-16 rounded-2xl bg-teal-600/10 border border-teal-600/30 flex items-center justify-center text-3xl">
+          🔐
+        </div>
+        <div>
+          <h3 className="text-2xl font-bold text-white">Escape</h3>
+          <p className="text-neutral-400 mt-2 max-w-md">
+            {t('escape_solo_desc', { defaultValue: 'A solo puzzle adventure. Solve each room to unlock the next. How far can you get?' })}
+          </p>
+        </div>
+        <Link
+          to="/escape"
+          id="escape-lobby-enter-btn"
+          className="inline-flex items-center gap-2 bg-teal-600 hover:bg-teal-500 text-white font-bold py-3 px-8 rounded-xl transition-all active:scale-95 shadow-[0_0_24px_rgba(20,184,166,0.35)] hover:shadow-[0_0_32px_rgba(20,184,166,0.5)] text-base"
+        >
+          {t('enter_escape', { defaultValue: 'Enter Escape →' })}
+        </Link>
+      </div>
+    );
+  }
 
   const currentAiStarts = activeGameTab === 'mill' ? aiStartsMill : activeGameTab === 'connect_four' ? aiStartsConnectFour : aiStartsHolyGrail;
   const currentGameMode = activeGameTab === 'mill' ? gameModeMill : activeGameTab === 'connect_four' ? gameModeConnectFour : gameModeHolyGrail;
@@ -130,7 +152,7 @@ export function CreateGamePanel({ activeGameTab, creatingGame, syncStatus, onCre
                   .sort((a, b) => a[1].elo - b[1].elo)
                   .map(([key, bot]) => (
                     <option key={key} value={key}>
-                      {BOT_EMOJIS[activeGameTab]?.[key] || "🤖"} {bot.username} — ELO {bot.elo} [{t(`bot_tag.${activeGameTab}.${key}`, { defaultValue: BOT_DESCRIPTIONS[activeGameTab]?.[key] || 'AI Bot' })}]
+                      {BOT_EMOJIS[activeGameTab]?.[key] || "🤖"} {bot.username} — Leaderscore {bot.elo} [{t(`bot_tag.${activeGameTab}.${key}`, { defaultValue: BOT_DESCRIPTIONS[activeGameTab]?.[key] || 'AI Bot' })}]
                     </option>
                   ))}
               </select>

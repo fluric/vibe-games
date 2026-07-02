@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import * as api from '../api/games';
-import { type GameDto, type UserDto, type LeaderboardEntryDto } from '@vibe-games/shared';
+import { getEscapeLeaderboard } from '../api/escape';
+import { type GameDto, type UserDto, type LeaderboardEntryDto, type EscapeLeaderboardEntry } from '@vibe-games/shared';
 import * as audio from '../components/AudioEffects';
 import { ConfirmModal } from '../components/ConfirmModal';
 import { useTranslation } from 'react-i18next';
@@ -14,7 +15,6 @@ import { LobbyUserStats } from '../components/lobby/LobbyUserStats';
 import { LobbyHeader } from '../components/lobby/LobbyHeader';
 import { LobbyAuthBlock } from '../components/lobby/LobbyAuthBlock';
 import { GameModeTabs } from '../components/lobby/GameModeTabs';
-import { EscapeLobbyPanel } from '../components/lobby/EscapeLobbyPanel';
 import { LobbyTabsSection } from '../components/lobby/LobbyTabsSection';
 import { VersionSyncBanners } from '../components/lobby/VersionSyncBanners';
 import { useVersionSync } from '../hooks/useVersionSync';
@@ -61,6 +61,7 @@ export function LobbyPage() {
   const [lobbyTab, setLobbyTab] = useState<'lobbies' | 'leaderboard'>('lobbies');
 
   const [leaderboardEntries, setLeaderboardEntries] = useState<LeaderboardEntryDto[]>([]);
+  const [escapeLeaderboardEntries, setEscapeLeaderboardEntries] = useState<EscapeLeaderboardEntry[]>([]);
   const [loadingLeaderboard, setLoadingLeaderboard] = useState(false);
   const [leaderboardError, setLeaderboardError] = useState<string | null>(null);
 
@@ -129,12 +130,16 @@ export function LobbyPage() {
   }, [currentUser]);
 
   const fetchLeaderboard = useCallback(async () => {
-    if (activeGameTab === 'escape') return; // Escape has its own leaderboard page
     setLoadingLeaderboard(true);
     setLeaderboardError(null);
     try {
-      const data = await api.getLeaderboard(activeGameTab as 'mill' | 'connect_four' | 'holy_grail');
-      setLeaderboardEntries(data.entries);
+      if (activeGameTab === 'escape') {
+        const data = await getEscapeLeaderboard();
+        setEscapeLeaderboardEntries(data.entries);
+      } else {
+        const data = await api.getLeaderboard(activeGameTab as 'mill' | 'connect_four' | 'holy_grail');
+        setLeaderboardEntries(data.entries);
+      }
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Failed to load leaderboard';
       console.error('Failed to fetch leaderboard:', err);
@@ -478,12 +483,6 @@ export function LobbyPage() {
 
         {/* Game Mode Selector Tabs */}
         <GameModeTabs activeGameTab={activeGameTab} setActiveGameTab={setActiveGameTab} />
-
-        {/* Escape solo panel */}
-        {activeGameTab === 'escape' ? (
-          <EscapeLobbyPanel />
-        ) : (
-        <>
         {/* User Card & Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <LobbyUserStats
@@ -528,6 +527,7 @@ export function LobbyPage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Public Lobby List */}
           <LobbyTabsSection
+            activeGameTab={activeGameTab}
             lobbyTab={lobbyTab}
             setLobbyTab={setLobbyTab}
             fetchLobby={fetchLobby}
@@ -540,6 +540,7 @@ export function LobbyPage() {
             leaderboardError={leaderboardError}
             loadingLeaderboard={loadingLeaderboard}
             leaderboardEntries={leaderboardEntries}
+            escapeLeaderboardEntries={escapeLeaderboardEntries}
             currentUser={currentUser}
           />
 
@@ -552,8 +553,6 @@ export function LobbyPage() {
             onJoinByCode={handleJoinByCode}
           />
         </div>
-        </>
-        )} {/* end activeGameTab !== 'escape' */}
       </div>
 
       {/* Custom Confirmation Modals */}

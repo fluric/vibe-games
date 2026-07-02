@@ -5,19 +5,18 @@
     "elo": 200
   },
   "rl_intermediate": {
-    "checkpoint": "connect_four_elo_400.pt",
+    "checkpoint": "connect_four_elo_600.pt",
     "num_simulations": 50,
-    "elo": 400
+    "elo": 600
   },
   "rl_strong": {
-    "checkpoint": null,
+    "checkpoint": "connect_four_elo_1000.pt",
     "num_simulations": 200,
-    "elo": null,
-    "note": "Will be populated after training reaches ELO ~800"
+    "elo": 1000
   },
   "rl_master": {
     "checkpoint": "champion.pt",
     "num_simulations": 800,
-    "elo": 798
+    "elo": 1787
   }
 }

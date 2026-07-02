@@ -35,36 +35,54 @@ export function LobbyUserStats({
         )}
       </div>
       <div className="border-t border-neutral-800 pt-4 mt-6">
-        <div className="flex justify-between items-center text-sm">
-          <span className="text-neutral-400">
-            {activeGameTab === 'mill'
-              ? t('morris_rating_label', { defaultValue: "Nine Men's Morris Rating:" })
-              : activeGameTab === 'connect_four'
-              ? t('c4_rating_label', { defaultValue: 'Connect Four Rating:' })
-              : t('grail_rating_label', { defaultValue: 'Grail Quest Rating:' })}
-          </span>
-          <span className="font-bold text-indigo-400">
-            {(() => {
-              const tab = activeGameTab as 'mill' | 'connect_four' | 'holy_grail';
-              const stats = currentUser.gameStats?.[tab] || currentUser;
-              return stats?.elo ?? 1200;
-            })()}{' '}
-            ELO
-          </span>
-        </div>
-        <div className="flex gap-4 text-xs text-neutral-500 mt-2">
-          {(() => {
-            const tab = activeGameTab as 'mill' | 'connect_four' | 'holy_grail';
-            const stats = currentUser.gameStats?.[tab] || currentUser;
-            return (
-              <>
-                <span>{t('wins', { defaultValue: 'Wins:' })} <strong className="text-emerald-400">{stats?.wins ?? 0}</strong></span>
-                <span>{t('losses', { defaultValue: 'Losses:' })} <strong className="text-rose-500">{stats?.losses ?? 0}</strong></span>
-                <span>{t('draws', { defaultValue: 'Draws:' })} <strong className="text-neutral-400">{stats?.draws ?? 0}</strong></span>
-              </>
-            );
-          })()}
-        </div>
+        {activeGameTab === 'escape' ? (
+          <div className="flex flex-col gap-2 text-sm">
+            <div className="flex justify-between items-center text-sm">
+              <span className="text-neutral-400">
+                {t('escape_status_label', { defaultValue: 'Escape Status:' })}
+              </span>
+              <span className="font-bold text-teal-400">
+                {t('escape_solo', { defaultValue: 'Solo Adventure' })}
+              </span>
+            </div>
+            <p className="text-xs text-neutral-500 mt-2">
+              {t('escape_progress_desc', { defaultValue: 'Solve rooms to climb the Hall of Fame.' })}
+            </p>
+          </div>
+        ) : (
+          <>
+            <div className="flex justify-between items-center text-sm">
+              <span className="text-neutral-400">
+                {activeGameTab === 'mill'
+                  ? t('morris_rating_label', { defaultValue: "Nine Men's Morris Rating:" })
+                  : activeGameTab === 'connect_four'
+                  ? t('c4_rating_label', { defaultValue: 'Connect Four Rating:' })
+                  : t('grail_rating_label', { defaultValue: 'Grail Quest Rating:' })}
+              </span>
+              <span className="font-bold text-indigo-400">
+                {(() => {
+                  const tab = activeGameTab as 'mill' | 'connect_four' | 'holy_grail';
+                  const stats = currentUser.gameStats?.[tab] || currentUser;
+                  return stats?.elo ?? 1200;
+                })()}{' '}
+                Leaderscore
+              </span>
+            </div>
+            <div className="flex gap-4 text-xs text-neutral-500 mt-2">
+              {(() => {
+                const tab = activeGameTab as 'mill' | 'connect_four' | 'holy_grail';
+                const stats = currentUser.gameStats?.[tab] || currentUser;
+                return (
+                  <>
+                    <span>{t('wins', { defaultValue: 'Wins:' })} <strong className="text-emerald-400">{stats?.wins ?? 0}</strong></span>
+                    <span>{t('losses', { defaultValue: 'Losses:' })} <strong className="text-rose-500">{stats?.losses ?? 0}</strong></span>
+                    <span>{t('draws', { defaultValue: 'Draws:' })} <strong className="text-neutral-400">{stats?.draws ?? 0}</strong></span>
+                  </>
+                );
+              })()}
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
