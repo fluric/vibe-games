@@ -2,7 +2,7 @@
  *  Adding a new room = adding a new entry here + bumping TOTAL_ROOMS in escape.ts.
  */
 
-export type PuzzleType = 'keypad' | 'cipher' | 'fuse' | 'symbol_grid' | 'valves';
+export type PuzzleType = 'keypad' | 'cipher' | 'fuse' | 'symbol_grid' | 'valves' | 'image_keypad' | 'riddle';
 
 export interface HotSpot {
   id: string;
@@ -56,7 +56,14 @@ export interface ImageKeypadRoomConfig {
   clues: string[];
 }
 
-export type RoomConfig = KeypadRoomConfig | CipherRoomConfig | FuseRoomConfig | SymbolGridRoomConfig | ValvesRoomConfig | ImageKeypadRoomConfig;
+export interface RiddleRoomConfig {
+  puzzleType: 'riddle';
+  riddleText: string;
+  solution: string; // The correct answer text
+  clues: string[];
+}
+
+export type RoomConfig = KeypadRoomConfig | CipherRoomConfig | FuseRoomConfig | SymbolGridRoomConfig | ValvesRoomConfig | ImageKeypadRoomConfig | RiddleRoomConfig;
 
 export interface EscapeRoom {
   id: number;
@@ -134,6 +141,20 @@ export function useEscapeRooms(): EscapeRoom[] {
           t('room3.clue4', { defaultValue: "4. The Yellow wire connects to a post lower than the Blue wire's post." })
         ]
       },
+    },
+    {
+      id: 4,
+      name: t('room4.name', { defaultValue: "The Sphinx's Sanctum" }),
+      description: t('room4.description', { defaultValue: 'A massive stone chamber filled with sand. A monolithic statue with human head and lion body stares at you.' }),
+      atmosphere: t('room4.atmosphere', { defaultValue: 'Sand shifts beneath your feet. Two glowing eyes watch from the dark.' }),
+      config: {
+        puzzleType: 'riddle',
+        riddleText: t('room4.riddleText', { defaultValue: 'I guard a secret,\nyet have no voice.\nTurn me right,\nand I reveal your choice.' }),
+        solution: t('room4.solution', { defaultValue: 'KEY' }), // Accepts KEY
+        clues: [
+          t('room4.clue1', { defaultValue: 'It fits in a lock.' })
+        ]
+      }
     }
   ], [t]);
 }

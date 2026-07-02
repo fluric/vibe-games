@@ -157,13 +157,12 @@
     "ui_back_to_lobby": "Back to Lobby",
     "ui_leaderboard": "Leaderboard",
     "room4": {
-      "name": "The Illusionist's Desk",
-      "description": "A polished metal cylinder sits on an ancient desk, surrounded by warped ink drawings. Reality seems twisted here.",
-      "atmosphere": "Mirrors deceive. Look closer at the reflection.",
-      "clue1": "1. The drawing makes no sense, but its reflection reveals a clock.",
-      "clue2": "2. Don't be fooled by a quick glance. Read the Roman numerals carefully.",
-      "clue3": "3. The clock face is mirrored (I, II, III are on the left). What is the true time?",
-      "trap_hint": "Are you sure about that time? Look closely at the numbers..."
+      "name": "The Sphinx's Sanctum",
+      "description": "A massive stone chamber filled with sand. A monolithic statue with human head and lion body stares at you.",
+      "atmosphere": "Sand shifts beneath your feet. Two glowing eyes watch from the dark.",
+      "riddleText": "I guard a secret,\nyet have no voice.\nTurn me right,\nand I reveal your choice.",
+      "solution": "KEY",
+      "clue1": "It fits in a lock."
     },
     "room5": {
       "name": "The Boiler Room",
@@ -180,7 +179,8 @@
     },
     "ui_entered_symbols": "Entered Symbols",
     "ui_reset": "Reset Sequence",
-    "ui_pressure_stable": "✓ PRESSURE STABLE"
+    "ui_pressure_stable": "✓ PRESSURE STABLE",
+    "ui_type_answer": "TYPE ANSWER..."
   },
   "game": {
     "waiting_for_opponent": "Waiting for opponent to join...",

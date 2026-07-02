@@ -267,13 +267,12 @@
     "ui_back_to_lobby": "Retour au salon",
     "ui_leaderboard": "Classement",
     "room4": {
-      "name": "Le Bureau de l'Illusionniste",
-      "description": "Un cylindre en métal poli repose sur un bureau ancien, entouré de dessins à l'encre déformés. La réalité semble tordue ici.",
-      "atmosphere": "Les miroirs trompent. Regardez de plus près le reflet.",
-      "clue1": "1. Le dessin n'a aucun sens, mais son reflet révèle une horloge.",
-      "clue2": "2. Ne vous laissez pas tromper par un coup d'œil rapide. Lisez attentivement les chiffres romains.",
-      "clue3": "3. Le cadran de l'horloge est inversé (I, II, III sont à gauche). Quelle est la véritable heure ?",
-      "trap_hint": "Êtes-vous sûr de cette heure ? Regardez attentivement les chiffres..."
+      "name": "Le Sanctuaire du Sphinx",
+      "description": "Une immense chambre de pierre remplie de sable. Une statue monolithique avec une tête humaine et un corps de lion vous dévisage.",
+      "atmosphere": "Le sable crisse sous vos pieds. Deux yeux luisants observent depuis l'obscurité.",
+      "riddleText": "Je garde un secret,\npourtant je n'ai pas de voix.\nTourne-moi à droite,\net je révèle ton choix.",
+      "solution": "CLE",
+      "clue1": "Ça rentre dans une serrure."
     },
     "room5": {
       "name": "La Chaufferie",
@@ -290,7 +289,8 @@
     },
     "ui_entered_symbols": "Symboles Entrés",
     "ui_reset": "Réinitialiser la Séquence",
-    "ui_pressure_stable": "✓ PRESSION STABLE"
+    "ui_pressure_stable": "✓ PRESSION STABLE",
+    "ui_type_answer": "TAPER LA RÉPONSE..."
   },
   "game": {
     "waiting_for_opponent": "En attente de l'adversaire...",

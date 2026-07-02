@@ -267,13 +267,12 @@
     "ui_back_to_lobby": "Volver a la sala",
     "ui_leaderboard": "Clasificación",
     "room4": {
-      "name": "El Escritorio del Ilusionista",
-      "description": "Un cilindro de metal pulido se asienta sobre un escritorio antiguo, rodeado de dibujos en tinta deformados. La realidad parece retorcida aquí.",
-      "atmosphere": "Los espejos engañan. Mira más de cerca el reflejo.",
-      "clue1": "1. El dibujo no tiene sentido, pero su reflejo revela un reloj.",
-      "clue2": "2. No te dejes engañar por un vistazo rápido. Lee los números romanos con cuidado.",
-      "clue3": "3. La esfera del reloj está reflejada (I, II, III están a la izquierda). ¿Cuál es la verdadera hora?",
-      "trap_hint": "¿Estás seguro de esa hora? Mira de cerca los números..."
+      "name": "El Santuario de la Esfinge",
+      "description": "Una enorme cámara de piedra llena de arena. Una estatua monolítica con cabeza humana y cuerpo de león te observa.",
+      "atmosphere": "La arena cruje bajo tus pies. Dos ojos brillantes te miran desde la oscuridad.",
+      "riddleText": "Guardo un secreto,\npero no tengo voz.\nGírame a la derecha,\ny revelo tu elección.",
+      "solution": "LLAVE",
+      "clue1": "Encaja en una cerradura."
     },
     "room5": {
       "name": "La Sala de Calderas",
@@ -290,7 +289,8 @@
     },
     "ui_entered_symbols": "Símbolos Ingresados",
     "ui_reset": "Reiniciar Secuencia",
-    "ui_pressure_stable": "✓ PRESIÓN ESTABLE"
+    "ui_pressure_stable": "✓ PRESIÓN ESTABLE",
+    "ui_type_answer": "ESCRIBE RESPUESTA..."
   },
   "game": {
     "waiting_for_opponent": "Esperando al oponente...",

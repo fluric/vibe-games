@@ -267,13 +267,12 @@
     "ui_back_to_lobby": "Zurück zur Lobby",
     "ui_leaderboard": "Bestenliste",
     "room4": {
-      "name": "Der Schreibtisch des Illusionisten",
-      "description": "Ein polierter Metallzylinder steht auf einem alten Schreibtisch, umgeben von verzerrten Tuschezeichnungen. Die Realität scheint hier verdreht.",
-      "atmosphere": "Spiegel täuschen. Schau dir das Spiegelbild genauer an.",
-      "clue1": "1. Die Zeichnung ergibt keinen Sinn, aber ihr Spiegelbild offenbart eine Uhr.",
-      "clue2": "2. Lass dich nicht von einem flüchtigen Blick täuschen. Lies die römischen Ziffern sorgfältig.",
-      "clue3": "3. Das Zifferblatt ist spiegelverkehrt (I, II, III sind links). Was ist die wahre Zeit?",
-      "trap_hint": "Bist du dir bei dieser Uhrzeit sicher? Schau dir die Zahlen genau an..."
+      "name": "Das Heiligtum der Sphinx",
+      "description": "Eine massive Steinkammer voller Sand. Eine monolithische Statue mit Menschenkopf und Löwenkörper starrt dich an.",
+      "atmosphere": "Sand rieselt unter deinen Füßen. Zwei leuchtende Augen wachen aus der Dunkelheit.",
+      "riddleText": "Ich hüte ein Geheimnis,\ndoch habe keine Stimme.\nDreh mich nach rechts,\nund ich zeige dir deine Wahl.",
+      "solution": "SCHLÜSSEL",
+      "clue1": "Es passt in ein Schloss."
     },
     "room5": {
       "name": "Der Heizungskeller",
@@ -290,7 +289,8 @@
     },
     "ui_entered_symbols": "Eingegebene Symbole",
     "ui_reset": "Sequenz Zurücksetzen",
-    "ui_pressure_stable": "✓ DRUCK STABIL"
+    "ui_pressure_stable": "✓ DRUCK STABIL",
+    "ui_type_answer": "ANTWORT EINGEBEN..."
   },
   "game": {
     "waiting_for_opponent": "Warte auf Gegner...",
