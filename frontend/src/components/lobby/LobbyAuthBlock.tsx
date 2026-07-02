@@ -25,9 +25,9 @@ export function LobbyAuthBlock({
 
   return (
     <div className="min-h-screen bg-neutral-950 text-neutral-100 font-sans flex items-center justify-center p-6 relative overflow-hidden">
-      {/* Glowing background circles - optimized for mobile Safari without heavy CSS blurs */}
-      <div className="absolute top-[-20%] left-[-20%] w-[70%] h-[70%] bg-[radial-gradient(circle,rgba(59,130,246,0.15)_0%,transparent_60%)] pointer-events-none" />
-      <div className="absolute bottom-[-20%] right-[-20%] w-[70%] h-[70%] bg-[radial-gradient(circle,rgba(99,102,241,0.15)_0%,transparent_60%)] pointer-events-none" />
+      {/* Glowing background circles */}
+      <div className="absolute top-[-20%] left-[-20%] w-[50%] h-[50%] rounded-full bg-blue-500/10 blur-[150px] pointer-events-none" />
+      <div className="absolute bottom-[-20%] right-[-20%] w-[50%] h-[50%] rounded-full bg-indigo-500/10 blur-[150px] pointer-events-none" />
 
       <div className="w-full max-w-sm bg-neutral-900/60 border border-neutral-800 rounded-3xl p-8 backdrop-blur-md shadow-2xl flex flex-col gap-6 z-10">
         <div className="text-center">
