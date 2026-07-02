@@ -274,7 +274,7 @@ export function LobbyPage() {
     const google = (window as Window & { google?: GoogleIdentity }).google;
     const buttonEl = document.getElementById('google-signin-button');
 
-    if (googleClientId && google && buttonEl) {
+    if (googleClientId && google?.accounts?.id && buttonEl) {
       try {
         google.accounts.id.initialize({
           client_id: googleClientId,

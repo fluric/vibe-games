@@ -17,6 +17,6 @@
   "rl_master": {
     "checkpoint": "champion.pt",
     "num_simulations": 800,
-    "elo": 1787
+    "elo": 2585
   }
 }
