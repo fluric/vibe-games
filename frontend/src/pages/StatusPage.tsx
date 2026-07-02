@@ -65,9 +65,9 @@ export function StatusPage() {
 
   return (
     <div className="min-h-screen bg-neutral-950 text-neutral-100 font-sans flex flex-col justify-center items-center gap-6 p-4 relative overflow-hidden">
-      {/* Background glow styling */}
-      <div className="absolute top-[-20%] left-[-20%] w-[50%] h-[50%] rounded-full bg-indigo-500/10 blur-[150px] pointer-events-none" />
-      <div className="absolute bottom-[-20%] right-[-20%] w-[50%] h-[50%] rounded-full bg-rose-500/10 blur-[150px] pointer-events-none" />
+      {/* Glowing background circles - optimized for mobile Safari */}
+      <div className="absolute top-[-20%] left-[-20%] w-[70%] h-[70%] bg-[radial-gradient(circle,rgba(99,102,241,0.15)_0%,transparent_60%)] pointer-events-none" />
+      <div className="absolute bottom-[-20%] right-[-20%] w-[70%] h-[70%] bg-[radial-gradient(circle,rgba(244,63,94,0.15)_0%,transparent_60%)] pointer-events-none" />
 
       {/* System Status Dashboard */}
       <div className="flex flex-col gap-3 p-6 rounded-2xl border border-solid border-neutral-800 bg-neutral-900/60 backdrop-blur-md shadow-2xl w-80 text-left z-10">

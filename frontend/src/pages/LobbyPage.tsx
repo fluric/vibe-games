@@ -455,9 +455,9 @@ export function LobbyPage() {
 
   return (
     <div className="min-h-screen bg-neutral-950 text-neutral-100 font-sans flex flex-col items-center p-6 md:p-12 relative overflow-hidden">
-      {/* Dynamic background accents */}
-      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-blue-500/10 blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-rose-500/10 blur-[120px] pointer-events-none" />
+      {/* Ambient background effects - optimized for mobile Safari */}
+      <div className="absolute top-[-10%] left-[-10%] w-[60%] h-[60%] bg-[radial-gradient(circle,rgba(59,130,246,0.10)_0%,transparent_60%)] pointer-events-none" />
+      <div className="absolute bottom-[-10%] right-[-10%] w-[60%] h-[60%] bg-[radial-gradient(circle,rgba(244,63,94,0.10)_0%,transparent_60%)] pointer-events-none" />
 
       {/* Main Container */}
       <div className="w-full max-w-4xl flex flex-col gap-8 z-10">

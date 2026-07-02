@@ -40,8 +40,8 @@ export function GameLayout({
 
   return (
     <div className="min-h-screen bg-neutral-950 text-neutral-100 font-sans flex flex-col items-center p-6 md:p-12 relative overflow-x-hidden">
-      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-blue-500/5 blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-rose-500/5 blur-[120px] pointer-events-none" />
+      <div className="absolute top-[-10%] left-[-10%] w-[60%] h-[60%] bg-[radial-gradient(circle,rgba(59,130,246,0.07)_0%,transparent_60%)] pointer-events-none" />
+      <div className="absolute bottom-[-10%] right-[-10%] w-[60%] h-[60%] bg-[radial-gradient(circle,rgba(244,63,94,0.07)_0%,transparent_60%)] pointer-events-none" />
 
       <div className="w-full max-w-6xl flex flex-col gap-6 z-10">
         <div className="flex justify-between items-center border-b border-neutral-800 pb-4">
