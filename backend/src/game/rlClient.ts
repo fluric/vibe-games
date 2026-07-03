@@ -46,6 +46,7 @@ export interface SidecarHealthResponse {
 export async function checkSidecarHealth(): Promise<SidecarHealthResponse | null> {
   try {
     const res = await fetch(`${SIDECAR_URL}/health`, {
+      headers: { 'Connection': 'close' },
       signal: AbortSignal.timeout(2_000),
     });
     if (!res.ok) return null;
@@ -77,7 +78,10 @@ export async function getRLAction(
   try {
     res = await fetch(`${SIDECAR_URL}/predict`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Connection': 'close',
+      },
       body: JSON.stringify(body),
       signal: AbortSignal.timeout(SIDECAR_TIMEOUT_MS),
     });

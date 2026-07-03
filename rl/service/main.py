@@ -143,7 +143,7 @@ async def health() -> HealthResponse:
 
 
 @app.post("/predict", response_model=PredictResponse)
-async def predict(req: PredictRequest) -> PredictResponse:
+def predict(req: PredictRequest) -> PredictResponse:
     game_type = req.game_type
     bot_level = req.bot_level
 
