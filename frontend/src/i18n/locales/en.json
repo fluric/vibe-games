@@ -198,7 +198,7 @@
     "your_turn_react": "Your Turn: React to Attack! ⚔️",
     "your_turn_deploy": "Your Turn: Deploy Units 🛖",
     "your_turn_move_units": "Your Turn: Move Units 🛡️",
-    "opponents_turn": "Opponent\\",
+    "opponents_turn": "Opponent's Turn",
     "waiting_for_action": "Waiting for opponent to submit their action.",
     "cancel_game_title": "Cancel Game Lobby",
     "cancel_game_msg": "Are you sure you want to cancel this game lobby?",
