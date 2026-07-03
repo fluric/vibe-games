@@ -13,14 +13,20 @@ let config: any;
 const timeArgIdx = process.argv.indexOf('--time');
 const MOVE_TIME_MS = timeArgIdx !== -1 ? parseInt(process.argv[timeArgIdx + 1], 10) : null;
 
+const includeRlIdx = process.argv.indexOf('--include-rl');
+const INCLUDE_RL = includeRlIdx !== -1;
+
+const roundsArgIdx = process.argv.indexOf('--rounds');
+const TOTAL_ROUNDS = roundsArgIdx !== -1 ? parseInt(process.argv[roundsArgIdx + 1], 10) : 3;
+
 // Game loop runner that both master and workers can run
-function runGame(
+async function runGame(
   gameType: GameType,
   botX: string,
   botO: string,
   localConfig: any,
   overrideMoveTime: number | null
-): { winner: PlayerPiece | 'draw' } {
+): Promise<{ winner: PlayerPiece | 'draw' }> {
   const engine = ENGINES[gameType];
   let state = engine.createInitialState();
   let moveCount = 0;
@@ -42,13 +48,18 @@ function runGame(
 
     const currentBot = state.turn === 'X' ? botX : botO;
     const botConfig = gameBotsConfig[currentBot];
-    const botType = botConfig.type;
+    const botType = botConfig.botLevel || botConfig.type || currentBot;
     const botDepth = botConfig.depth ?? 3;
     const botWeights = botConfig.weights;
     const botTimeLimit = overrideMoveTime !== null ? overrideMoveTime : (botConfig.timeLimitMs ?? 1500);
 
     try {
-      const action = engine.getAiAction(state, botType, botDepth, botWeights, botTimeLimit);
+      let action;
+      if (botType.startsWith('rl_') && engine.getAiActionAsync) {
+        action = await engine.getAiActionAsync(state, botType, botDepth, botWeights, botTimeLimit);
+      } else {
+        action = engine.getAiAction(state, botType, botDepth, botWeights, botTimeLimit);
+      }
       state = engine.handleMove(state, action, state.turn);
     } catch (err: any) {
       console.error(`  ❌ Error during ${state.turn} (${currentBot}) turn:`, err.message);
@@ -62,9 +73,9 @@ function runGame(
 
 if (!isMainThread) {
   // Worker logic
-  parentPort?.on('message', (msg) => {
+  parentPort?.on('message', async (msg) => {
     if (msg.type === 'play') {
-      const result = runGame(msg.gameType, msg.botX, msg.botO, msg.config, MOVE_TIME_MS);
+      const result = await runGame(msg.gameType, msg.botX, msg.botO, msg.config, MOVE_TIME_MS);
       parentPort?.postMessage({
         type: 'result',
         winner: result.winner,
@@ -78,9 +89,12 @@ if (!isMainThread) {
   // Main thread logic
   config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
 
-  const millBots = Object.keys(config.mill);
-  const c4Bots = Object.keys(config.connect_four);
-  const hgBots = Object.keys(config.holy_grail);
+  const millBots = Object.keys(config.mill).filter(k => !k.startsWith('rl_'));
+  let c4Bots = Object.keys(config.connect_four);
+  if (!INCLUDE_RL) {
+    c4Bots = c4Bots.filter(k => !k.startsWith('rl_'));
+  }
+  const hgBots = Object.keys(config.holy_grail).filter(k => !k.startsWith('rl_'));
 
   if (MOVE_TIME_MS !== null) {
     console.log(`⏱️  Move time budget: Overridden to ${MOVE_TIME_MS}ms per move`);
@@ -100,24 +114,27 @@ if (!isMainThread) {
     holy_grail: {}
   };
   for (const key of millBots) {
-    ratings.mill[key] = config.mill[key].elo;
+    ratings.mill[key] = 0;
     winCounts.mill[key] = { wins: 0, losses: 0, draws: 0 };
   }
   for (const key of c4Bots) {
-    ratings.connect_four[key] = config.connect_four[key].elo;
+    ratings.connect_four[key] = 0;
     winCounts.connect_four[key] = { wins: 0, losses: 0, draws: 0 };
   }
   for (const key of hgBots) {
-    ratings.holy_grail[key] = config.holy_grail[key].elo;
+    ratings.holy_grail[key] = 0;
     winCounts.holy_grail[key] = { wins: 0, losses: 0, draws: 0 };
   }
 
-  console.log('🤖 Starting Offline Parallel AI Tournament Calibration...');
+  if (INCLUDE_RL) {
+    console.log('🤖 Starting Offline Parallel AI Tournament Calibration (INCLUDING RL BOTS)...');
+    console.log('⚠️  WARNING: RL bots use PyTorch and network requests. This will take significantly longer!');
+  } else {
+    console.log('🤖 Starting Offline Parallel AI Tournament Calibration (MINIMAX ONLY)...');
+  }
 
   const MATCHUPS = [
-    { gameType: 'mill' as const, bots: millBots, baselineKey: 'easy_random' },
-    { gameType: 'connect_four' as const, bots: c4Bots, baselineKey: 'easy_random' },
-    { gameType: 'holy_grail' as const, bots: hgBots, baselineKey: 'easy_random' },
+    { gameType: 'connect_four' as GameType, bots: c4Bots, baselineKey: 'easy_random' }
   ];
 
   // Generate all tasks (matchups)
@@ -130,10 +147,8 @@ if (!isMainThread) {
   }
 
   const tasks: Task[] = [];
-  const totalRounds = 3;
-
   for (const group of MATCHUPS) {
-    for (let round = 1; round <= totalRounds; round++) {
+    for (let round = 1; round <= TOTAL_ROUNDS; round++) {
       for (let i = 0; i < group.bots.length; i++) {
         for (let j = 0; j < group.bots.length; j++) {
           if (i !== j) {
@@ -255,9 +270,12 @@ if (!isMainThread) {
     // Write updated ELOs directly back to aiConfig.json
     const outConfig = JSON.parse(fs.readFileSync(configPath, 'utf8'));
     for (const group of MATCHUPS) {
-      if (group.gameType === 'holy_grail') {
+      if (group.gameType === 'connect_four') {
         for (const bot of group.bots) {
-          outConfig[group.gameType][bot].elo = Math.round(ratings[group.gameType][bot]);
+          // Keep RL bots with their own ELO if they weren't included in the tournament
+          if (!bot.startsWith('rl_') || INCLUDE_RL) {
+            outConfig[group.gameType][bot].elo = Math.round(ratings[group.gameType][bot]);
+          }
         }
       }
     }
