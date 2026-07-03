@@ -33,6 +33,7 @@ export async function runAiLoopIfNeeded(game: Game): Promise<void> {
   let aiActive = !game.state.winner;
   while (aiActive && game.state.turn === aiPiece) {
     try {
+      const startTime = Date.now();
       let rawAction: any;
 
       // ── RL sidecar path (async) ───────────────────────────────────────────

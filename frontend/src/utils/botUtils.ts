@@ -25,6 +25,10 @@ export const AI_BOT_IDS = [
   '00000000-0000-0000-0000-000000000030', // Random Randy (HG Easy)
   '00000000-0000-0000-0000-000000000031', // Aggressive Archie (HG Medium)
   '00000000-0000-0000-0000-000000000032', // Tactical Toby (HG Hard)
+  '00000000-0000-0000-0000-000000000040', // Neural Novice (C4 RL)
+  '00000000-0000-0000-0000-000000000041', // Neural Scout (C4 RL)
+  '00000000-0000-0000-0000-000000000042', // Neural Strategist (C4 RL)
+  '00000000-0000-0000-0000-000000000043', // Neural Master (C4 RL)
 ];
 
 export function isBotId(id?: string | null): boolean {
