@@ -12,7 +12,7 @@
 import type { ConnectFourGameState, MillGameState } from '@vibe-games/shared';
 
 const SIDECAR_URL = process.env.RL_SIDECAR_URL ?? 'http://localhost:8765';
-const SIDECAR_TIMEOUT_MS = 10_000; // 10s — generous for high-sim bots
+const SIDECAR_TIMEOUT_MS = 30_000; // 30s — generous for cold starts (model loading)
 
 export interface RLPredictRequest {
   game_type: 'connect_four' | 'mill';
