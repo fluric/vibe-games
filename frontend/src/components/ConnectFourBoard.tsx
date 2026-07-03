@@ -132,7 +132,7 @@ export const ConnectFourBoard: React.FC<ConnectFourBoardProps> = ({
       {/* Grid container */}
       <div className="relative p-4 md:p-6 bg-neutral-950/40 border border-neutral-800/60 rounded-3xl backdrop-blur-md shadow-[0_0_40px_rgba(0,0,0,0.3)]">
         {/* Connect 4 Blue Frame */}
-        <div className="grid grid-cols-7 gap-4 sm:gap-5 md:gap-6 bg-blue-900 border-4 border-blue-950 p-5 rounded-2xl shadow-[inset_0_4px_12px_rgba(0,0,0,0.4),0_8px_24px_rgba(0,0,0,0.5)]">
+        <div className="grid grid-cols-7 place-items-center gap-4 sm:gap-5 md:gap-6 bg-blue-900 border-4 border-blue-950 p-5 rounded-2xl shadow-[inset_0_4px_12px_rgba(0,0,0,0.4),0_8px_24px_rgba(0,0,0,0.5)]">
           {Array.from({ length: ROWS }).map((_, r) => (
             <React.Fragment key={r}>
               {Array.from({ length: COLS }).map((_, c) => {
@@ -163,11 +163,11 @@ export const ConnectFourBoard: React.FC<ConnectFourBoardProps> = ({
       </div>
 
       {/* Column indicators at the bottom */}
-      <div className="grid grid-cols-7 gap-4 sm:gap-5 md:gap-6 px-4 w-full max-w-[340px] sm:max-w-[420px] md:max-w-[570px] text-center text-xs font-bold text-neutral-500">
+      <div className="grid grid-cols-7 place-items-center gap-4 sm:gap-5 md:gap-6 text-center text-xs font-bold text-neutral-500">
         {Array.from({ length: COLS }).map((_, c) => (
           <div 
             key={c} 
-            className={`transition-colors duration-200 ${hoveredCol === c && !disabled ? 'text-blue-400' : ''}`}
+            className={`w-10 sm:w-12 md:w-16 transition-colors duration-200 ${hoveredCol === c && !disabled ? 'text-blue-400' : ''}`}
           >
             {c + 1}
           </div>
