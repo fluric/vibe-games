@@ -51,6 +51,7 @@ export const GrailSidePanel: React.FC<GrailSidePanelProps> = ({
   setIsLogCollapsed,
   logContainerRef
 }) => {
+  const { t } = useTranslation('game');
   const { hands } = state;
 
   return (
