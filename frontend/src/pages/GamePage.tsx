@@ -236,7 +236,7 @@ export function GamePage() {
         else if (millState.phase === 'movement') bannerMessage = t('your_turn_move', { defaultValue: 'Your Turn: Move Piece' });
         else if (millState.phase === 'flying') bannerMessage = t('your_turn_fly', { defaultValue: 'Your Turn: Fly Piece ✈️' });
       } else if (game.gameType === 'connect_four') {
-        bannerMessage = t('your_turn_drop', { defaultValue: 'Your Turn: Drop Piece 🔴' });
+        bannerMessage = t('your_turn_drop', { defaultValue: 'Your Turn: Drop Piece' });
       } else if (game.gameType === 'holy_grail') {
         const grailState = game.state as HolyGrailGameState;
         if (grailState.phase === 'react') bannerMessage = t('your_turn_react', { defaultValue: 'Your Turn: React to Attack! ⚔️' });

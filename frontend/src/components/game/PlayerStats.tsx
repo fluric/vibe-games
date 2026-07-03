@@ -13,11 +13,44 @@ export function PlayerStats({ game, player }: PlayerStatsProps) {
   const playerDto = isPlayerX ? game.playerX : game.playerO;
   const isMyTurn = game.status === 'in_progress' && game.state.turn === player;
 
-  const bgClass = isPlayerX ? 'bg-blue-500' : 'bg-rose-500';
-  const textClass = isPlayerX ? 'text-blue-400' : 'text-rose-400';
-  const shadowClass = isPlayerX ? 'shadow-[0_0_8px_rgba(59,130,246,0.6)]' : 'shadow-[0_0_8px_rgba(239,68,68,0.6)]';
-  const activeBg = isPlayerX ? 'bg-blue-500/10 border-blue-500/30' : 'bg-rose-500/10 border-rose-500/30';
-  const gradient = isPlayerX ? 'from-blue-500 to-indigo-600' : 'from-rose-500 to-amber-600';
+  let themeX = {
+    bg: 'bg-blue-500',
+    text: 'text-blue-400',
+    shadow: 'shadow-[0_0_8px_rgba(59,130,246,0.6)]',
+    activeBg: 'bg-blue-500/10 border-blue-500/30',
+    gradient: 'from-blue-500 to-indigo-600'
+  };
+  let themeO = {
+    bg: 'bg-rose-500',
+    text: 'text-rose-400',
+    shadow: 'shadow-[0_0_8px_rgba(239,68,68,0.6)]',
+    activeBg: 'bg-rose-500/10 border-rose-500/30',
+    gradient: 'from-rose-500 to-amber-600'
+  };
+
+  if (game.gameType === 'connect_four') {
+    themeX = {
+      bg: 'bg-rose-500',
+      text: 'text-rose-400',
+      shadow: 'shadow-[0_0_8px_rgba(239,68,68,0.6)]',
+      activeBg: 'bg-rose-500/10 border-rose-500/30',
+      gradient: 'from-rose-500 to-rose-700'
+    };
+    themeO = {
+      bg: 'bg-amber-400',
+      text: 'text-amber-400',
+      shadow: 'shadow-[0_0_8px_rgba(251,191,36,0.6)]',
+      activeBg: 'bg-amber-400/10 border-amber-400/30',
+      gradient: 'from-amber-400 to-amber-600'
+    };
+  }
+
+  const theme = isPlayerX ? themeX : themeO;
+  const bgClass = theme.bg;
+  const textClass = theme.text;
+  const shadowClass = theme.shadow;
+  const activeBg = theme.activeBg;
+  const gradient = theme.gradient;
 
   let rem = 0;
   let placed = 0;
