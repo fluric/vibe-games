@@ -104,7 +104,6 @@ export function GamePage() {
 
   useEffect(() => {
     if (checkingAuth || !id || !game) return;
-    const isAiGame = isGameAgainstAi(game);
     const isFinished = game?.status === 'finished';
     if (isFinished) return;
     const interval = setInterval(() => {

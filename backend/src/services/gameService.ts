@@ -636,11 +636,51 @@ export async function submitMove(gameId: string, userId: string, movePayload: an
     game.winnerId = game.state.winner === 'draw' ? null : (game.state.winner === 'X' ? game.playerXId : game.playerOId);
   }
 
-  await runAiLoopIfNeeded(game);
+  const savedGame = await gameRepo.save(game);
 
-  if (game.status === 'finished') {
-    await handleGameFinished(game);
+  if (savedGame.status === 'finished') {
+    await handleGameFinished(savedGame);
+  } else {
+    // Run AI loop in the background to ensure separation of human and AI moves
+    runAiLoopIfNeededBackground(savedGame.id).catch(err => {
+      console.error('Background AI Loop Error:', err);
+    });
   }
 
-  return await gameRepo.save(game);
+  return savedGame;
+}
+
+export async function runAiLoopIfNeededBackground(gameId: string): Promise<void> {
+  const gameRepo = AppDataSource.getRepository(Game);
+  const game = await gameRepo.findOne({
+    where: { id: gameId },
+    relations: ['playerX', 'playerO'],
+  });
+
+  if (!game || game.status !== 'in_progress') return;
+
+  const botId = [game.playerXId, game.playerOId].find(id => id && BOTS_MAP.has(id));
+  if (!botId) return;
+
+  const botInfo = BOTS_MAP.get(botId)!;
+  const aiPiece: PlayerPiece = botId === game.playerXId ? 'X' : 'O';
+
+  if (game.state.turn !== aiPiece) return;
+
+  const startTime = Date.now();
+  await runAiLoopIfNeeded(game);
+
+  // If the AI actually made a move (or finished the game)
+  if (game.state.turn !== aiPiece || (game.status as string) === 'finished') {
+    const elapsed = Date.now() - startTime;
+    // Enforce a minimum delay of 1200ms so fast bots don't overlap with the human's animation
+    if (elapsed < 1200) {
+      await new Promise(resolve => setTimeout(resolve, 1200 - elapsed));
+    }
+
+    await gameRepo.save(game);
+    if ((game.status as string) === 'finished') {
+      await handleGameFinished(game);
+    }
+  }
 }
