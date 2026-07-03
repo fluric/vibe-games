@@ -106,7 +106,7 @@ export function GamePage() {
     if (checkingAuth || !id || !game) return;
     const isAiGame = isGameAgainstAi(game);
     const isFinished = game?.status === 'finished';
-    if (isFinished || isAiGame) return;
+    if (isFinished) return;
     const interval = setInterval(() => {
       if (!actionPendingRef.current) fetchGame();
     }, 2000);
