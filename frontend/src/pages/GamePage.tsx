@@ -116,6 +116,33 @@ export function GamePage() {
   const handleBoardAction = async (action: string, params: unknown) => {
     if (!id || submittingMove) return;
     setSubmittingMove(true);
+
+    // Optimistic update for Connect Four
+    if (game?.gameType === 'connect_four' && action === 'place') {
+      const col = (params as Record<string, unknown>).column as number;
+      const board = [...(game.state.board as any[])];
+      let placedIdx = -1;
+      for (let r = 5; r >= 0; r--) {
+        const idx = r * 7 + col;
+        if (board[idx] === null) {
+          board[idx] = getMyPiece(game);
+          placedIdx = idx;
+          break;
+        }
+      }
+      if (placedIdx !== -1) {
+        setGame({
+          ...game,
+          state: {
+            ...game.state,
+            board,
+            turn: getMyPiece(game) === 'X' ? 'O' : 'X',
+          }
+        } as GameDto);
+        audio.playPlaceSound();
+      }
+    }
+
     try {
       const updated = await api.submitMove(id, { action, ...(params as Record<string, unknown>) });
       const oldBoard = game?.state.board;
@@ -123,35 +150,20 @@ export function GamePage() {
       const isAiGame = isGameAgainstAi(updated);
 
       if (updated.gameType === 'connect_four' && isAiGame && Array.isArray(oldBoard) && Array.isArray(newBoard)) {
-        const newIndices: number[] = [];
-        for (let i = 0; i < newBoard.length; i++) {
-          if (oldBoard[i] === null && newBoard[i] !== null) newIndices.push(i);
-        }
-        if (newIndices.length === 2) {
-          const humanPiece = getMyPiece(updated);
-          const humanIndex = newIndices.find(idx => newBoard[idx] === humanPiece);
-          const aiIndex = newIndices.find(idx => newBoard[idx] !== humanPiece);
-          if (humanIndex !== undefined && aiIndex !== undefined) {
-            const intermediateBoard = [...newBoard];
-            intermediateBoard[aiIndex] = null;
-            setGame({
-              ...updated,
-              state: { ...updated.state, board: intermediateBoard, turn: updated.state.turn === 'X' ? 'O' : 'X', winner: null },
-              status: 'in_progress',
-            } as GameDto);
-            if (connectFourTimeoutRef.current) clearTimeout(connectFourTimeoutRef.current);
-            connectFourTimeoutRef.current = setTimeout(() => {
-              setGame(updated);
-              setSubmittingMove(false);
-              if (updated.status === 'finished') {
-                const myPiece = getMyPiece(updated);
-                if (myPiece && updated.state.winner === myPiece) audio.playVictorySound();
-                else if (myPiece && updated.state.winner && updated.state.winner !== myPiece) audio.playErrorSound();
-              }
-            }, 1200);
-            return;
+        // Since we already applied the human move optimistically, oldBoard represents the board BEFORE the human moved.
+        // newBoard contains BOTH the human move and the AI move.
+        // We want to just wait a short moment and show the final updated board (the AI's move).
+        if (connectFourTimeoutRef.current) clearTimeout(connectFourTimeoutRef.current);
+        connectFourTimeoutRef.current = setTimeout(() => {
+          setGame(updated);
+          setSubmittingMove(false);
+          if (updated.status === 'finished') {
+            const myPiece = getMyPiece(updated);
+            if (myPiece && updated.state.winner === myPiece) audio.playVictorySound();
+            else if (myPiece && updated.state.winner && updated.state.winner !== myPiece) audio.playErrorSound();
           }
-        }
+        }, 800); // 800ms delay to ensure human animation finishes before AI moves
+        return;
       }
       setGame(updated);
       setSubmittingMove(false);
