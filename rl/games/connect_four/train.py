@@ -42,9 +42,8 @@ CHAMPION_PATH = MODELS_DIR / "champion.pt"
 
 # ─── Config ───────────────────────────────────────────────────────────────────
 
-# ELO thresholds at which we save a named milestone checkpoint.
-# Edit these to add more granularity.
-MILESTONE_ELOS = [200, 400, 600, 800, 1000, 1200, 1400]
+# Save a milestone checkpoint every N ELO points automatically.
+MILESTONE_INTERVAL = 200
 
 # ELO computation baseline: these are the approximate ELO ratings of the
 # existing TypeScript minimax bots. We compute RL bot ELO by win rate vs. these.
@@ -322,6 +321,11 @@ def train(
         champion_elo = float(registry["rl_master"]["elo"])
         print(f"Loaded champion ELO from registry: {champion_elo:.0f}")
 
+        # Mark all past milestones as completed so we don't retrospectively save them
+        max_past_threshold = int(champion_elo // MILESTONE_INTERVAL) * MILESTONE_INTERVAL
+        for threshold in range(MILESTONE_INTERVAL, max_past_threshold + MILESTONE_INTERVAL, MILESTONE_INTERVAL):
+            milestone_saved.add(threshold)
+
     print(f"\n{'='*60}")
     print(f"Training: {num_iterations} iterations × {games_per_iter} games/iter")
     print(f"MCTS sims: {num_simulations} | Batch: {batch_size} | Eval every: {eval_every}")
@@ -377,9 +381,10 @@ def train(
                 rounded_elo = int(round(champion_elo / 50) * 50)
                 print(f"  ELO gain: +{elo_gain:.0f} → New ELO: ~{champion_elo:.0f} (rounded: {rounded_elo})")
 
-                # Save milestone if we've crossed a new threshold
-                for threshold in MILESTONE_ELOS:
-                    if champion_elo >= threshold and threshold not in milestone_saved:
+                # Save milestone if we've crossed a new threshold (dynamic)
+                max_threshold = int(champion_elo // MILESTONE_INTERVAL) * MILESTONE_INTERVAL
+                for threshold in range(MILESTONE_INTERVAL, max_threshold + MILESTONE_INTERVAL, MILESTONE_INTERVAL):
+                    if threshold not in milestone_saved:
                         save_milestone(champion, threshold, registry)
                         milestone_saved.add(threshold)
 

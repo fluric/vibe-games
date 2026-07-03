@@ -58,6 +58,14 @@ export function LobbyPage() {
     }
   });
 
+  useEffect(() => {
+    try {
+      localStorage.setItem('vibe-games-active-tab', activeGameTab);
+    } catch {
+      // Ignore quota errors, etc.
+    }
+  }, [activeGameTab]);
+
   const [lobbyTab, setLobbyTab] = useState<'lobbies' | 'leaderboard'>('lobbies');
 
   const [leaderboardEntries, setLeaderboardEntries] = useState<LeaderboardEntryDto[]>([]);
