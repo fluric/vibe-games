@@ -442,6 +442,25 @@
     "draw_condition": "400 tours.",
     "got_it_play": "Compris !",
     "c4_drop_red": "Cliquez sur une colonne pour poser votre pièce 🔴 Rouge",
-    "c4_drop_gold": "Cliquez sur une colonne pour poser votre pièce 🟡 Or"
+    "c4_drop_gold": "Cliquez sur une colonne pour poser votre pièce 🟡 Or",
+    "active_turn": "Active Turn",
+    "player_turn_prefix": "Player",
+    "your_turn_badge": "Your Turn",
+    "opponent_hand": "Opponent Hand",
+    "cards_count": "cards",
+    "phase": "Phase",
+    "review_mode_desc": "<strong>Review Mode:</strong> Opponent turn completed. Take your time to review the logs and board state (opponent deployments/moves shown as overlays) before starting your action phase.",
+    "deploy_phase_desc1": "Deploy cards from your hand onto your 🛖 <strong>Urban housing cells</strong>.",
+    "deploy_phase_desc2": "Your valid cells are highlighted in purple.",
+    "deploy_phase_desc3": "<strong>To place:</strong> Click a highlighted housing cell, then click a card in your hand. Or click a card first, then click a highlighted cell.",
+    "move_phase_desc": "Select one of your stacks, then click an adjacent hex to move units. Stacks with Kings can carry the Grail 🏆.",
+    "react_phase_desc": "You are under attack! Click the contested cells (highlighted in red ⚔️) to fight or retreat.",
+    "start_my_turn": "Start My Turn",
+    "go_to_movement": "Go to Movement",
+    "end_turn_btn": "End Turn",
+    "reacting_to_combat": "Reacting to combat...",
+    "opponent_turn_btn": "Opponent Turn",
+    "battle_log": "Battle Log",
+    "no_events_yet": "No events yet."
   }
 }

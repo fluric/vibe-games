@@ -2,6 +2,8 @@ import { formatCardString, formatCardValue, parseCardLabel } from './boardUtils'
 import type { GroupedLog } from './historyUtils';
 
 export function renderGroupedHistoryEntry(grouped: GroupedLog) {
+  const { t } = useTranslation('game');
+
   if (grouped.radioactiveSummary) {
     const summary = grouped.radioactiveSummary;
     const playerColor = summary.player === 'X' 
