@@ -4,7 +4,7 @@ import type { HolyGrailGameState, PlayerPiece } from '@vibe-games/shared';
 import * as audio from '../AudioEffects';
 import { formatCardValue, parseCardLabel } from './boardUtils';
 import { getGroupedHistory } from './historyUtils';
-import { renderGroupedHistoryEntry } from './HistoryRenderer';
+import { GroupedHistoryEntry } from './HistoryRenderer';
 
 interface GrailSidePanelProps {
   state: HolyGrailGameState;
@@ -201,7 +201,7 @@ export const GrailSidePanel: React.FC<GrailSidePanelProps> = ({
             {(() => {
               const groupedLogs = getGroupedHistory(state.history || []);
               if (groupedLogs.length > 0) {
-                return groupedLogs.map((grouped) => renderGroupedHistoryEntry(grouped));
+                return groupedLogs.map((grouped) => <GroupedHistoryEntry key={grouped.key} grouped={grouped} />);
               }
               return (
                 <div className="text-xs text-neutral-600 italic text-center my-auto">{t("no_events_yet", { defaultValue: "No events yet." })}</div>

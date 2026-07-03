@@ -1,7 +1,7 @@
 import { formatCardString, formatCardValue, parseCardLabel } from './boardUtils';
 import type { GroupedLog } from './historyUtils';
 
-export function renderGroupedHistoryEntry(grouped: GroupedLog) {
+export const GroupedHistoryEntry: React.FC<{ grouped: GroupedLog }> = ({ grouped }) => {
   const { t } = useTranslation('game');
 
   if (grouped.radioactiveSummary) {
