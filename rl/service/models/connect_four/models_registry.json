@@ -15,8 +15,8 @@
     "elo": 1000
   },
   "rl_master": {
-    "checkpoint": "champion.pt",
+    "checkpoint": "connect_four_elo_3800.pt",
     "num_simulations": 800,
-    "elo": 2585
+    "elo": 3765
   }
 }
