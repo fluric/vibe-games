@@ -98,14 +98,28 @@ export function RulesModal({ isOpen, onClose }: RulesModalProps) {
                   </p>
                   <ul className="list-disc pl-5 mt-2 space-y-1.5 text-neutral-400 text-xs">
                     <li>
-                      <Trans i18nKey="secure_the_grail" ns="game" defaultValue="<0>Secure the Grail:</0> Move the <1>Holy Grail 🏆</1> (starts at center hex <2>0,0</2>) back to your <3>Home Base</3>.">
-                        <strong className="text-indigo-400">Secure the Grail:</strong> Move the <span className="text-amber-400 font-bold">Holy Grail 🏆</span> (starts at center hex <code className="bg-neutral-950 px-1 py-0.5 rounded text-neutral-400">0,0</code>) back to your <strong className="text-white">Home Base</strong>.
-                      </Trans>
+                      <Trans 
+                        i18nKey="secure_the_grail" 
+                        ns="game" 
+                        defaultValue="<0>Secure the Grail:</0> Move the <1>Holy Grail 🏆</1> (starts at center hex <2>0,0</2>) back to your <3>Home Base</3>."
+                        components={[
+                          <strong key="0" className="text-indigo-400" />,
+                          <span key="1" className="text-amber-400 font-bold" />,
+                          <code key="2" className="bg-neutral-950 px-1 py-0.5 rounded text-neutral-400" />,
+                          <strong key="3" className="text-white" />
+                        ]}
+                      />
                     </li>
                     <li>
-                      <Trans i18nKey="base_capture" ns="game" defaultValue="<0>Base Capture:</0> Invade and occupy the opponent's <1>Home Base</1> with your units.">
-                        <strong className="text-rose-400">Base Capture:</strong> Invade and occupy the opponent's <strong className="text-white">Home Base</strong> with your units.
-                      </Trans>
+                      <Trans 
+                        i18nKey="base_capture" 
+                        ns="game" 
+                        defaultValue="<0>Base Capture:</0> Invade and occupy the opponent's <1>Home Base</1> with your units."
+                        components={[
+                          <strong key="0" className="text-rose-400" />,
+                          <strong key="1" className="text-white" />
+                        ]}
+                      />
                     </li>
                   </ul>
                 </div>
@@ -141,9 +155,12 @@ export function RulesModal({ isOpen, onClose }: RulesModalProps) {
                         🌾 {t('farm_land', { defaultValue: 'Farm Land (-2,0 & 2,0)' })}
                       </div>
                       <p className="text-neutral-400 leading-normal">
-                        <Trans i18nKey="farm_land_desc" ns="game" defaultValue="Neutral resource hexes. Controlling a Farm Land grants you <0>+1 card draw</0> at the start of your turn.">
-                          Neutral resource hexes. Controlling a Farm Land grants you <strong className="text-white">+1 card draw</strong> at the start of your turn.
-                        </Trans>
+                        <Trans 
+                          i18nKey="farm_land_desc" 
+                          ns="game" 
+                          defaultValue="Neutral resource hexes. Controlling a Farm Land grants you <0>+1 card draw</0> at the start of your turn."
+                          components={[<strong key="0" className="text-white" />]}
+                        />
                       </p>
                     </div>
                     <div className="p-3 rounded-xl bg-neutral-950/40 border border-neutral-800/80">
@@ -166,18 +183,27 @@ export function RulesModal({ isOpen, onClose }: RulesModalProps) {
                     🃏 {t('cards_as_units', { defaultValue: 'Cards as Units' })}
                   </h4>
                   <p>
-                    <Trans i18nKey="cards_as_units_desc" ns="game" defaultValue="Your soldiers are represented by playing cards in your hand with values from <0>1 to 13</0>:">
-                      Your soldiers are represented by playing cards in your hand with values from <strong className="text-white">1 to 13</strong>:
-                    </Trans>
+                    <Trans 
+                      i18nKey="cards_as_units_desc" 
+                      ns="game" 
+                      defaultValue="Your soldiers are represented by playing cards in your hand with values from <0>1 to 13</0>:"
+                      components={[<strong key="0" className="text-white" />]}
+                    />
                   </p>
                   <ul className="list-disc pl-5 mt-2 space-y-1.5 text-neutral-400 text-xs">
                     <li><strong className="text-white">{t('1_to_10', { defaultValue: '1 to 10:' })}</strong> {t('regular_number_soldiers', { defaultValue: 'Regular number soldiers.' })}</li>
                     <li><strong className="text-indigo-400">11:</strong> {t('jack_j', { defaultValue: 'Jack (J)' })}</li>
                     <li><strong className="text-indigo-400">12:</strong> {t('queen_q', { defaultValue: 'Queen (Q)' })}</li>
                     <li>
-                      <Trans i18nKey="king_desc" ns="game" defaultValue="<0>13:</0> King (K) — The <1>only unit</1> capable of carrying the Grail.">
-                        <strong className="text-indigo-400">13:</strong> King (K) — The <strong className="text-white">only unit</strong> capable of carrying the Grail.
-                      </Trans>
+                      <Trans 
+                        i18nKey="king_desc" 
+                        ns="game" 
+                        defaultValue="<0>13:</0> King (K) — The <1>only unit</1> capable of carrying the Grail."
+                        components={[
+                          <strong key="0" className="text-indigo-400" />,
+                          <strong key="1" className="text-white" />
+                        ]}
+                      />
                     </li>
                   </ul>
                 </div>
@@ -189,9 +215,12 @@ export function RulesModal({ isOpen, onClose }: RulesModalProps) {
                     ⚖️ {t('recruitment_limits', { defaultValue: 'Recruitment Limits' })}
                   </h4>
                   <p>
-                    <Trans i18nKey="recruitment_limits_desc" ns="game" defaultValue="To prevent overwhelming face card armies, there is a strict limit on the number of face cards you can have <0>in play</0> (hand and board combined):">
-                      To prevent overwhelming face card armies, there is a strict limit on the number of face cards you can have <strong className="text-white">in play</strong> (hand and board combined):
-                    </Trans>
+                    <Trans 
+                      i18nKey="recruitment_limits_desc" 
+                      ns="game" 
+                      defaultValue="To prevent overwhelming face card armies, there is a strict limit on the number of face cards you can have <0>in play</0> (hand and board combined):"
+                      components={[<strong key="0" className="text-white" />]}
+                    />
                   </p>
                   <div className="mt-3 overflow-hidden rounded-xl border border-neutral-800">
                     <table className="w-full text-left text-xs bg-neutral-950/30">
@@ -228,9 +257,12 @@ export function RulesModal({ isOpen, onClose }: RulesModalProps) {
                 <div className="p-3.5 rounded-2xl bg-amber-500/5 border border-amber-500/15 flex items-start gap-3">
                   <span className="text-lg">💡</span>
                   <div className="text-xs text-amber-300/90 leading-relaxed">
-                    <Trans i18nKey="tip_protect_king" ns="game" defaultValue="<0>Tip:</0> Protect your King! If your King is destroyed and you already have cards in transit or wait lists, you must wait until you draw a new one to move the Grail. Keep face card capacities in mind when planning your deck expansion.">
-                      <strong className="text-white">Tip:</strong> Protect your King! If your King is destroyed and you already have cards in transit or wait lists, you must wait until you draw a new one to move the Grail. Keep face card capacities in mind when planning your deck expansion.
-                    </Trans>
+                    <Trans 
+                      i18nKey="tip_protect_king" 
+                      ns="game" 
+                      defaultValue="<0>Tip:</0> Protect your King! If your King is destroyed and you already have cards in transit or wait lists, you must wait until you draw a new one to move the Grail. Keep face card capacities in mind when planning your deck expansion."
+                      components={[<strong key="0" className="text-white" />]}
+                    />
                   </div>
                 </div>
               </div>
@@ -253,23 +285,38 @@ export function RulesModal({ isOpen, onClose }: RulesModalProps) {
                       </p>
                       <ul className="list-disc pl-5 mt-1 space-y-1 text-neutral-500">
                         <li>
-                          <Trans i18nKey="react_fight" ns="game" defaultValue="<0>Fight:</0> Resolve combat immediately using card duels.">
-                            <strong className="text-neutral-400">Fight:</strong> Resolve combat immediately using card duels.
-                          </Trans>
+                          <Trans 
+                            i18nKey="react_fight" 
+                            ns="game" 
+                            defaultValue="<0>Fight:</0> Resolve combat immediately using card duels."
+                            components={[<strong key="0" className="text-neutral-400" />]}
+                          />
                         </li>
                         <li>
-                          <Trans i18nKey="react_retreat" ns="game" defaultValue="<0>Retreat:</0> Flee! Move all units in that cell to an adjacent cell you own, yielding the contested cell to the attacker.">
-                            <strong className="text-neutral-400">Retreat:</strong> Flee! Move all units in that cell to an adjacent cell you own, yielding the contested cell to the attacker.
-                          </Trans>
+                          <Trans 
+                            i18nKey="react_retreat" 
+                            ns="game" 
+                            defaultValue="<0>Retreat:</0> Flee! Move all units in that cell to an adjacent cell you own, yielding the contested cell to the attacker."
+                            components={[<strong key="0" className="text-neutral-400" />]}
+                          />
                         </li>
                       </ul>
                     </li>
                     <li>
                       <strong className="text-white text-sm">{t('phase_deploy', { defaultValue: '2. Deployment Phase (deploy)' })}</strong>
                       <p className="mt-1 leading-relaxed">
-                        <Trans i18nKey="phase_deploy_desc" ns="game" defaultValue="At the start of this phase, you draw new cards (Base draw of <0>4 cards</0>, plus <1>+1 card per owned Farm Land</1>. Player X's very first turn only draws 2). You can drag/click cards from your hand to deploy them onto your <2>Home Base</2> or owned <3>Urban housing</3>. Click <4>'End Deploy'</4> when finished.">
-                          At the start of this phase, you draw new cards (Base draw of <strong className="text-white">4 cards</strong>, plus <strong className="text-white">+1 card per owned Farm Land</strong>. Player X's very first turn only draws 2). You can drag/click cards from your hand to deploy them onto your <strong className="text-white">Home Base</strong> or owned <strong className="text-white">Urban housing</strong>. Click <strong className="text-indigo-400">"End Deploy"</strong> when finished.
-                        </Trans>
+                        <Trans 
+                          i18nKey="phase_deploy_desc" 
+                          ns="game" 
+                          defaultValue="At the start of this phase, you draw new cards (Base draw of <0>4 cards</0>, plus <1>+1 card per owned Farm Land</1>. Player X's very first turn only draws 2). You can drag/click cards from your hand to deploy them onto your <2>Home Base</2> or owned <3>Urban housing</3>. Click <4>'End Deploy'</4> when finished."
+                          components={[
+                            <strong key="0" className="text-white" />,
+                            <strong key="1" className="text-white" />,
+                            <strong key="2" className="text-white" />,
+                            <strong key="3" className="text-white" />,
+                            <strong key="4" className="text-indigo-400" />
+                          ]}
+                        />
                       </p>
                     </li>
                     <li>
