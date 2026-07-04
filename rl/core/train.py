@@ -212,13 +212,24 @@ def save_milestone(
     save_checkpoint_fn: Callable[[BaseNet, str], None]
 ) -> None:
     models_dir.mkdir(parents=True, exist_ok=True)
-    filename = f"{game_name}_elo_{elo}.pt"
+    
+    base_filename = f"{game_name}_elo_{elo}"
+    filename = f"{base_filename}.pt"
     path = models_dir / filename
+    
+    counter = 2
+    while path.exists():
+        filename = f"{base_filename}_v{counter}.pt"
+        path = models_dir / filename
+        counter += 1
+
     save_checkpoint_fn(net, str(path))
     print(f"  → Milestone saved: {filename}")
 
     bot_level = _elo_to_bot_level(elo)
     if bot_level:
+        # Don't overwrite if the user has manually set a custom bot level
+        # We will just write to the standard bot_level, but with the new file
         registry[bot_level] = {
             "checkpoint": filename,
             "num_simulations": _bot_level_sims(bot_level),
@@ -250,6 +261,7 @@ def run_training_loop(
     eval_sims: int = 50,
     resume: bool = True,
     milestone_interval: int = 200,
+    promotion_threshold: float = 0.55,
 ) -> None:
     print(f"Device: {device}")
     print(f"Models dir: {models_dir}")
@@ -284,11 +296,15 @@ def run_training_loop(
 
     for entry in registry.values():
         if "elo" in entry:
-            milestone_saved.add(entry["elo"])
+            milestone_saved.add(float(entry["elo"]))
 
-    if resume and "rl_master" in registry and "elo" in registry["rl_master"]:
-        champion_elo = float(registry["rl_master"]["elo"])
-        print(f"Loaded champion ELO from registry: {champion_elo:.0f}")
+    if resume:
+        if "rl_master" in registry and "elo" in registry["rl_master"]:
+            champion_elo = float(registry["rl_master"]["elo"])
+            print(f"Loaded champion ELO from registry (rl_master): {champion_elo:.0f}")
+        elif milestone_saved:
+            champion_elo = max(milestone_saved)
+            print(f"Loaded champion ELO from highest milestone: {champion_elo:.0f}")
 
         max_past_threshold = int(champion_elo // milestone_interval) * milestone_interval
         for threshold in range(milestone_interval, max_past_threshold + milestone_interval, milestone_interval):
@@ -337,7 +353,7 @@ def run_training_loop(
             win_rate = evaluate_champion(env_cls, challenger, champion, device, action_space_size, eval_games, eval_sims)
             print(f"  Challenger win rate: {win_rate:.1%}")
 
-            if win_rate >= 0.55:
+            if win_rate >= promotion_threshold:
                 print(f"  ✓ Challenger promoted to champion!")
                 champion = copy.deepcopy(challenger)
                 save_checkpoint_fn(champion, str(champion_path))
@@ -361,7 +377,7 @@ def run_training_loop(
                 }
                 save_registry(registry_path, registry)
             else:
-                print(f"  ✗ Champion retained (win rate {win_rate:.1%} < 55%)")
+                print(f"  ✗ Champion retained (win rate {win_rate:.1%} < {promotion_threshold:.1%})")
             print()
 
     print("\nTraining complete!")

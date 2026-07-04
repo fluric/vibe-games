@@ -22,6 +22,7 @@ if __name__ == "__main__":
     parser.add_argument("--eval-sims", type=int, default=50, help="MCTS sims during evaluation")
     parser.add_argument("--no-resume", action="store_true", help="Start from scratch even if champion.pt exists")
     parser.add_argument("--device", type=str, default=None, choices=["mps", "cuda", "cpu"], help="Force device")
+    parser.add_argument("--promotion-threshold", type=float, default=0.55, help="Win rate needed to replace champion")
 
     args = parser.parse_args()
 
@@ -50,4 +51,5 @@ if __name__ == "__main__":
         eval_sims=args.eval_sims,
         resume=not args.no_resume,
         milestone_interval=200,
+        promotion_threshold=args.promotion_threshold,
     )
