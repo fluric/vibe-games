@@ -153,13 +153,13 @@
   "connect_four": {
     "easy_random": {
       "id": "00000000-0000-0000-0000-000000000009",
-      "username": "Random Randy (C4 Easy)",
+      "username": "Random Randy (Easy)",
       "elo": 0,
       "type": "random"
     },
     "easy_cowardly": {
       "id": "00000000-0000-0000-0000-000000000020",
-      "username": "Cowardly Connie (C4 Easy)",
+      "username": "Cowardly Connie (Easy)",
       "elo": 532,
       "type": "minimax",
       "depth": 1,
@@ -174,7 +174,7 @@
     },
     "easy_greedy": {
       "id": "00000000-0000-0000-0000-000000000021",
-      "username": "Greedy Gordon (C4 Easy)",
+      "username": "Greedy Gordon (Easy)",
       "elo": 290,
       "type": "minimax",
       "depth": 1,
@@ -189,7 +189,7 @@
     },
     "easy_aggressive": {
       "id": "00000000-0000-0000-0000-000000000022",
-      "username": "Arthur the Aggressive (C4 Easy)",
+      "username": "Arthur the Aggressive (Easy)",
       "elo": 302,
       "type": "minimax",
       "depth": 1,
@@ -204,7 +204,7 @@
     },
     "medium_aggressive": {
       "id": "00000000-0000-0000-0000-000000000010",
-      "username": "Aggressive Archie (C4 Hard)",
+      "username": "Aggressive Archie (Hard)",
       "elo": 756,
       "type": "minimax",
       "depth": 3,
@@ -212,7 +212,7 @@
     },
     "medium_defensive": {
       "id": "00000000-0000-0000-0000-000000000011",
-      "username": "Defensive Debbie (C4 Hard)",
+      "username": "Defensive Debbie (Hard)",
       "elo": 765,
       "type": "minimax",
       "depth": 3,
@@ -220,7 +220,7 @@
     },
     "medium_mobile": {
       "id": "00000000-0000-0000-0000-000000000012",
-      "username": "Mobile Monty (C4 Hard)",
+      "username": "Mobile Monty (Hard)",
       "elo": 777,
       "type": "minimax",
       "depth": 3,
@@ -228,7 +228,7 @@
     },
     "hard_tactical": {
       "id": "00000000-0000-0000-0000-000000000013",
-      "username": "Tactical Toby (C4 Medium)",
+      "username": "Tactical Toby (Medium)",
       "elo": 1135,
       "type": "minimax",
       "depth": 4,
@@ -236,7 +236,7 @@
     },
     "expert_garry": {
       "id": "00000000-0000-0000-0000-000000000014",
-      "username": "Grandmaster Garry (C4 Expert)",
+      "username": "Grandmaster Garry (Expert)",
       "elo": 997,
       "type": "minimax",
       "depth": 5,
@@ -244,7 +244,7 @@
     },
     "legendary_magnus": {
       "id": "00000000-0000-0000-0000-000000000015",
-      "username": "Champion Magnus (C4 Legendary)",
+      "username": "Champion Magnus (Legendary)",
       "elo": 1151,
       "type": "minimax",
       "depth": 6,
@@ -252,7 +252,7 @@
     },
     "perfect_oracle": {
       "id": "00000000-0000-0000-0000-000000000016",
-      "username": "Perfect Oracle (C4 Grandmaster)",
+      "username": "Perfect Oracle (Grandmaster)",
       "elo": 1166,
       "type": "minimax",
       "depth": 7,
@@ -260,7 +260,7 @@
     },
     "rl_200": {
       "id": "00000000-0000-0000-0000-000000000040",
-      "username": "Neural Novice (C4 RL)",
+      "username": "Neural Novice (RL)",
       "elo": 200,
       "type": "rl",
       "botLevel": "rl_200",
@@ -268,7 +268,7 @@
     },
     "rl_400": {
       "id": "00000000-0000-0000-0000-000000000041",
-      "username": "Neural Apprentice (C4 RL)",
+      "username": "Neural Apprentice (RL)",
       "elo": 400,
       "type": "rl",
       "botLevel": "rl_400",
@@ -276,7 +276,7 @@
     },
     "rl_1000": {
       "id": "00000000-0000-0000-0000-000000000042",
-      "username": "Neural Scout (C4 RL)",
+      "username": "Neural Scout (RL)",
       "elo": 1000,
       "type": "rl",
       "botLevel": "rl_1000",
@@ -284,7 +284,7 @@
     },
     "rl_1400": {
       "id": "00000000-0000-0000-0000-000000000043",
-      "username": "Neural Strategist (C4 RL)",
+      "username": "Neural Strategist (RL)",
       "elo": 1400,
       "type": "rl",
       "botLevel": "rl_1400",
@@ -292,7 +292,7 @@
     },
     "rl_3800": {
       "id": "00000000-0000-0000-0000-000000000044",
-      "username": "Neural Expert (C4 RL)",
+      "username": "Neural Expert (RL)",
       "elo": 3800,
       "type": "rl",
       "botLevel": "rl_3800",
@@ -300,7 +300,7 @@
     },
     "rl_4600": {
       "id": "00000000-0000-0000-0000-000000000045",
-      "username": "Neural Master (C4 RL)",
+      "username": "Neural Master (RL)",
       "elo": 4600,
       "type": "rl",
       "botLevel": "rl_4600",
@@ -310,13 +310,13 @@
   "holy_grail": {
     "easy_random": {
       "id": "00000000-0000-0000-0000-000000000030",
-      "username": "Random Randy (HG Easy)",
+      "username": "Random Randy (Easy)",
       "elo": 0,
       "type": "random"
     },
     "medium_aggressive": {
       "id": "00000000-0000-0000-0000-000000000031",
-      "username": "Aggressive Archie (HG Medium)",
+      "username": "Aggressive Archie (Medium)",
       "elo": 270,
       "type": "minimax",
       "depth": 3,
@@ -324,7 +324,7 @@
     },
     "hard_tactical": {
       "id": "00000000-0000-0000-0000-000000000032",
-      "username": "Tactical Toby (HG Hard)",
+      "username": "Tactical Toby (Hard)",
       "elo": 295,
       "type": "minimax",
       "depth": 4,
@@ -332,7 +332,7 @@
     },
     "expert_smart": {
       "id": "00000000-0000-0000-0000-000000000033",
-      "username": "Smart Sophia (HG Expert)",
+      "username": "Smart Sophia (Expert)",
       "elo": 292,
       "type": "smart",
       "depth": 1,
