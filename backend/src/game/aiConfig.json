@@ -160,7 +160,7 @@
     "easy_cowardly": {
       "id": "00000000-0000-0000-0000-000000000020",
       "username": "Cowardly Connie (C4 Easy)",
-      "elo": 560,
+      "elo": 532,
       "type": "minimax",
       "depth": 1,
       "timeLimitMs": 100,
@@ -175,7 +175,7 @@
     "easy_greedy": {
       "id": "00000000-0000-0000-0000-000000000021",
       "username": "Greedy Gordon (C4 Easy)",
-      "elo": 310,
+      "elo": 290,
       "type": "minimax",
       "depth": 1,
       "timeLimitMs": 100,
@@ -190,7 +190,7 @@
     "easy_aggressive": {
       "id": "00000000-0000-0000-0000-000000000022",
       "username": "Arthur the Aggressive (C4 Easy)",
-      "elo": 331,
+      "elo": 302,
       "type": "minimax",
       "depth": 1,
       "timeLimitMs": 100,
@@ -205,7 +205,7 @@
     "medium_aggressive": {
       "id": "00000000-0000-0000-0000-000000000010",
       "username": "Aggressive Archie (C4 Hard)",
-      "elo": 1018,
+      "elo": 756,
       "type": "minimax",
       "depth": 3,
       "timeLimitMs": 500
@@ -213,7 +213,7 @@
     "medium_defensive": {
       "id": "00000000-0000-0000-0000-000000000011",
       "username": "Defensive Debbie (C4 Hard)",
-      "elo": 1019,
+      "elo": 765,
       "type": "minimax",
       "depth": 3,
       "timeLimitMs": 500
@@ -221,7 +221,7 @@
     "medium_mobile": {
       "id": "00000000-0000-0000-0000-000000000012",
       "username": "Mobile Monty (C4 Hard)",
-      "elo": 1018,
+      "elo": 777,
       "type": "minimax",
       "depth": 3,
       "timeLimitMs": 500
@@ -229,7 +229,7 @@
     "hard_tactical": {
       "id": "00000000-0000-0000-0000-000000000013",
       "username": "Tactical Toby (C4 Medium)",
-      "elo": 752,
+      "elo": 1135,
       "type": "minimax",
       "depth": 4,
       "timeLimitMs": 4000
@@ -237,7 +237,7 @@
     "expert_garry": {
       "id": "00000000-0000-0000-0000-000000000014",
       "username": "Grandmaster Garry (C4 Expert)",
-      "elo": 1123,
+      "elo": 997,
       "type": "minimax",
       "depth": 5,
       "timeLimitMs": 4000
@@ -245,7 +245,7 @@
     "legendary_magnus": {
       "id": "00000000-0000-0000-0000-000000000015",
       "username": "Champion Magnus (C4 Legendary)",
-      "elo": 1278,
+      "elo": 1151,
       "type": "minimax",
       "depth": 6,
       "timeLimitMs": 4000
@@ -253,7 +253,7 @@
     "perfect_oracle": {
       "id": "00000000-0000-0000-0000-000000000016",
       "username": "Perfect Oracle (C4 Grandmaster)",
-      "elo": 1320,
+      "elo": 1166,
       "type": "minimax",
       "depth": 7,
       "timeLimitMs": 4000
@@ -261,7 +261,7 @@
     "rl_novice": {
       "id": "00000000-0000-0000-0000-000000000040",
       "username": "Neural Novice (C4 RL)",
-      "elo": 200,
+      "elo": 311,
       "type": "rl",
       "botLevel": "rl_novice",
       "enabled": true
@@ -269,7 +269,7 @@
     "rl_intermediate": {
       "id": "00000000-0000-0000-0000-000000000041",
       "username": "Neural Scout (C4 RL)",
-      "elo": 600,
+      "elo": 1281,
       "type": "rl",
       "botLevel": "rl_intermediate",
       "enabled": true
@@ -277,7 +277,7 @@
     "rl_strong": {
       "id": "00000000-0000-0000-0000-000000000042",
       "username": "Neural Strategist (C4 RL)",
-      "elo": 1000,
+      "elo": 1421,
       "type": "rl",
       "botLevel": "rl_strong",
       "enabled": true
@@ -285,7 +285,7 @@
     "rl_master": {
       "id": "00000000-0000-0000-0000-000000000043",
       "username": "Neural Master (C4 RL)",
-      "elo": 3765,
+      "elo": 1491,
       "type": "rl",
       "botLevel": "rl_master",
       "enabled": true
