@@ -96,39 +96,45 @@ export async function seedBots() {
   const userRepo = AppDataSource.getRepository(User);
   const userStatsRepo = AppDataSource.getRepository(UserStats);
 
+  const promises = [];
+
   for (const [gameType, gameBots] of Object.entries(aiConfig)) {
     const targetGameType = gameType as GameType;
     for (const bot of Object.values(gameBots)) {
-      let existing = await userRepo.findOneBy({ id: bot.id });
-      if (!existing) {
-        existing = userRepo.create({
-          id: bot.id,
-          username: bot.username,
-          googleId: `bot-${bot.id}`,
-          email: `bot-${bot.id}@vibegames.local`,
-        });
-        try {
-          await userRepo.save(existing);
-        } catch (err) {
-          // Safe to ignore if concurrent seed process inserted first
+      promises.push((async () => {
+        let existing = await userRepo.findOneBy({ id: bot.id });
+        if (!existing) {
+          existing = userRepo.create({
+            id: bot.id,
+            username: bot.username,
+            googleId: `bot-${bot.id}`,
+            email: `bot-${bot.id}@vibegames.local`,
+          });
+          try {
+            await userRepo.save(existing);
+          } catch (err) {
+            // Safe to ignore if concurrent seed process inserted first
+          }
         }
-      }
 
-      let stats = await userStatsRepo.findOneBy({ userId: bot.id, gameType: targetGameType });
-      if (!stats) {
-        stats = userStatsRepo.create({
-          userId: bot.id,
-          gameType: targetGameType,
-          elo: bot.elo,
-        });
-        try {
-          await userStatsRepo.save(stats);
-        } catch (err) {
-          // Safe to ignore if concurrent seed process inserted first
+        let stats = await userStatsRepo.findOneBy({ userId: bot.id, gameType: targetGameType });
+        if (!stats) {
+          stats = userStatsRepo.create({
+            userId: bot.id,
+            gameType: targetGameType,
+            elo: bot.elo,
+          });
+          try {
+            await userStatsRepo.save(stats);
+          } catch (err) {
+            // Safe to ignore if concurrent seed process inserted first
+          }
         }
-      }
+      })());
     }
   }
+
+  await Promise.all(promises);
 }
 
 export async function toUserDto(user: User | null, gameType: GameType): Promise<UserDto | null> {
