@@ -258,36 +258,52 @@
       "depth": 7,
       "timeLimitMs": 4000
     },
-    "rl_novice": {
+    "rl_200": {
       "id": "00000000-0000-0000-0000-000000000040",
       "username": "Neural Novice (C4 RL)",
-      "elo": 311,
+      "elo": 200,
       "type": "rl",
-      "botLevel": "rl_novice",
+      "botLevel": "rl_200",
       "enabled": true
     },
-    "rl_intermediate": {
+    "rl_400": {
       "id": "00000000-0000-0000-0000-000000000041",
-      "username": "Neural Scout (C4 RL)",
-      "elo": 1281,
+      "username": "Neural Apprentice (C4 RL)",
+      "elo": 400,
       "type": "rl",
-      "botLevel": "rl_intermediate",
+      "botLevel": "rl_400",
       "enabled": true
     },
-    "rl_strong": {
+    "rl_1000": {
       "id": "00000000-0000-0000-0000-000000000042",
-      "username": "Neural Strategist (C4 RL)",
-      "elo": 1421,
+      "username": "Neural Scout (C4 RL)",
+      "elo": 1000,
       "type": "rl",
-      "botLevel": "rl_strong",
+      "botLevel": "rl_1000",
       "enabled": true
     },
-    "rl_master": {
+    "rl_1400": {
       "id": "00000000-0000-0000-0000-000000000043",
-      "username": "Neural Master (C4 RL)",
-      "elo": 1491,
+      "username": "Neural Strategist (C4 RL)",
+      "elo": 1400,
       "type": "rl",
-      "botLevel": "rl_master",
+      "botLevel": "rl_1400",
+      "enabled": true
+    },
+    "rl_3800": {
+      "id": "00000000-0000-0000-0000-000000000044",
+      "username": "Neural Expert (C4 RL)",
+      "elo": 3800,
+      "type": "rl",
+      "botLevel": "rl_3800",
+      "enabled": true
+    },
+    "rl_4600": {
+      "id": "00000000-0000-0000-0000-000000000045",
+      "username": "Neural Master (C4 RL)",
+      "elo": 4600,
+      "type": "rl",
+      "botLevel": "rl_4600",
       "enabled": true
     }
   },

@@ -134,10 +134,12 @@
         "expert_garry": "Minimax Profondeur 5",
         "legendary_magnus": "Minimax Profondeur 6",
         "perfect_oracle": "Recherche d'alignement central",
-        "rl_novice": "Réseau neuronal (sans anticipation)",
-        "rl_intermediate": "Réseau neuronal + MCTS 50",
-        "rl_strong": "Réseau neuronal + MCTS 200",
-        "rl_master": "Réseau neuronal + MCTS 800"
+        "rl_200": "Réseau neuronal (sans anticipation)",
+        "rl_400": "Réseau neuronal (sans anticipation)",
+        "rl_1000": "Réseau neuronal (sans anticipation)",
+        "rl_1400": "Réseau neuronal (sans anticipation)",
+        "rl_3800": "Réseau neuronal + MCTS 50",
+        "rl_4600": "Réseau neuronal + MCTS 50"
       },
       "holy_grail": {
         "easy_random": "Jeu aléatoire",
@@ -172,10 +174,12 @@
         "expert_garry": "Garry évalue 5 demi-coups avec des heuristiques positionnelles optimisées.",
         "legendary_magnus": "Magnus calcule 6 demi-coups. Niveau légendaire!",
         "perfect_oracle": "L'Oracle utilise une évaluation positionnelle profonde.",
-        "rl_novice": "⚡ Novice Neuronal utilise un réseau neuronal pur (sans anticipation).",
-        "rl_intermediate": "⚡ Scout Neuronal combine un réseau neuronal avec 50 simulations MCTS.",
-        "rl_strong": "⚡ Stratège Neuronal effectue 200 simulations MCTS.",
-        "rl_master": "⚡ Maître Neuronal effectue 800 simulations MCTS. Le bot le plus fort."
+        "rl_200": "⚡ Novice Neuronal utilise un réseau neuronal pur (sans anticipation).",
+        "rl_400": "⚡ Apprenti Neuronal utilise un réseau neuronal pur (sans anticipation).",
+        "rl_1000": "⚡ Scout Neuronal utilise un réseau neuronal pur (sans anticipation).",
+        "rl_1400": "⚡ Stratège Neuronal utilise un réseau neuronal pur (sans anticipation).",
+        "rl_3800": "⚡ Expert Neuronal effectue 50 simulations MCTS.",
+        "rl_4600": "⚡ Maître Neuronal effectue 50 simulations MCTS avec des poids optimisés."
       },
       "holy_grail": {
         "easy_random": "Randy HG joue des coups complètement aléatoires.",

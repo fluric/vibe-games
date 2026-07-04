@@ -134,10 +134,12 @@
         "expert_garry": "Minimax Tiefe 5",
         "legendary_magnus": "Minimax Tiefe 6",
         "perfect_oracle": "Mittelpunktausrichtungssuche",
-        "rl_novice": "Neuronales Netz (Tiefe 0)",
-        "rl_intermediate": "Neuronales Netz + MCTS 50",
-        "rl_strong": "Neuronales Netz + MCTS 200",
-        "rl_master": "Neuronales Netz + MCTS 800"
+        "rl_200": "Neuronales Netz (Tiefe 0)",
+        "rl_400": "Neuronales Netz (Tiefe 0)",
+        "rl_1000": "Neuronales Netz (Tiefe 0)",
+        "rl_1400": "Neuronales Netz (Tiefe 0)",
+        "rl_3800": "Neuronales Netz + MCTS 50",
+        "rl_4600": "Neuronales Netz + MCTS 50"
       },
       "holy_grail": {
         "easy_random": "Zufälliges Spiel",
@@ -172,10 +174,12 @@
         "expert_garry": "Garry bewertet 5 Halbzüge mit optimierten Heuristiken.",
         "legendary_magnus": "Magnus berechnet 6 Halbzüge. Legendäres Niveau!",
         "perfect_oracle": "Das Orakel verwendet tiefe Positionsbewertung.",
-        "rl_novice": "⚡ Neuronaler Neuling verwendet ein reines neuronales Netz (ohne Vorausschau).",
-        "rl_intermediate": "⚡ Neuronaler Pfadfinder kombiniert ein trainiertes neuronales Netz mit 50 MCTS-Simulationen.",
-        "rl_strong": "⚡ Neuronaler Stratege führt 200 MCTS-Simulationen durch.",
-        "rl_master": "⚡ Neuronaler Meister führt 800 MCTS-Simulationen durch. Der stärkste Bot."
+        "rl_200": "⚡ Neuronaler Neuling verwendet ein reines neuronales Netz (ohne Vorausschau).",
+        "rl_400": "⚡ Neuronaler Lehrling verwendet ein reines neuronales Netz (ohne Vorausschau).",
+        "rl_1000": "⚡ Neuronaler Pfadfinder verwendet ein reines neuronales Netz (ohne Vorausschau).",
+        "rl_1400": "⚡ Neuronaler Stratege verwendet ein reines neuronales Netz (ohne Vorausschau).",
+        "rl_3800": "⚡ Neuronaler Experte führt 50 MCTS-Simulationen durch.",
+        "rl_4600": "⚡ Neuronaler Meister führt 50 MCTS-Simulationen mit optimierten Gewichten durch."
       },
       "holy_grail": {
         "easy_random": "Randy HG spielt völlig zufällige Züge.",

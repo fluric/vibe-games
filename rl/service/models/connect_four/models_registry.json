@@ -1,22 +1,32 @@
 {
-  "rl_novice": {
+  "rl_200": {
     "checkpoint": "connect_four_elo_200.pt",
     "num_simulations": 0,
     "elo": 200
   },
-  "rl_intermediate": {
-    "checkpoint": "connect_four_elo_600.pt",
-    "num_simulations": 50,
-    "elo": 600
+  "rl_400": {
+    "checkpoint": "connect_four_elo_400.pt",
+    "num_simulations": 0,
+    "elo": 400
   },
-  "rl_strong": {
+  "rl_1000": {
     "checkpoint": "connect_four_elo_1000.pt",
-    "num_simulations": 200,
+    "num_simulations": 0,
     "elo": 1000
   },
-  "rl_master": {
+  "rl_1400": {
+    "checkpoint": "connect_four_elo_1400.pt",
+    "num_simulations": 0,
+    "elo": 1400
+  },
+  "rl_3800": {
     "checkpoint": "connect_four_elo_3800.pt",
-    "num_simulations": 800,
-    "elo": 3765
+    "num_simulations": 50,
+    "elo": 3800
+  },
+  "rl_4600": {
+    "checkpoint": "connect_four_elo_4600.pt",
+    "num_simulations": 50,
+    "elo": 4600
   }
 }
