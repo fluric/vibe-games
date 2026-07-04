@@ -148,6 +148,38 @@
         "fork": 120,
         "mobility": 10
       }
+    },
+    "rl_novice": {
+      "id": "00000000-0000-0000-0000-000000000050",
+      "username": "Neural Novice (RL)",
+      "elo": 300,
+      "type": "rl",
+      "botLevel": "rl_novice",
+      "enabled": true
+    },
+    "rl_intermediate": {
+      "id": "00000000-0000-0000-0000-000000000051",
+      "username": "Neural Apprentice (RL)",
+      "elo": 700,
+      "type": "rl",
+      "botLevel": "rl_intermediate",
+      "enabled": true
+    },
+    "rl_strong": {
+      "id": "00000000-0000-0000-0000-000000000052",
+      "username": "Neural Expert (RL)",
+      "elo": 1000,
+      "type": "rl",
+      "botLevel": "rl_strong",
+      "enabled": true
+    },
+    "rl_master": {
+      "id": "00000000-0000-0000-0000-000000000053",
+      "username": "Neural Master (RL)",
+      "elo": 1400,
+      "type": "rl",
+      "botLevel": "rl_master",
+      "enabled": true
     }
   },
   "connect_four": {

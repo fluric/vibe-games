@@ -10,6 +10,8 @@ import copy
 import numpy as np
 from typing import List, Optional
 
+from rl.core.interfaces import BaseEnv
+
 ROWS = 6
 COLS = 7
 
@@ -19,7 +21,7 @@ PLAYER_O = -1
 EMPTY = 0
 
 
-class ConnectFourEnv:
+class ConnectFourEnv(BaseEnv):
     """
     Pure Python Connect Four environment.
 
@@ -29,7 +31,7 @@ class ConnectFourEnv:
 
     def __init__(self) -> None:
         self.board = np.zeros(42, dtype=np.int8)
-        self.turn: int = PLAYER_X   # X goes first
+        self._turn: int = PLAYER_X   # X goes first
         self.winner: Optional[int] = None  # PLAYER_X, PLAYER_O, 0 (draw), None (ongoing)
 
     # ── Factory ──────────────────────────────────────────────────────────────
@@ -46,7 +48,7 @@ class ConnectFourEnv:
                 env.board[i] = PLAYER_O
             else:
                 env.board[i] = EMPTY
-        env.turn = PLAYER_X if state["turn"] == "X" else PLAYER_O
+        env._turn = PLAYER_X if state["turn"] == "X" else PLAYER_O
         w = state.get("winner")
         if w == "X":
             env.winner = PLAYER_X
@@ -72,7 +74,7 @@ class ConnectFourEnv:
         winner_map = {PLAYER_X: "X", PLAYER_O: "O", 0: "draw", None: None}
         return {
             "board": board,
-            "turn": "X" if self.turn == PLAYER_X else "O",
+            "turn": "X" if self._turn == PLAYER_X else "O",
             "winner": winner_map[self.winner],
         }
 
@@ -80,14 +82,14 @@ class ConnectFourEnv:
 
     def reset(self) -> "ConnectFourEnv":
         self.board = np.zeros(42, dtype=np.int8)
-        self.turn = PLAYER_X
+        self._turn = PLAYER_X
         self.winner = None
         return self
 
     def clone(self) -> "ConnectFourEnv":
         env = ConnectFourEnv()
         env.board = self.board.copy()
-        env.turn = self.turn
+        env._turn = self._turn
         env.winner = self.winner
         return env
 
@@ -119,17 +121,21 @@ class ConnectFourEnv:
         if target_row == -1:
             raise ValueError(f"Column {column} is full")
 
-        self.board[target_row * COLS + column] = self.turn
+        self.board[target_row * COLS + column] = self._turn
 
         # Check win / draw
-        if self._check_win(self.turn):
-            self.winner = self.turn
+        if self._check_win(self._turn):
+            self.winner = self._turn
         elif np.all(self.board != EMPTY):
             self.winner = 0  # draw
         else:
-            self.turn = PLAYER_O if self.turn == PLAYER_X else PLAYER_X
+            self._turn = PLAYER_O if self._turn == PLAYER_X else PLAYER_X
 
         return self
+
+    @property
+    def turn(self) -> int:
+        return self._turn
 
     # ── Encoding for neural network ──────────────────────────────────────────
 
@@ -142,8 +148,8 @@ class ConnectFourEnv:
         """
         planes = np.zeros((3, ROWS, COLS), dtype=np.float32)
         board_2d = self.board.reshape(ROWS, COLS)
-        planes[0] = (board_2d == self.turn).astype(np.float32)
-        planes[1] = (board_2d == -self.turn).astype(np.float32)
+        planes[0] = (board_2d == self._turn).astype(np.float32)
+        planes[1] = (board_2d == -self._turn).astype(np.float32)
         planes[2] = 1.0  # constant plane
         return planes
 
@@ -195,5 +201,5 @@ class ConnectFourEnv:
         rows = []
         for r in range(ROWS):
             rows.append(" ".join(symbols[int(self.board[r * COLS + c])] for c in range(COLS)))
-        turn_str = "X" if self.turn == PLAYER_X else "O"
+        turn_str = "X" if self._turn == PLAYER_X else "O"
         return "\n".join(rows) + f"\n  Turn: {turn_str}  Winner: {self.winner}"

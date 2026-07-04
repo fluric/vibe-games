@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { PublicLobbiesPanel } from './PublicLobbiesPanel';
 import { LeaderboardPanel } from './LeaderboardPanel';
@@ -37,25 +38,33 @@ export function LobbyTabsSection({
   loadingLeaderboard,
   leaderboardEntries,
   escapeLeaderboardEntries,
-  currentUser
+  currentUser,
 }: Props) {
   const { t } = useTranslation('lobby');
+  
+  useEffect(() => {
+    if (activeGameTab === 'escape' && lobbyTab === 'lobbies') {
+      setLobbyTab('leaderboard');
+    }
+  }, [activeGameTab, lobbyTab, setLobbyTab]);
 
   return (
     <div className="md:col-span-2 bg-neutral-900/60 border border-neutral-800 rounded-2xl p-6 backdrop-blur-md flex flex-col gap-4">
       {/* Tabs Header */}
       <div className="flex justify-between items-center border-b border-neutral-800 pb-2">
         <div className="flex gap-4">
-          <button
-            onClick={() => setLobbyTab('lobbies')}
-            className={`text-sm font-bold transition-colors pb-2 border-b-2 ${
-              lobbyTab === 'lobbies'
-                ? 'text-white border-indigo-500'
-                : 'text-neutral-400 border-transparent hover:text-white'
-            }`}
-          >
-            🌍 {t('active_lobbies', { defaultValue: 'Active Lobbies' })}
-          </button>
+          {activeGameTab !== 'escape' && (
+            <button
+              onClick={() => setLobbyTab('lobbies')}
+              className={`text-sm font-bold transition-colors pb-2 border-b-2 ${
+                lobbyTab === 'lobbies'
+                  ? 'text-white border-indigo-500'
+                  : 'text-neutral-400 border-transparent hover:text-white'
+              }`}
+            >
+              🌍 {t('active_lobbies', { defaultValue: 'Active Lobbies' })}
+            </button>
+          )}
           <button
             onClick={() => setLobbyTab('leaderboard')}
             className={`text-sm font-bold transition-colors pb-2 border-b-2 ${

@@ -27,12 +27,16 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 # ── Make sure we can import from the rl/ package root ─────────────────────────
-RL_ROOT = Path(__file__).parent.parent
-sys.path.insert(0, str(RL_ROOT))
+PROJECT_ROOT = Path(__file__).parent.parent.parent
+sys.path.insert(0, str(PROJECT_ROOT))
 
-from games.connect_four.env import ConnectFourEnv
-from games.connect_four.net import ConnectFourNet, get_device, load_checkpoint
-from games.connect_four.mcts import MCTS
+from rl.games.connect_four.env import ConnectFourEnv
+from rl.games.connect_four.net import ConnectFourNet, get_device
+from rl.games.connect_four.net import load_checkpoint as load_c4_checkpoint
+from rl.games.mill.env import MillEnv
+from rl.games.mill.net import MillNet
+from rl.games.mill.net import load_checkpoint as load_mill_checkpoint
+from rl.core.mcts import MCTS
 
 # ─── App ──────────────────────────────────────────────────────────────────────
 
@@ -51,11 +55,11 @@ app.add_middleware(
 
 # ─── State ────────────────────────────────────────────────────────────────────
 
-MODELS_DIR = RL_ROOT / "service" / "models"
+MODELS_DIR = PROJECT_ROOT / "rl" / "service" / "models"
 device = get_device()
 
 # { "connect_four": { "rl_novice": (net, num_sims), ... } }
-loaded_models: Dict[str, Dict[str, tuple[ConnectFourNet, int]]] = {}
+loaded_models: Dict[str, Dict[str, tuple[Any, int]]] = {}
 
 
 def _load_game_models(game_type: str) -> None:
@@ -85,7 +89,9 @@ def _load_game_models(game_type: str) -> None:
 
         try:
             if game_type == "connect_four":
-                net = load_checkpoint(str(ckpt_path), device)
+                net = load_c4_checkpoint(str(ckpt_path), device)
+            elif game_type == "mill":
+                net = load_mill_checkpoint(str(ckpt_path), device)
             else:
                 print(f"  [{game_type}/{bot_level}] Unknown game type — skipping.")
                 continue
@@ -102,7 +108,7 @@ async def startup_event() -> None:
     print(f"\nRL Sidecar starting up — device: {device}")
     print(f"Loading models from: {MODELS_DIR}")
     _load_game_models("connect_four")
-    # Future: _load_game_models("mill")
+    _load_game_models("mill")
     print(f"\nLoaded {sum(len(v) for v in loaded_models.values())} models total.\n")
 
 
@@ -165,6 +171,8 @@ def predict(req: PredictRequest) -> PredictResponse:
 
     if game_type == "connect_four":
         action, sims_used = _predict_connect_four(net, req.state, num_sims)
+    elif game_type == "mill":
+        action, sims_used = _predict_mill(net, req.state, num_sims)
     else:
         raise HTTPException(status_code=501, detail=f"Game '{game_type}' not yet implemented")
 
@@ -181,6 +189,7 @@ async def reload_models() -> dict:
     """Reload all models from disk — useful after training completes a new checkpoint."""
     loaded_models.clear()
     _load_game_models("connect_four")
+    _load_game_models("mill")
     return {"reloaded": sum(len(v) for v in loaded_models.values())}
 
 
@@ -200,7 +209,38 @@ def _predict_connect_four(net: ConnectFourNet, state: dict, num_sims: int) -> tu
     if not legal:
         raise HTTPException(status_code=400, detail="No legal actions available")
 
-    mcts = MCTS(net, device)
+    mcts = MCTS(net, device, ConnectFourNet.NUM_ACTIONS)
     column = mcts.best_action(env, num_sims)
 
     return {"action": "place", "column": column}, num_sims
+
+
+def _predict_mill(net: MillNet, state: dict, num_sims: int) -> tuple[dict, int]:
+    """Convert state dict → action dict for Mill."""
+    try:
+        env = MillEnv.from_state_dict(state)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Invalid state: {e}")
+
+    if env.is_terminal():
+        raise HTTPException(status_code=400, detail="Game is already terminal")
+
+    legal = env.legal_actions()
+    if not legal:
+        raise HTTPException(status_code=400, detail="No legal actions available")
+
+    mcts = MCTS(net, device, MillNet.NUM_ACTIONS)
+    action_idx = mcts.best_action(env, num_sims)
+
+    if env.mill_formed_this_turn:
+        action = {"action": "remove", "position": action_idx}
+    elif env.phase == "placement":
+        action = {"action": "place", "position": action_idx}
+    else:
+        # Move
+        move_idx = action_idx - 24
+        from_pos = move_idx // 24
+        to_pos = move_idx % 24
+        action = {"action": "move", "from": from_pos, "to": to_pos}
+
+    return action, num_sims

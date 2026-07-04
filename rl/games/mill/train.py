@@ -3,15 +3,15 @@ from pathlib import Path
 import torch
 
 from rl.core.train import run_training_loop
-from rl.games.connect_four.env import ConnectFourEnv
-from rl.games.connect_four.net import ConnectFourNet, create_net, load_checkpoint, save_checkpoint, get_device
+from rl.games.mill.env import MillEnv
+from rl.games.mill.net import MillNet, create_net, load_checkpoint, save_checkpoint, get_device
 
 SCRIPT_DIR = Path(__file__).parent
 REPO_ROOT = SCRIPT_DIR.parent.parent.parent
-MODELS_DIR = REPO_ROOT / "rl" / "service" / "models" / "connect_four"
+MODELS_DIR = REPO_ROOT / "rl" / "service" / "models" / "mill"
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Train AlphaZero Connect Four bot")
+    parser = argparse.ArgumentParser(description="Train AlphaZero Mill bot")
     parser.add_argument("--iterations", type=int, default=200, help="Number of training iterations")
     parser.add_argument("--games-per-iter", type=int, default=50, help="Self-play games per iteration")
     parser.add_argument("--num-simulations", type=int, default=100, help="MCTS simulations per move")
@@ -31,13 +31,13 @@ if __name__ == "__main__":
         device = get_device()
 
     run_training_loop(
-        env_cls=ConnectFourEnv,
-        net_cls=ConnectFourNet,
+        env_cls=MillEnv,
+        net_cls=MillNet,
         create_net_fn=create_net,
         load_checkpoint_fn=load_checkpoint,
         save_checkpoint_fn=save_checkpoint,
-        game_name="connect_four",
-        action_space_size=ConnectFourNet.NUM_ACTIONS,
+        game_name="mill",
+        action_space_size=MillNet.NUM_ACTIONS,
         models_dir=MODELS_DIR,
         device=device,
         num_iterations=args.iterations,

@@ -520,16 +520,18 @@ export function LobbyPage() {
         />
 
         {/* Global Ongoing Matches (Spectate) */}
-        <div className="bg-neutral-900/60 border border-neutral-800 rounded-2xl p-6 backdrop-blur-md">
-          <div className="flex items-center gap-2 mb-4 pb-2 border-b border-neutral-800">
-            <span className="text-xl">📺</span>
-            <h3 className="text-lg font-bold text-white">{t('live_matches', { defaultValue: 'Live Matches' })}</h3>
-            <span className="text-xs text-neutral-500 ml-auto bg-neutral-950 px-2 py-1 rounded-md border border-neutral-800">
-              {t('spectator_mode', { defaultValue: 'Spectator Mode' })}
-            </span>
+        {activeGameTab !== 'escape' && (
+          <div className="bg-neutral-900/60 border border-neutral-800 rounded-2xl p-6 backdrop-blur-md">
+            <div className="flex items-center gap-2 mb-4 pb-2 border-b border-neutral-800">
+              <span className="text-xl">📺</span>
+              <h3 className="text-lg font-bold text-white">{t('live_matches', { defaultValue: 'Live Matches' })}</h3>
+              <span className="text-xs text-neutral-500 ml-auto bg-neutral-950 px-2 py-1 rounded-md border border-neutral-800">
+                {t('spectator_mode', { defaultValue: 'Spectator Mode' })}
+              </span>
+            </div>
+            <OngoingMatchesPanel games={ongoingGames.filter(g => g.playerX?.id !== currentUser?.id && g.playerO?.id !== currentUser?.id)} onSpectate={(id) => navigate(`/game/${id}`)} />
           </div>
-          <OngoingMatchesPanel games={ongoingGames.filter(g => g.playerX?.id !== currentUser?.id && g.playerO?.id !== currentUser?.id)} onSpectate={(id) => navigate(`/game/${id}`)} />
-        </div>
+        )}
 
         {/* Lobby and Invite Sections */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -553,13 +555,15 @@ export function LobbyPage() {
           />
 
           {/* Join Direct Code Card */}
-          <JoinByCodePanel
-            inviteCode={inviteCode}
-            setInviteCode={setInviteCode}
-            joiningCode={joiningCode}
-            syncStatus={syncStatus}
-            onJoinByCode={handleJoinByCode}
-          />
+          {activeGameTab !== 'escape' && (
+            <JoinByCodePanel
+              inviteCode={inviteCode}
+              setInviteCode={setInviteCode}
+              joiningCode={joiningCode}
+              syncStatus={syncStatus}
+              onJoinByCode={handleJoinByCode}
+            />
+          )}
         </div>
       </div>
 

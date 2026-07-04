@@ -1,12 +1,3 @@
-"""
-Dual-head neural network for Connect Four (AlphaZero-style).
-
-Architecture:
-  Input: (batch, 3, 6, 7) float32 tensor
-  Backbone: 4 residual convolutional blocks (64 channels, 3x3 kernel)
-  Policy head: → softmax over 7 columns
-  Value head: → tanh scalar in [-1, +1]
-"""
 from __future__ import annotations
 
 import torch
@@ -14,6 +5,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from rl.core.interfaces import BaseNet
+
 
 class ResidualBlock(nn.Module):
     """Standard pre-activation residual block."""
@@ -32,20 +24,21 @@ class ResidualBlock(nn.Module):
         return F.relu(out + residual)
 
 
-class ConnectFourNet(nn.Module, BaseNet):
+class MillNet(nn.Module, BaseNet):
     """
-    AlphaZero-style dual-head network for Connect Four.
-
-    Policy head output: log-probabilities over 7 columns (use with NLLLoss or convert to probs).
-    Value head output: scalar in [-1, +1] representing expected outcome for the current player.
+    AlphaZero-style dual-head network for Nine Men's Morris (Mill).
+    
+    Action Space = 600:
+    - 0-23: Placement or Removal at node index
+    - 24-599: Movement from node X to node Y (24 + X * 24 + Y)
     """
 
-    NUM_ACTIONS = 7   # one per column
-    INPUT_PLANES = 3  # self, opponent, constant
-    ROWS = 6
+    NUM_ACTIONS = 600
+    INPUT_PLANES = 7
+    ROWS = 7
     COLS = 7
 
-    def __init__(self, num_res_blocks: int = 4, num_channels: int = 64) -> None:
+    def __init__(self, num_res_blocks: int = 5, num_channels: int = 128) -> None:
         super().__init__()
 
         # Input conv
@@ -73,21 +66,13 @@ class ConnectFourNet(nn.Module, BaseNet):
             nn.ReLU(),
         )
         self.value_fc = nn.Sequential(
-            nn.Linear(32 * self.ROWS * self.COLS, 64),
+            nn.Linear(32 * self.ROWS * self.COLS, 128),
             nn.ReLU(),
-            nn.Linear(64, 1),
+            nn.Linear(128, 1),
             nn.Tanh(),
         )
 
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
-        """
-        Args:
-            x: (batch, 3, 6, 7) float32 tensor
-
-        Returns:
-            policy_logits: (batch, 7) — raw log-probabilities (before softmax)
-            value: (batch, 1) — value in [-1, +1]
-        """
         out = self.input_conv(x)
         out = self.res_blocks(out)
 
@@ -103,17 +88,7 @@ class ConnectFourNet(nn.Module, BaseNet):
 
         return policy_logits, value
 
-    def predict(self, encoded_state: "torch.Tensor") -> tuple["torch.Tensor", float]:
-        """
-        Single-state inference (no gradient).
-
-        Args:
-            encoded_state: (3, 6, 7) float32 tensor (no batch dim)
-
-        Returns:
-            policy_probs: (7,) tensor of probabilities (masked to legal actions if needed)
-            value: scalar float
-        """
+    def predict(self, encoded_state: torch.Tensor) -> tuple[torch.Tensor, float]:
         self.eval()
         with torch.no_grad():
             x = encoded_state.unsqueeze(0)  # add batch dim
@@ -123,7 +98,6 @@ class ConnectFourNet(nn.Module, BaseNet):
 
 
 def get_device() -> torch.device:
-    """Select the best available device: MPS (Apple Silicon) > CUDA > CPU."""
     if torch.backends.mps.is_available():
         return torch.device("mps")
     if torch.cuda.is_available():
@@ -131,23 +105,22 @@ def get_device() -> torch.device:
     return torch.device("cpu")
 
 
-def create_net(device: torch.device | None = None) -> ConnectFourNet:
-    """Create a new randomly initialized network on the best available device."""
+def create_net(device: torch.device | None = None) -> MillNet:
     if device is None:
         device = get_device()
-    net = ConnectFourNet()
+    net = MillNet()
     net.to(device)
     return net
 
 
-def save_checkpoint(net: ConnectFourNet, path: str) -> None:
+def save_checkpoint(net: MillNet, path: str) -> None:
     torch.save(net.state_dict(), path)
 
 
-def load_checkpoint(path: str, device: torch.device | None = None) -> ConnectFourNet:
+def load_checkpoint(path: str, device: torch.device | None = None) -> MillNet:
     if device is None:
         device = get_device()
-    net = ConnectFourNet()
+    net = MillNet()
     net.load_state_dict(torch.load(path, map_location=device))
     net.to(device)
     net.eval()
