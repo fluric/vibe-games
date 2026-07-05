@@ -62,7 +62,7 @@ backend/src/
 │   ├── gameRegistry.ts   # Engine map (GameType → IGameEngine)
 │   ├── millEngine.ts
 │   ├── connectFourEngine.ts
-│   ├── holyGrailEngine.ts
+│   ├── grailQuestEngine.ts
 │   ├── elo.ts
 │   └── *.spec.ts         # Unit tests alongside the logic they test
 └── migrations/
@@ -91,13 +91,13 @@ frontend/src/
 │   ├── GamePage.tsx      # 🔶 Too large — planned split
 │   └── StatusPage.tsx
 ├── components/           # Reusable UI pieces
-│   ├── HolyGrailBoard.tsx  # 🔶 Too large — planned split
+│   ├── GrailQuestBoard.tsx  # 🔶 Too large — planned split
 │   ├── MillBoard.tsx
 │   ├── ConnectFourBoard.tsx
 │   ├── ConfirmModal.tsx
 │   └── RulesModal.tsx
 ├── hooks/                # 🔲 PLANNED: Custom React hooks extracted from pages
-│   └── useHolyGrailGame.ts
+│   └── useGrailQuestGame.ts
 └── __tests__/            # 🔲 PLANNED: Vitest component tests
 ```
 
@@ -105,12 +105,12 @@ frontend/src/
 
 | File | Size | Problem |
 |---|---|---|
-| `HolyGrailBoard.tsx` | ~115 KB | Mixes board rendering, combat modal, animation, game state logic |
+| `GrailQuestBoard.tsx` | ~115 KB | Mixes board rendering, combat modal, animation, game state logic |
 | `LobbyPage.tsx` | ~67 KB | Mixes player card, leaderboard, game creation, lobby list |
 | `GamePage.tsx` | ~37 KB | Mixes all game types and page routing logic |
 
 **Planned splits:**
-- `HolyGrailBoard.tsx` → split into `HolyGrailBoard.tsx` (rendering), `CombatModal.tsx`, `useHolyGrailGame.ts` (state hook)
+- `GrailQuestBoard.tsx` → split into `GrailQuestBoard.tsx` (rendering), `CombatModal.tsx`, `useGrailQuestGame.ts` (state hook)
 - `LobbyPage.tsx` → split into `LobbyPage.tsx` (layout), `PlayerCard.tsx`, `GameCreationPanel.tsx`, `Leaderboard.tsx`, `ActiveLobbies.tsx`
 
 ---
@@ -169,7 +169,7 @@ Refactoring means changing the internal structure of code without changing its e
 
 - 🔲 Set up ESLint rule for max file length.
 - 🔲 Extract game service functions from `games.ts`.
-- 🔲 Split `HolyGrailBoard.tsx` into sub-components + hook.
+- 🔲 Split `GrailQuestBoard.tsx` into sub-components + hook.
 - 🔲 Split `LobbyPage.tsx` into focused components.
-- 🔲 Add `frontend/src/hooks/` directory with `useHolyGrailGame.ts`.
+- 🔲 Add `frontend/src/hooks/` directory with `useGrailQuestGame.ts`.
 - 🔲 GitHub Actions CI: run lint + build on every push.

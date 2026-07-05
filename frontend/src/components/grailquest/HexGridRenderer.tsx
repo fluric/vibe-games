@@ -1,17 +1,17 @@
-import type { HolyGrailCell } from '@vibe-games/shared';
+import type { GrailQuestCell } from '@vibe-games/shared';
 import { getHexCenter, getHexPoints, formatCardValue, WIDTH, HEIGHT, HEX_SIZE } from './utils';
 
  
 type MoveDetails = any;
 
 export interface HexGridRendererProps {
-  board: Record<string, HolyGrailCell>;
+  board: Record<string, GrailQuestCell>;
   grailCellKey: string | null;
   pendingCombats: { cellKey: string }[];
   hoveredCellKey: string | null;
   setHoveredCellKey: (key: string | null) => void;
   handleCellClick: (key: string) => void;
-  getCellFillClass: (cell: HolyGrailCell) => string;
+  getCellFillClass: (cell: GrailQuestCell) => string;
   myPiece: 'X' | 'O' | null;
   turn: 'X' | 'O';
   isReviewingLastTurn: boolean;

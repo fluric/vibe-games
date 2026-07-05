@@ -24,7 +24,7 @@ describe('OngoingMatchesPanel', () => {
       },
       {
         id: 'game-2',
-        gameType: 'holy_grail',
+        gameType: 'grail_quest',
         status: 'in_progress',
         playerX: { id: 'p3', username: 'Charlie', elo: 1000 },
         playerO: undefined, // test fallback to 'Player O'
@@ -42,7 +42,7 @@ describe('OngoingMatchesPanel', () => {
     expect(screen.getByText('Bob')).toBeInTheDocument();
 
     // Check second game
-    expect(screen.getByText('holy grail')).toBeInTheDocument();
+    expect(screen.getByText('grail quest')).toBeInTheDocument();
     expect(screen.getByText('Charlie')).toBeInTheDocument();
     expect(screen.getByText('Player O')).toBeInTheDocument(); // fallback
   });

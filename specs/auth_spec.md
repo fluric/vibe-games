@@ -115,7 +115,7 @@ Sessions are maintained via an httpOnly JWT cookie named `session`.
 |---|---|---|
 | `id` | UUID | Primary key |
 | `userId` | UUID | Foreign key → User |
-| `gameType` | string | `mill` / `connect_four` / `tic_tac_toe` / `holy_grail` |
+| `gameType` | string | `mill` / `connect_four` / `tic_tac_toe` / `grail_quest` |
 | `elo` | number | Default 1200 |
 | `wins` | number | |
 | `losses` | number | |
@@ -143,7 +143,7 @@ Sessions are maintained via an httpOnly JWT cookie named `session`.
       "mill":         { "elo": 1200, "wins": 0, "losses": 0, "draws": 0 },
       "connect_four": { "elo": 1176, "wins": 0, "losses": 1, "draws": 0 },
       "tic_tac_toe":  { "elo": 1200, "wins": 0, "losses": 0, "draws": 0 },
-      "holy_grail":   { "elo": 1200, "wins": 0, "losses": 0, "draws": 0 }
+      "grail_quest":   { "elo": 1200, "wins": 0, "losses": 0, "draws": 0 }
     }
   }
 }

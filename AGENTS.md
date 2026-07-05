@@ -58,7 +58,7 @@ vibe-games/
 │   ├── elo_spec.md
 │   ├── mill_spec.md
 │   ├── connect_four_spec.md
-│   ├── holy_grail_spec.md
+│   ├── grail_quest_spec.md
 │   ├── testing_spec.md
 │   └── architecture_spec.md
 ├── docker-compose.yml
@@ -94,7 +94,7 @@ npm run migration:revert               # Roll back last migration
 npx ts-node -r tsconfig-paths/register backend/src/game/elo.spec.ts
 npx ts-node -r tsconfig-paths/register backend/src/game/millEngine.spec.ts
 npx ts-node -r tsconfig-paths/register backend/src/game/connectFourEngine.spec.ts
-npx ts-node -r tsconfig-paths/register backend/src/game/holyGrailEngine.spec.ts
+npx ts-node -r tsconfig-paths/register backend/src/game/grailQuestEngine.spec.ts
 # API integration tests (requires docker:up)
 npx ts-node -r tsconfig-paths/register backend/src/game/authApi.spec.ts
 npx ts-node -r tsconfig-paths/register backend/src/game/gamesApi.spec.ts

@@ -1,4 +1,4 @@
-import type { HolyGrailGameState, HolyGrailCell, PlayerPiece, HolyGrailCard } from "@vibe-games/shared";
+import type { GrailQuestGameState, GrailQuestCell, PlayerPiece, GrailQuestCard } from "@vibe-games/shared";
 
 export const HEX_SIZE = 45;
 export const WIDTH = 560;
@@ -62,14 +62,14 @@ export interface TempVisualRadioactivity {
   card: string;
 }
 export interface RolledBackState {
-  board: Record<string, HolyGrailCell>;
+  board: Record<string, GrailQuestCell>;
   grailCellKey: string;
 }
 
 export interface AggregatedMove {
   from: string;
   to: string;
-  cards: HolyGrailCard[];
+  cards: GrailQuestCard[];
   carriesGrail: boolean;
 }
 
@@ -81,7 +81,7 @@ export interface AggregatedReviewMove {
   isRetreat?: boolean;
 }
 
-export function getAggregatedFriendlyMoves(moves: { from: string; to: string; cards: HolyGrailCard[]; carriesGrail?: boolean }[]): AggregatedMove[] {
+export function getAggregatedFriendlyMoves(moves: { from: string; to: string; cards: GrailQuestCard[]; carriesGrail?: boolean }[]): AggregatedMove[] {
   const map = new Map<string, AggregatedMove>();
   for (const m of moves) {
     const key = `${m.from}->${m.to}`;
@@ -121,7 +121,7 @@ export function getAggregatedReviewMoves(moves: TempVisualMove[]): AggregatedRev
   return Array.from(map.values());
 }
 
-export function getCellDefaultOwner(cell: HolyGrailCell): PlayerPiece | 'neutral' | null {
+export function getCellDefaultOwner(cell: GrailQuestCell): PlayerPiece | 'neutral' | null {
   if (cell.cellType === 'home_base' || cell.cellType === 'urban') {
     return cell.r < 0 ? 'X' : 'O';
   }
@@ -129,13 +129,13 @@ export function getCellDefaultOwner(cell: HolyGrailCell): PlayerPiece | 'neutral
 }
 
 export function rollbackBoardAndGrail(
-  board: Record<string, HolyGrailCell>,
+  board: Record<string, GrailQuestCell>,
   grailCellKey: string | undefined,
   reviewDeploys: TempVisualDeploy[],
   reviewMoves: TempVisualMove[],
   oppPiece: PlayerPiece
 ): RolledBackState {
-  const rolledBoard: Record<string, HolyGrailCell> = JSON.parse(JSON.stringify(board));
+  const rolledBoard: Record<string, GrailQuestCell> = JSON.parse(JSON.stringify(board));
   let rolledGrailKey = grailCellKey || '0,0';
 
   // 1. Rollback moves in reverse order
@@ -150,7 +150,7 @@ export function rollbackBoardAndGrail(
 
       const countToTake = Math.min(move.count, toCell.soldiers.length);
       
-      const taken: HolyGrailCard[] = [];
+      const taken: GrailQuestCard[] = [];
       for (let c = 0; c < countToTake; c++) {
         const popped = toCell.soldiers.pop();
         if (popped) taken.push(popped);
@@ -202,8 +202,8 @@ export function formatCardString(cardStr: string): string {
 
 
 
-export interface HolyGrailBoardProps {
-  state: HolyGrailGameState;
+export interface GrailQuestBoardProps {
+  state: GrailQuestGameState;
   myPiece: PlayerPiece | null;
   disabled: boolean;
   submittingMove: boolean;

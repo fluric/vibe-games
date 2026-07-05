@@ -167,7 +167,7 @@ export async function toUserDto(user: User | null, gameType: GameType): Promise<
   };
 }
 
-export function obfuscateHolyGrailState(
+export function obfuscateGrailQuestState(
   state: any,
   requestingUserId: string | undefined,
   playerXId: string | null,
@@ -304,8 +304,8 @@ export async function toGameDto(game: Game, requestingUserId?: string): Promise<
     updatedAt: game.updatedAt.toISOString(),
   };
 
-  if (game.gameType === 'holy_grail' && dto.state) {
-    dto.state = obfuscateHolyGrailState(dto.state, requestingUserId, game.playerXId, game.playerOId);
+  if (game.gameType === 'grail_quest' && dto.state) {
+    dto.state = obfuscateGrailQuestState(dto.state, requestingUserId, game.playerXId, game.playerOId);
   }
 
   return dto;
@@ -521,7 +521,7 @@ export async function getUserActiveGames(userId: string): Promise<Game[]> {
 }
 
 export async function getLeaderboard(gameType: GameType): Promise<LeaderboardResponse> {
-  if (gameType !== 'mill' && gameType !== 'connect_four' && gameType !== 'holy_grail') {
+  if (gameType !== 'mill' && gameType !== 'connect_four' && gameType !== 'grail_quest') {
     throw new Error('Unsupported game type');
   }
 

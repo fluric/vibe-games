@@ -30,7 +30,7 @@ async function runGame(
   const engine = ENGINES[gameType];
   let state = engine.createInitialState();
   let moveCount = 0;
-  const maxMoves = gameType === 'mill' ? 150 : (gameType === 'holy_grail' ? 400 : 60);
+  const maxMoves = gameType === 'mill' ? 150 : (gameType === 'grail_quest' ? 400 : 60);
   const positionCounts = new Map<string, number>();
 
   const gameBotsConfig = localConfig[gameType];
@@ -94,7 +94,7 @@ if (!isMainThread) {
   if (!INCLUDE_RL) {
     c4Bots = c4Bots.filter(k => !k.startsWith('rl_'));
   }
-  const hgBots = Object.keys(config.holy_grail).filter(k => !k.startsWith('rl_'));
+  const hgBots = Object.keys(config.grail_quest).filter(k => !k.startsWith('rl_'));
 
   if (MOVE_TIME_MS !== null) {
     console.log(`⏱️  Move time budget: Overridden to ${MOVE_TIME_MS}ms per move`);
@@ -106,12 +106,12 @@ if (!isMainThread) {
   const ratings: Record<string, Record<string, number>> = {
     mill: {},
     connect_four: {},
-    holy_grail: {}
+    grail_quest: {}
   };
   const winCounts: Record<string, Record<string, Record<string, number>>> = {
     mill: {},
     connect_four: {},
-    holy_grail: {}
+    grail_quest: {}
   };
   for (const key of millBots) {
     ratings.mill[key] = 0;
@@ -122,8 +122,8 @@ if (!isMainThread) {
     winCounts.connect_four[key] = { wins: 0, losses: 0, draws: 0 };
   }
   for (const key of hgBots) {
-    ratings.holy_grail[key] = 0;
-    winCounts.holy_grail[key] = { wins: 0, losses: 0, draws: 0 };
+    ratings.grail_quest[key] = 0;
+    winCounts.grail_quest[key] = { wins: 0, losses: 0, draws: 0 };
   }
 
   if (INCLUDE_RL) {

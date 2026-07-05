@@ -1,10 +1,10 @@
-import { PlayerPiece, HolyGrailGameState, HolyGrailCard, PendingCombat } from '@vibe-games/shared';
+import { PlayerPiece, GrailQuestGameState, GrailQuestCard, PendingCombat } from '@vibe-games/shared';
 import { getDistance, getCellType } from './gridUtils';
 import { getCardLabel, runDeployDraw } from './deckManager';
 import { evaluateDuel, reassembleCellStack, reassembleCombatAttackerStack } from './combatResolver';
 import { checkGameEnd, endRound } from './roundResolver';
 
-export function handleReactAction(state: HolyGrailGameState, action: any, player: PlayerPiece): HolyGrailGameState {
+export function handleReactAction(state: GrailQuestGameState, action: any, player: PlayerPiece): GrailQuestGameState {
   if (state.phase !== 'react') {
     throw new Error('Not in reaction phase');
   }
@@ -243,7 +243,7 @@ export function handleReactAction(state: HolyGrailGameState, action: any, player
   return state;
 }
 
-export function handleDeployAction(state: HolyGrailGameState, action: any, player: PlayerPiece): HolyGrailGameState {
+export function handleDeployAction(state: GrailQuestGameState, action: any, player: PlayerPiece): GrailQuestGameState {
   const type = action.action || action.type;
 
   if (type === 'deploy_all') {
@@ -309,7 +309,7 @@ export function handleDeployAction(state: HolyGrailGameState, action: any, playe
   return state;
 }
 
-export function handleMoveAction(state: HolyGrailGameState, action: any, player: PlayerPiece): HolyGrailGameState {
+export function handleMoveAction(state: GrailQuestGameState, action: any, player: PlayerPiece): GrailQuestGameState {
   if (state.phase !== 'move') {
     throw new Error('Not in movement phase');
   }
@@ -425,7 +425,7 @@ export function handleMoveAction(state: HolyGrailGameState, action: any, player:
   return state;
 }
 
-export function handleEndTurnAction(state: HolyGrailGameState, player: PlayerPiece): HolyGrailGameState {
+export function handleEndTurnAction(state: GrailQuestGameState, player: PlayerPiece): GrailQuestGameState {
   // 1. Finalize friendly movements by placing the in-transit cards on their destination cells
   const friendlyTargets = new Set<string>();
   for (const move of state.movesThisTurn || []) {

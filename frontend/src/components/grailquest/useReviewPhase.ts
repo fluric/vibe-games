@@ -1,12 +1,12 @@
 import { useState, useEffect, useMemo } from 'react';
-import type { PlayerPiece, HolyGrailCell } from '@vibe-games/shared';
+import type { PlayerPiece, GrailQuestCell } from '@vibe-games/shared';
 import type { TempVisualMove, TempVisualDeploy, TempVisualRadioactivity } from './boardUtils';
 import { rollbackBoardAndGrail } from './boardUtils';
 import { parseRadioactiveText, parseRetreatText } from './historyUtils';
 
 interface UseReviewPhaseParams {
   history: string[];
-  stateBoard: Record<string, HolyGrailCell>;
+  stateBoard: Record<string, GrailQuestCell>;
   stateGrailCellKey: string;
   myPiece: PlayerPiece | null;
   turn: PlayerPiece;
@@ -49,7 +49,7 @@ export function useReviewPhase({
   }
 
   // Determine displaying board state
-  const { board, grailCellKey } = useMemo((): { board: Record<string, HolyGrailCell>; grailCellKey: string } => {
+  const { board, grailCellKey } = useMemo((): { board: Record<string, GrailQuestCell>; grailCellKey: string } => {
     const defaultState = {
       board: stateBoard,
       grailCellKey: stateGrailCellKey || '0,0'

@@ -1,8 +1,8 @@
 import { useTranslation } from 'react-i18next';
 
 interface Props {
-  activeGameTab: 'mill' | 'connect_four' | 'holy_grail' | 'escape';
-  setActiveGameTab: (tab: 'mill' | 'connect_four' | 'holy_grail' | 'escape') => void;
+  activeGameTab: 'mill' | 'connect_four' | 'grail_quest' | 'escape';
+  setActiveGameTab: (tab: 'mill' | 'connect_four' | 'grail_quest' | 'escape') => void;
 }
 
 export function GameModeTabs({ activeGameTab, setActiveGameTab }: Props) {
@@ -31,9 +31,9 @@ export function GameModeTabs({ activeGameTab, setActiveGameTab }: Props) {
         🔴 {t('connect_four', { defaultValue: 'Connect Four' })}
       </button>
       <button
-        onClick={() => setActiveGameTab('holy_grail')}
+        onClick={() => setActiveGameTab('grail_quest')}
         className={`flex-1 py-3 text-sm rounded-xl font-bold transition-all active:scale-[0.98] ${
-          activeGameTab === 'holy_grail'
+          activeGameTab === 'grail_quest'
             ? 'bg-amber-600 shadow-[0_0_15px_rgba(245,158,11,0.4)] text-white'
             : 'text-neutral-400 hover:text-white hover:bg-neutral-800/40'
         }`}

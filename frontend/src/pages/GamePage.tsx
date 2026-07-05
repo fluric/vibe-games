@@ -1,10 +1,10 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import * as api from '../api/games';
-import type { GameDto, PlayerPiece, UserDto, MillGameState, HolyGrailGameState } from '@vibe-games/shared';
+import type { GameDto, PlayerPiece, UserDto, MillGameState, GrailQuestGameState } from '@vibe-games/shared';
 import { MillBoard } from '../components/MillBoard';
 import { ConnectFourBoard } from '../components/ConnectFourBoard';
-import { HolyGrailBoard } from '../components/HolyGrailBoard';
+import { GrailQuestBoard } from '../components/GrailQuestBoard';
 import * as audio from '../components/AudioEffects';
 import { ConfirmModal } from '../components/ConfirmModal';
 import { RulesModal } from '../components/RulesModal';
@@ -236,8 +236,8 @@ export function GamePage() {
         else if (millState.phase === 'flying') bannerMessage = t('your_turn_fly', { defaultValue: 'Your Turn: Fly Piece ✈️' });
       } else if (game.gameType === 'connect_four') {
         bannerMessage = t('your_turn_drop', { defaultValue: 'Your Turn: Drop Piece' });
-      } else if (game.gameType === 'holy_grail') {
-        const grailState = game.state as HolyGrailGameState;
+      } else if (game.gameType === 'grail_quest') {
+        const grailState = game.state as GrailQuestGameState;
         if (grailState.phase === 'react') bannerMessage = t('your_turn_react', { defaultValue: 'Your Turn: React to Attack! ⚔️' });
         else if (grailState.phase === 'deploy') bannerMessage = t('your_turn_deploy', { defaultValue: 'Your Turn: Deploy Units 🛖' });
         else if (grailState.phase === 'move') bannerMessage = t('your_turn_move_units', { defaultValue: 'Your Turn: Move Units 🛡️' });
@@ -274,9 +274,9 @@ export function GamePage() {
             disabled={game.status !== 'in_progress' || !isMyTurn}
             onAction={handleBoardAction}
           />
-        ) : game.gameType === 'holy_grail' ? (
-          <HolyGrailBoard
-            state={game.state as HolyGrailGameState}
+        ) : game.gameType === 'grail_quest' ? (
+          <GrailQuestBoard
+            state={game.state as GrailQuestGameState}
             myPiece={myPiece}
             disabled={game.status !== 'in_progress' || !isMyTurn || submittingMove}
             submittingMove={submittingMove}

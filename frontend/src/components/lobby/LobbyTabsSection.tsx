@@ -6,7 +6,7 @@ import { EscapeLeaderboardTable } from './EscapeLeaderboardTable';
 import type { GameDto, LeaderboardEntryDto, UserDto, EscapeLeaderboardEntry } from '@vibe-games/shared';
 
 interface Props {
-  activeGameTab: 'mill' | 'connect_four' | 'holy_grail' | 'escape';
+  activeGameTab: 'mill' | 'connect_four' | 'grail_quest' | 'escape';
   lobbyTab: 'lobbies' | 'leaderboard';
   setLobbyTab: (tab: 'lobbies' | 'leaderboard') => void;
   fetchLobby: () => void;

@@ -31,7 +31,7 @@ function PlayerCardStats({
       ? "Nine Men's Morris Rating:"
       : activeGameTab === 'connect_four'
         ? 'Connect Four Rating:'
-        : activeGameTab === 'holy_grail'
+        : activeGameTab === 'grail_quest'
           ? 'Grail Quest Rating:'
           : 'Rating:';
 
@@ -69,7 +69,7 @@ const mockUser: UserDto = {
     mill:         { elo: 1350, wins: 5, losses: 3, draws: 1 },
     connect_four: { elo: 1176, wins: 0, losses: 1, draws: 0 },
     tic_tac_toe:  { elo: 1200, wins: 0, losses: 0, draws: 0 },
-    holy_grail:   { elo: 1450, wins: 2, losses: 0, draws: 0 },
+    grail_quest:   { elo: 1450, wins: 2, losses: 0, draws: 0 },
     escape:       { elo: 1200, wins: 0, losses: 0, draws: 0 },
   },
 };
@@ -96,8 +96,8 @@ describe('PlayerCard — ELO and stats per game tab (specs/lobby_spec.md §1.1)'
     expect(screen.getByTestId('losses').textContent).toBe('Losses: 1');
   });
 
-  it('shows Grail Quest label and correct stats on holy_grail tab', () => {
-    render(<PlayerCardStats currentUser={mockUser} activeGameTab="holy_grail" />);
+  it('shows Grail Quest label and correct stats on grail_quest tab', () => {
+    render(<PlayerCardStats currentUser={mockUser} activeGameTab="grail_quest" />);
     expect(screen.getByTestId('rating-label').textContent).toBe('Grail Quest Rating:');
     expect(screen.getByTestId('elo').textContent).toBe('1450 ELO');
     expect(screen.getByTestId('wins').textContent).toBe('Wins: 2');

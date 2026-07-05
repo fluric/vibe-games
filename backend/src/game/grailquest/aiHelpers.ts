@@ -1,10 +1,10 @@
-import { PlayerPiece, HolyGrailGameState, HolyGrailCard } from '@vibe-games/shared';
+import { PlayerPiece, GrailQuestGameState, GrailQuestCard } from '@vibe-games/shared';
 import { getDistance, getCellType, AXIAL_NEIGHBORS } from './gridUtils';
 import { evaluateDuel } from './combatResolver';
 import { getCardLabel } from './deckManager';
 
 // Evaluate the board state from the perspective of the active player
-export function evaluateBoard(state: HolyGrailGameState, player: PlayerPiece): number {
+export function evaluateBoard(state: GrailQuestGameState, player: PlayerPiece): number {
   const opponent: PlayerPiece = player === 'X' ? 'O' : 'X';
   let score = 0;
 
@@ -138,7 +138,7 @@ export function evaluateBoard(state: HolyGrailGameState, player: PlayerPiece): n
       const carriesGrail = state.grailCellKey === move.from;
       if (!carriesGrail) {
         score += (6 - distToGrail) * 80;
-        const hasKing = (move.cards || []).some((c: HolyGrailCard) => c.value === 13);
+        const hasKing = (move.cards || []).some((c: GrailQuestCard) => c.value === 13);
         if (hasKing) {
           score += (6 - distToGrail) * 250;
         }
@@ -181,7 +181,7 @@ export function evaluateBoard(state: HolyGrailGameState, player: PlayerPiece): n
 }
 
 // Generate the best move by simulating 1-ply lookahead actions and evaluating outcomes
-export function getSmartAiAction(state: HolyGrailGameState, player: PlayerPiece, handleMove: Function): any {
+export function getSmartAiAction(state: GrailQuestGameState, player: PlayerPiece, handleMove: Function): any {
   const opponent: PlayerPiece = player === 'X' ? 'O' : 'X';
   const homeBaseKey = player === 'X' ? '0,-3' : '0,3';
 

@@ -1,6 +1,6 @@
 import { formatCardValue } from './utils';
 import { useTranslation } from 'react-i18next';
-import type { HolyGrailCell } from '@vibe-games/shared';
+import type { GrailQuestCell } from '@vibe-games/shared';
 
  
 type Combat = any;
@@ -14,7 +14,7 @@ export interface GrailControlsProps {
   isReviewingLastTurn: boolean;
   moveTargetKey: string | null;
   grailCellKey: string | null;
-  board: Record<string, HolyGrailCell>;
+  board: Record<string, GrailQuestCell>;
   moveCount: number;
   setMoveCount: (count: number) => void;
   executeMove: () => void;
@@ -76,7 +76,7 @@ export const GrailControls: React.FC<GrailControlsProps> = ({
   const { t } = useTranslation('game');
   const disabled = isBoardLocked;
 
-  // Helpers copied directly from HolyGrailBoard because they are tightly coupled to the modal log UI
+  // Helpers copied directly from GrailQuestBoard because they are tightly coupled to the modal log UI
   const parseCombatText = (rawLog: string) => {
     // Example: "X ⚔️ O: 4 vs 5 ➡️ Defender (O) wins!"
     const match = rawLog.match(/([XO])\s*⚔️\s*([XO]):\s*(.+?)\s+vs\s+(.+?)\s*➡️\s*(.+)/);

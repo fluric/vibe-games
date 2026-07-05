@@ -176,7 +176,7 @@ so they can quickly return to an active match without remembering the game ID.
 > *"Read AGENTS.md and specs/README.md. Then look at specs/testing_spec.md Section 1.3. Set up Vitest in the frontend package and write the first component test for the player card ELO display. Run the test, make it pass, commit."*
 
 ### For big features, ask for a plan first
-> *"Read specs/architecture_spec.md. Plan how to split HolyGrailBoard.tsx into sub-components as described in Section 1.3. Show me the plan before writing any code."*
+> *"Read specs/architecture_spec.md. Plan how to split GrailQuestBoard.tsx into sub-components as described in Section 1.3. Show me the plan before writing any code."*
 
 ### For overnight autonomous runs
 Use the `/goal` slash command in the chat:
@@ -345,7 +345,7 @@ All backend tests use `ts-node` (no test framework) and take ~1 second each.
 npx ts-node -r tsconfig-paths/register backend/src/game/elo.spec.ts
 npx ts-node -r tsconfig-paths/register backend/src/game/millEngine.spec.ts
 npx ts-node -r tsconfig-paths/register backend/src/game/connectFourEngine.spec.ts
-npx ts-node -r tsconfig-paths/register backend/src/game/holyGrailEngine.spec.ts
+npx ts-node -r tsconfig-paths/register backend/src/game/grailQuestEngine.spec.ts
 ```
 
 ### API integration tests (requires database running)
@@ -375,7 +375,7 @@ npm run build   # builds shared → backend → frontend in order
 npx ts-node -r tsconfig-paths/register backend/src/game/elo.spec.ts && \
 npx ts-node -r tsconfig-paths/register backend/src/game/millEngine.spec.ts && \
 npx ts-node -r tsconfig-paths/register backend/src/game/connectFourEngine.spec.ts && \
-npx ts-node -r tsconfig-paths/register backend/src/game/holyGrailEngine.spec.ts && \
+npx ts-node -r tsconfig-paths/register backend/src/game/grailQuestEngine.spec.ts && \
 # API tests (requires DB)
 npx ts-node -r tsconfig-paths/register backend/src/game/authApi.spec.ts && \
 npx ts-node -r tsconfig-paths/register backend/src/game/gamesApi.spec.ts && \
@@ -397,7 +397,7 @@ AI agents work from context windows — they read a portion of your code and wor
 
 | File | Current size | Problem | Plan |
 |---|---|---|---|
-| `HolyGrailBoard.tsx` | ~115 KB | Too much mixed in one file | Split: board, combat modal, game hook |
+| `GrailQuestBoard.tsx` | ~115 KB | Too much mixed in one file | Split: board, combat modal, game hook |
 | `LobbyPage.tsx` | ~67 KB | Too many concerns | Split: player card, game creation, leaderboard |
 | `backend/src/routes/games.ts` | 785 lines | Business logic in routes | Extract to `services/gameService.ts` |
 

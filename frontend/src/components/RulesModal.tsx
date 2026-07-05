@@ -41,7 +41,7 @@ export function RulesModal({ isOpen, onClose }: RulesModalProps) {
             <span className="text-2xl">🏆</span>
             <div>
               <h3 className="text-lg font-bold text-white tracking-tight">
-                {t('grail_quest_title', { defaultValue: 'Grail Quest (Holy Grail)' })}
+                {t('grail_quest_title', { defaultValue: 'Grail Quest (Grail Quest)' })}
               </h3>
               <p className="text-[10px] text-neutral-500 uppercase tracking-widest font-semibold mt-0.5">
                 {t('complete_rules_guide', { defaultValue: 'Complete Rules & Strategy Guide' })}
@@ -101,7 +101,7 @@ export function RulesModal({ isOpen, onClose }: RulesModalProps) {
                       <Trans 
                         i18nKey="secure_the_grail" 
                         ns="game" 
-                        defaultValue="<0>Secure the Grail:</0> Move the <1>Holy Grail 🏆</1> (starts at center hex <2>0,0</2>) back to your <3>Home Base</3>."
+                        defaultValue="<0>Secure the Grail:</0> Move the <1>Grail Quest 🏆</1> (starts at center hex <2>0,0</2>) back to your <3>Home Base</3>."
                         components={[
                           <strong key="0" className="text-indigo-400" />,
                           <span key="1" className="text-amber-400 font-bold" />,
@@ -436,7 +436,7 @@ export function RulesModal({ isOpen, onClose }: RulesModalProps) {
                     <li>
                       <strong className="text-white text-sm">{t('grail_radiation', { defaultValue: '2. Grail Radiation (Radioactivity)' })}</strong>
                       <p className="mt-1 leading-relaxed text-rose-400/90 font-medium">
-                        {t('grail_radiation_desc', { defaultValue: 'The Holy Grail emits raw holy energy! At the end of the round, each soldier occupying the Grail\'s hex has a 50% chance of being permanently destroyed. If there are no units left on the cell, the cell becomes neutral.' })}
+                        {t('grail_radiation_desc', { defaultValue: 'The Grail Quest emits raw holy energy! At the end of the round, each soldier occupying the Grail\'s hex has a 50% chance of being permanently destroyed. If there are no units left on the cell, the cell becomes neutral.' })}
                       </p>
                     </li>
                     <li>

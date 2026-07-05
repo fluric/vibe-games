@@ -15,7 +15,7 @@ As a **Product Owner or Requirements Engineer**, you work here — not in the co
 | [elo_spec.md](./elo_spec.md) | Rating system rules, calculation formula, update logic |
 | [mill_spec.md](./mill_spec.md) | Nine Men's Morris game rules and API |
 | [connect_four_spec.md](./connect_four_spec.md) | Connect Four game rules and API |
-| [holy_grail_spec.md](./holy_grail_spec.md) | Grail Quest — hex strategy game rules and API |
+| [grail_quest_spec.md](./grail_quest_spec.md) | Grail Quest — hex strategy game rules and API |
 | [testing_spec.md](./testing_spec.md) | What tests must exist and what they must cover |
 | [architecture_spec.md](./architecture_spec.md) | Module structure, file organization, code quality rules |
 
@@ -31,7 +31,7 @@ As a **Product Owner or Requirements Engineer**, you work here — not in the co
 
 **ELO:** A numeric skill rating system. A higher number means a stronger player. When you beat someone with a higher ELO, your rating goes up more than if you beat a weaker player.
 
-**Game Type:** One of the four game modes: `mill` (Nine Men's Morris), `connect_four`, `tic_tac_toe`, `holy_grail` (Grail Quest). These string identifiers are used throughout the codebase.
+**Game Type:** One of the four game modes: `mill` (Nine Men's Morris), `connect_four`, `tic_tac_toe`, `grail_quest` (Grail Quest). These string identifiers are used throughout the codebase.
 
 **DTO (Data Transfer Object):** A TypeScript interface that defines the exact shape of data sent over the network. Lives in `shared/src/index.ts`. Never redefine these in frontend or backend.
 

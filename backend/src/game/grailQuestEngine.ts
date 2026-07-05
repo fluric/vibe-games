@@ -1,15 +1,15 @@
-import { PlayerPiece, HolyGrailGameState, HolyGrailCell, HolyGrailCard, HolyGrailCellType, PendingCombat } from '@vibe-games/shared';
+import { PlayerPiece, GrailQuestGameState, GrailQuestCell, GrailQuestCard, GrailQuestCellType, PendingCombat } from '@vibe-games/shared';
 
-import { getDistance, isValidHex, getCellType, getInitialOwner, getNeighborIndex, getFarmLandsCount, AXIAL_NEIGHBORS } from './holygrail/gridUtils';
-import { countFaceCardsInPlay, drawRandomCard, getCardLabel, runDeployDraw } from './holygrail/deckManager';
-import { evaluateDuel, reassembleCellStack, reassembleCombatAttackerStack } from './holygrail/combatResolver';
-import { getSmartAiAction } from './holygrail/aiHelpers';
-import { checkGameEnd, endRound } from './holygrail/roundResolver';
-import { handleReactAction, handleDeployAction, handleMoveAction, handleEndTurnAction } from './holygrail/actionHandlers';
+import { getDistance, isValidHex, getCellType, getInitialOwner, getNeighborIndex, getFarmLandsCount, AXIAL_NEIGHBORS } from './grailquest/gridUtils';
+import { countFaceCardsInPlay, drawRandomCard, getCardLabel, runDeployDraw } from './grailquest/deckManager';
+import { evaluateDuel, reassembleCellStack, reassembleCombatAttackerStack } from './grailquest/combatResolver';
+import { getSmartAiAction } from './grailquest/aiHelpers';
+import { checkGameEnd, endRound } from './grailquest/roundResolver';
+import { handleReactAction, handleDeployAction, handleMoveAction, handleEndTurnAction } from './grailquest/actionHandlers';
 
 // Generate the initial board state
-export function generateBoard(): Record<string, HolyGrailCell> {
-  const board: Record<string, HolyGrailCell> = {};
+export function generateBoard(): Record<string, GrailQuestCell> {
+  const board: Record<string, GrailQuestCell> = {};
   for (let q = -3; q <= 3; q++) {
     for (let r = -3; r <= 3; r++) {
       if (isValidHex(q, r)) {
@@ -27,8 +27,8 @@ export function generateBoard(): Record<string, HolyGrailCell> {
   return board;
 }
 
-export function createInitialState(): HolyGrailGameState {
-  const state: HolyGrailGameState = {
+export function createInitialState(): GrailQuestGameState {
+  const state: GrailQuestGameState = {
     board: generateBoard(),
     hands: {
       X: [
@@ -62,10 +62,10 @@ export function createInitialState(): HolyGrailGameState {
 
   return state;
 }
-export const HolyGrailEngine = {
+export const GrailQuestEngine = {
   createInitialState,
   
-  handleMove(state: HolyGrailGameState, action: any, player: PlayerPiece): HolyGrailGameState {
+  handleMove(state: GrailQuestGameState, action: any, player: PlayerPiece): GrailQuestGameState {
     if (state.winner) {
       throw new Error('Game is already finished');
     }
@@ -113,14 +113,14 @@ export const HolyGrailEngine = {
     throw new Error('Invalid game action type');
   },
 
-  getAiAction(state: HolyGrailGameState, botType: string, depth: number, weights: any, timeLimitMs: number): any {
+  getAiAction(state: GrailQuestGameState, botType: string, depth: number, weights: any, timeLimitMs: number): any {
     const player = state.turn;
     const opponent: PlayerPiece = player === 'X' ? 'O' : 'X';
     const homeBaseKey = player === 'X' ? '0,-3' : '0,3';
     const enemyBaseKey = player === 'X' ? '0,3' : '0,-3';
 
     if (botType === 'smart') {
-      return getSmartAiAction(state, player, HolyGrailEngine.handleMove);
+      return getSmartAiAction(state, player, GrailQuestEngine.handleMove);
     }
 
     // ─── 1. REACT PHASE ───

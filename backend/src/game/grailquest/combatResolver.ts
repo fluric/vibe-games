@@ -1,4 +1,4 @@
-import { HolyGrailGameState, HolyGrailCard } from '@vibe-games/shared';
+import { GrailQuestGameState, GrailQuestCard } from '@vibe-games/shared';
 import { getNeighborIndex } from './gridUtils';
 
 // Card comparison duel logic
@@ -47,7 +47,7 @@ export function evaluateDuel(attackerVal: number, defenderVal: number): { winner
 }
 
 // Re-sort and assemble stack for a cell, respecting clockwise incoming moves
-export function reassembleCellStack(state: HolyGrailGameState, cellKey: string, baseSoldiers: HolyGrailCard[]): HolyGrailCard[] {
+export function reassembleCellStack(state: GrailQuestGameState, cellKey: string, baseSoldiers: GrailQuestCard[]): GrailQuestCard[] {
   const incoming = (state.movesThisTurn || []).filter(m => m.to === cellKey);
   if (incoming.length === 0) return baseSoldiers;
 
@@ -65,7 +65,7 @@ export function reassembleCellStack(state: HolyGrailGameState, cellKey: string, 
 }
 
 // Re-sort and assemble combat attacker stack
-export function reassembleCombatAttackerStack(state: HolyGrailGameState, cellKey: string): HolyGrailCard[] {
+export function reassembleCombatAttackerStack(state: GrailQuestGameState, cellKey: string): GrailQuestCard[] {
   const incoming = (state.movesThisTurn || []).filter(m => m.to === cellKey);
   const [q_dest, r_dest] = cellKey.split(',').map(Number);
 

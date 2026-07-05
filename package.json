@@ -18,7 +18,7 @@
     "docker:down": "PATH=\"/Applications/Docker.app/Contents/Resources/bin:$PATH\" docker compose down",
     "docker:reset": "PATH=\"/Applications/Docker.app/Contents/Resources/bin:$PATH\" docker compose down -v && PATH=\"/Applications/Docker.app/Contents/Resources/bin:$PATH\" docker compose up -d",
     "test:e2e": "npm run test:e2e -w frontend",
-    "test:quick": "npx ts-node -r tsconfig-paths/register backend/src/game/elo.spec.ts && npx ts-node -r tsconfig-paths/register backend/src/game/millEngine.spec.ts && npx ts-node -r tsconfig-paths/register backend/src/game/connectFourEngine.spec.ts && npx ts-node -r tsconfig-paths/register backend/src/game/holyGrailEngine.spec.ts && npm run test -w frontend",
+    "test:quick": "npx ts-node -r tsconfig-paths/register backend/src/game/elo.spec.ts && npx ts-node -r tsconfig-paths/register backend/src/game/millEngine.spec.ts && npx ts-node -r tsconfig-paths/register backend/src/game/connectFourEngine.spec.ts && npx ts-node -r tsconfig-paths/register backend/src/game/grailQuestEngine.spec.ts && npm run test -w frontend",
     "test:full": "npm run test:quick && npx ts-node -r tsconfig-paths/register backend/src/game/authApi.spec.ts && npx ts-node -r tsconfig-paths/register backend/src/game/gamesApi.spec.ts && npm run lint && npm run build",
     "ai:tournament": "npm run tournament -w backend",
     "ai:tune": "npm run tune -w backend",

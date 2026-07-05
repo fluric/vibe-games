@@ -1,4 +1,4 @@
-import { PlayerPiece, HolyGrailCellType, HolyGrailGameState } from '@vibe-games/shared';
+import { PlayerPiece, GrailQuestCellType, GrailQuestGameState } from '@vibe-games/shared';
 
 // Neighbor offsets in axial coordinates (q, r)
 // Clockwise starting from East (3 o'clock)
@@ -22,7 +22,7 @@ export function isValidHex(q: number, r: number): boolean {
 }
 
 // Get the type of a cell based on coordinates
-export function getCellType(q: number, r: number): HolyGrailCellType {
+export function getCellType(q: number, r: number): GrailQuestCellType {
   if (q === 0 && r === 0) return 'grail_center';
   
   if (q === 0 && r === -3) return 'home_base'; // Player X
@@ -60,7 +60,7 @@ export function getNeighborIndex(q_dest: number, r_dest: number, q_start: number
 }
 
 // Count Farm Land cells owned by player
-export function getFarmLandsCount(state: HolyGrailGameState, player: PlayerPiece): number {
+export function getFarmLandsCount(state: GrailQuestGameState, player: PlayerPiece): number {
   let count = 0;
   for (const cell of Object.values(state.board)) {
     if (cell.cellType === 'farm_land' && cell.owner === player) {

@@ -176,9 +176,17 @@
     "rl_master": {
       "id": "00000000-0000-0000-0000-000000000053",
       "username": "Neural Master (RL)",
-      "elo": 1400,
+      "elo": 2000,
       "type": "rl",
       "botLevel": "rl_master",
+      "enabled": true
+    },
+    "rl_champion": {
+      "id": "00000000-0000-0000-0000-000000000054",
+      "username": "Neural Champion (RL)",
+      "elo": 2500,
+      "type": "rl",
+      "botLevel": "rl_champion",
       "enabled": true
     }
   },
@@ -339,7 +347,7 @@
       "enabled": true
     }
   },
-  "holy_grail": {
+  "grail_quest": {
     "easy_random": {
       "id": "00000000-0000-0000-0000-000000000030",
       "username": "Random Randy (Easy)",

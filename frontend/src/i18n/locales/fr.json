@@ -10,7 +10,7 @@
     "nine_mens_morris": "Jeu du Moulin",
     "connect_four": "Puissance 4",
     "tic_tac_toe": "Morpion",
-    "holy_grail": "Saint Graal",
+    "grail_quest": "Saint Graal",
     "escape_room": "Escape Room",
     "no_active_matches": "Aucun match actif. Commencez-en un ci-dessus !",
     "join_match": "Rejoindre",
@@ -33,7 +33,7 @@
     "no_ranked_players": "Aucun joueur classé pour ce jeu.",
     "rank": "Rang",
     "player_col": "Joueur",
-    "elo": "Leaderscore",
+    "elo": "ELO",
     "record": "Bilan (V-D-N)",
     "bot": "BOT",
     "you": "VOUS",
@@ -141,7 +141,7 @@
         "rl_3800": "Réseau neuronal + MCTS 50",
         "rl_4600": "Réseau neuronal + MCTS 50"
       },
-      "holy_grail": {
+      "grail_quest": {
         "easy_random": "Jeu aléatoire",
         "medium_aggressive": "Positionnel & Combat",
         "hard_tactical": "Recherche tactique",
@@ -181,7 +181,7 @@
         "rl_3800": "⚡ Expert Neuronal effectue 50 simulations MCTS.",
         "rl_4600": "⚡ Maître Neuronal effectue 50 simulations MCTS avec des poids optimisés."
       },
-      "holy_grail": {
+      "grail_quest": {
         "easy_random": "Randy HG joue des coups complètement aléatoires.",
         "medium_aggressive": "Archie HG joue un jeu positionnel ciblant les fermes et les bases.",
         "hard_tactical": "Toby HG calcule les coups et les séquences de combat.",
@@ -193,7 +193,7 @@
       "mill": "Moulin",
       "connect_four": "Puissance 4",
       "tic_tac_toe": "Morpion",
-      "holy_grail": "Graal"
+      "grail_quest": "Graal"
     },
     "your_turn": "Ton Tour",
     "opponent_turn": "Tour Adverse",
@@ -308,11 +308,11 @@
     "your_turn_place": "À vous : Placer un pion",
     "your_turn_move": "À vous : Déplacer un pion",
     "your_turn_fly": "À vous : Voler un pion ✈️",
-    "your_turn_drop": "À vous : Lâcher un jeton",
+    "your_turn_drop": "À vous : Lâcher un jeton 🔴",
     "your_turn_react": "À vous : Réagir à l'attaque ! ⚔️",
     "your_turn_deploy": "À vous : Déployer des unités 🛖",
     "your_turn_move_units": "À vous : Déplacer des unités 🛡️",
-    "opponents_turn": "Tour de l'adversaire",
+    "opponents_turn": "Tour de l'adversaire ({{turn}})",
     "waiting_for_action": "En attente de l'action de l'adversaire.",
     "cancel_game_title": "Annuler la partie",
     "cancel_game_msg": "Êtes-vous sûr de vouloir annuler cette partie ?",

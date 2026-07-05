@@ -1,13 +1,13 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import type { HolyGrailGameState, PlayerPiece } from '@vibe-games/shared';
+import type { GrailQuestGameState, PlayerPiece } from '@vibe-games/shared';
 import * as audio from '../AudioEffects';
 import { formatCardValue, parseCardLabel } from './boardUtils';
 import { getGroupedHistory } from './historyUtils';
 import { GroupedHistoryEntry } from './HistoryRenderer';
 
 interface GrailSidePanelProps {
-  state: HolyGrailGameState;
+  state: GrailQuestGameState;
   myPiece: PlayerPiece | null;
   turn: 'X' | 'O';
   phase: 'deploy' | 'move' | 'react';

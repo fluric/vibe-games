@@ -10,7 +10,7 @@
     "nine_mens_morris": "Nine Men's Morris",
     "connect_four": "Connect Four",
     "tic_tac_toe": "Tic-Tac-Toe",
-    "holy_grail": "Holy Grail",
+    "grail_quest": "Grail Quest",
     "escape_room": "Escape Room",
     "no_active_matches": "No active matches. Start one above!",
     "join_match": "Join Match",
@@ -79,7 +79,7 @@
       "mill": "Nine Men's Morris",
       "connect_four": "Connect Four",
       "tic_tac_toe": "Tic Tac Toe",
-      "holy_grail": "Holy Grail"
+      "grail_quest": "Grail Quest"
     },
     "your_turn": "Your Turn",
     "opponent_turn": "Opponent Turn",

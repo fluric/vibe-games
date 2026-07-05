@@ -34,7 +34,7 @@ This lets agents (and you) choose the right level of feedback for each situation
 ### What each tier includes
 
 **Quick** (`npm run test:quick`):
-- All 4 backend engine unit tests (elo, mill, connectFour, holyGrail)
+- All 4 backend engine unit tests (elo, mill, connectFour, grailQuest)
 - All frontend Vitest component tests
 
 **Full** (`npm run test:full`):
@@ -60,7 +60,7 @@ Pure game logic, no database, no network. Each engine has a dedicated spec file.
 |---|---|---|
 | `backend/src/game/millEngine.spec.ts` | Nine Men's Morris | Game rules, win conditions, draw detection |
 | `backend/src/game/connectFourEngine.spec.ts` | Connect Four | Column drops, win detection, full board draw |
-| `backend/src/game/holyGrailEngine.spec.ts` | Grail Quest | All rules in `specs/holy_grail_spec.md` |
+| `backend/src/game/grailQuestEngine.spec.ts` | Grail Quest | All rules in `specs/grail_quest_spec.md` |
 | `backend/src/game/elo.spec.ts` | ELO formula | All 5 cases in `specs/elo_spec.md` Section 1 |
 
 **How to run:**
@@ -68,7 +68,7 @@ Pure game logic, no database, no network. Each engine has a dedicated spec file.
 # From repo root — each takes ~1 second
 npx ts-node -r tsconfig-paths/register backend/src/game/millEngine.spec.ts
 npx ts-node -r tsconfig-paths/register backend/src/game/connectFourEngine.spec.ts
-npx ts-node -r tsconfig-paths/register backend/src/game/holyGrailEngine.spec.ts
+npx ts-node -r tsconfig-paths/register backend/src/game/grailQuestEngine.spec.ts
 npx ts-node -r tsconfig-paths/register backend/src/game/elo.spec.ts
 ```
 
@@ -183,7 +183,7 @@ npm run test:e2e  # runs playwright tests
 npx ts-node -r tsconfig-paths/register backend/src/game/elo.spec.ts
 npx ts-node -r tsconfig-paths/register backend/src/game/millEngine.spec.ts
 npx ts-node -r tsconfig-paths/register backend/src/game/connectFourEngine.spec.ts
-npx ts-node -r tsconfig-paths/register backend/src/game/holyGrailEngine.spec.ts
+npx ts-node -r tsconfig-paths/register backend/src/game/grailQuestEngine.spec.ts
 
 # Backend API tests (requires DB running)
 npx ts-node -r tsconfig-paths/register backend/src/game/authApi.spec.ts

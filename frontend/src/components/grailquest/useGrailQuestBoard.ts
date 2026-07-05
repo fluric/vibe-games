@@ -1,12 +1,12 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useReviewPhase } from './useReviewPhase';
 import { useParams } from 'react-router-dom';
-import type { HolyGrailCell, PendingCombat, HolyGrailCard } from '@vibe-games/shared';
+import type { GrailQuestCell, PendingCombat, GrailQuestCard } from '@vibe-games/shared';
 import { getAggregatedFriendlyMoves, getAggregatedReviewMoves, parseCardLabel } from './boardUtils';
-import type { HolyGrailBoardProps } from './boardUtils';
+import type { GrailQuestBoardProps } from './boardUtils';
 import { parseCombatText } from './historyUtils';
 
-export function useHolyGrailBoard(props: HolyGrailBoardProps) {
+export function useGrailQuestBoard(props: GrailQuestBoardProps) {
   const { state, myPiece, disabled, submittingMove, onAction } = props;
   const { board: stateBoard, phase, turn, winner, hands, pendingCombats, grailCellKey: stateGrailCellKey = '0,0' } = state;
 
@@ -65,7 +65,7 @@ export function useHolyGrailBoard(props: HolyGrailBoardProps) {
   const [displayedAttackerVal, setDisplayedAttackerVal] = useState<number | undefined>(undefined);
   const [displayedDefenderVal, setDisplayedDefenderVal] = useState<number | undefined>(undefined);
   const [displayedDefenderVal2, setDisplayedDefenderVal2] = useState<number | undefined>(undefined);
-  const [displayedDefenderStack, setDisplayedDefenderStack] = useState<HolyGrailCard[]>([]);
+  const [displayedDefenderStack, setDisplayedDefenderStack] = useState<GrailQuestCard[]>([]);
   
   const [isRevealingAttacker, setIsRevealingAttacker] = useState(false);
   const [isRevealingDefender, setIsRevealingDefender] = useState(false);
@@ -422,7 +422,7 @@ export function useHolyGrailBoard(props: HolyGrailBoardProps) {
   const endTurn = async () => {
     try {
       // 1. Construct the finalized board where all our in-transit moves are placed on their destinations
-      const finalizedBoard: Record<string, HolyGrailCell> = JSON.parse(JSON.stringify(board));
+      const finalizedBoard: Record<string, GrailQuestCell> = JSON.parse(JSON.stringify(board));
       
       const friendlyTargets = new Set<string>();
       for (const move of state.movesThisTurn || []) {
@@ -445,10 +445,10 @@ export function useHolyGrailBoard(props: HolyGrailBoardProps) {
       };
 
       const reassembleCellStackFrontend = (
-        moves: { from: string; to: string; cards: HolyGrailCard[]; carriesGrail?: boolean }[],
+        moves: { from: string; to: string; cards: GrailQuestCard[]; carriesGrail?: boolean }[],
         cellKey: string,
-        baseSoldiers: HolyGrailCard[]
-      ): HolyGrailCard[] => {
+        baseSoldiers: GrailQuestCard[]
+      ): GrailQuestCard[] => {
         const incoming = moves.filter(m => m.to === cellKey);
         if (incoming.length === 0) return baseSoldiers;
 
@@ -493,7 +493,7 @@ export function useHolyGrailBoard(props: HolyGrailBoardProps) {
   };
 
   // Color mapping based on cell type
-  const getCellFillClass = (cell: HolyGrailCell) => {
+  const getCellFillClass = (cell: GrailQuestCell) => {
     const isSelected = selectedCellKey === `${cell.q},${cell.r}`;
     const isMoveTarget = moveTargetKey === `${cell.q},${cell.r}`;
     const isPendingCombat = pendingCombats.some(c => c.cellKey === `${cell.q},${cell.r}`);

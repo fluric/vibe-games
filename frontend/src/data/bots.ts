@@ -11,6 +11,7 @@ export const BOT_DESCRIPTIONS: Record<string, Record<string, string>> = {
     expert_garry: "Minimax Depth 5",
     legendary_magnus: "Minimax Depth 6",
     perfect_oracle: "Solved Openings & Positional Search",
+    rl_champion: "Neural Network + MCTS 100",
   },
   connect_four: {
     easy_random: "Random Play",
@@ -31,7 +32,7 @@ export const BOT_DESCRIPTIONS: Record<string, Record<string, string>> = {
     rl_3800: "Neural Network + MCTS 50",
     rl_4600: "Neural Network + MCTS 50",
   },
-  holy_grail: {
+  grail_quest: {
     easy_random: "Random Play",
     medium_aggressive: "Positional & Combat",
     hard_tactical: "Tactical Search",
@@ -52,6 +53,7 @@ export const BOT_EMOJIS: Record<string, Record<string, string>> = {
     expert_garry: "🔥",
     legendary_magnus: "👑",
     perfect_oracle: "🌌",
+    rl_champion: "🤖",
   },
   connect_four: {
     easy_random: "🟢",
@@ -72,7 +74,7 @@ export const BOT_EMOJIS: Record<string, Record<string, string>> = {
     rl_3800: "⚡",
     rl_4600: "⚡",
   },
-  holy_grail: {
+  grail_quest: {
     easy_random: "🟢",
     medium_aggressive: "🟡",
     hard_tactical: "🔴",
@@ -93,6 +95,7 @@ export const BOT_HELP_TEXT: Record<string, Record<string, string>> = {
     expert_garry: "Garry evaluates 5 plies deep with optimized positional heuristics. A true challenge!",
     legendary_magnus: "Magnus calculates 6 plies deep with extremely optimized weights. Legendary level!",
     perfect_oracle: "The Oracle uses deep positional evaluation and solved center column openings for maximum control.",
+    rl_champion: "The reigning Neural Network champion, continuously improving via self-play.",
   },
   connect_four: {
     easy_random: "Randy plays completely random moves. Great for absolute beginners.",
@@ -113,7 +116,7 @@ export const BOT_HELP_TEXT: Record<string, Record<string, string>> = {
     rl_3800: "⚡ Neural Expert runs 50 MCTS simulations guided by a deep self-play trained network.",
     rl_4600: "⚡ Neural Master runs 50 MCTS simulations guided by a highly optimized self-play trained network.",
   },
-  holy_grail: {
+  grail_quest: {
     easy_random: "Randy HG plays completely random moves.",
     medium_aggressive: "Archie HG plays a positional game targeting farms and bases.",
     hard_tactical: "Toby HG calculates moves and combat sequences.",

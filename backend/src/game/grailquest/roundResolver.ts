@@ -1,9 +1,9 @@
-import { HolyGrailGameState, HolyGrailCard } from '@vibe-games/shared';
+import { GrailQuestGameState, GrailQuestCard } from '@vibe-games/shared';
 import { getCellType } from './gridUtils';
 import { getCardLabel } from './deckManager';
 
 // Check for victory/defeat at end of round
-export function checkGameEnd(state: HolyGrailGameState): void {
+export function checkGameEnd(state: GrailQuestGameState): void {
   // 1. Grail at Home Base
   if (state.grailCellKey === '0,-3') {
     state.winner = 'X';
@@ -56,7 +56,7 @@ export function checkGameEnd(state: HolyGrailGameState): void {
 }
 
 // End of Round Resolution
-export function endRound(state: HolyGrailGameState): void {
+export function endRound(state: GrailQuestGameState): void {
   // 1. Grail Movement Resolution
   const candidates = state.grailMovementCandidates || [];
   const validDestinations: string[] = [];
@@ -79,8 +79,8 @@ export function endRound(state: HolyGrailGameState): void {
   // 2. Radioactivity: each soldier in the Grail's cell is killed with 50% chance
   const grailCell = state.board[state.grailCellKey || '0,0'];
   if (grailCell && grailCell.soldiers.length > 0) {
-    const killedCards: HolyGrailCard[] = [];
-    const remainingSoldiers: HolyGrailCard[] = [];
+    const killedCards: GrailQuestCard[] = [];
+    const remainingSoldiers: GrailQuestCard[] = [];
     for (const soldier of grailCell.soldiers) {
       if (Math.random() < 0.5) {
         killedCards.push(soldier);

@@ -3,7 +3,7 @@ import type { UserDto } from '@vibe-games/shared';
 
 interface Props {
   currentUser: UserDto;
-  activeGameTab: 'mill' | 'connect_four' | 'holy_grail' | 'escape';
+  activeGameTab: 'mill' | 'connect_four' | 'grail_quest' | 'escape';
 }
 
 export function LobbyUserStats({
@@ -61,7 +61,7 @@ export function LobbyUserStats({
               </span>
               <span className="font-bold text-indigo-400">
                 {(() => {
-                  const tab = activeGameTab as 'mill' | 'connect_four' | 'holy_grail';
+                  const tab = activeGameTab as 'mill' | 'connect_four' | 'grail_quest';
                   const stats = currentUser.gameStats?.[tab] || currentUser;
                   return stats?.elo ?? 1200;
                 })()}{' '}
@@ -70,7 +70,7 @@ export function LobbyUserStats({
             </div>
             <div className="flex gap-4 text-xs text-neutral-500 mt-2">
               {(() => {
-                const tab = activeGameTab as 'mill' | 'connect_four' | 'holy_grail';
+                const tab = activeGameTab as 'mill' | 'connect_four' | 'grail_quest';
                 const stats = currentUser.gameStats?.[tab] || currentUser;
                 return (
                   <>

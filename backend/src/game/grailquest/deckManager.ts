@@ -1,8 +1,8 @@
-import { PlayerPiece, HolyGrailGameState, HolyGrailCard } from '@vibe-games/shared';
+import { PlayerPiece, GrailQuestGameState, GrailQuestCard } from '@vibe-games/shared';
 import { getFarmLandsCount } from './gridUtils';
 
 // Count how many face cards are currently in play (hand + board) for a player
-export function countFaceCardsInPlay(state: HolyGrailGameState, player: PlayerPiece, tempDrawn: HolyGrailCard[] = []) {
+export function countFaceCardsInPlay(state: GrailQuestGameState, player: PlayerPiece, tempDrawn: GrailQuestCard[] = []) {
   const hand = state.hands[player] || [];
   const allHandCards = [...hand, ...tempDrawn];
   let kings = allHandCards.filter(c => c.value === 13).length;
@@ -35,10 +35,10 @@ export function countFaceCardsInPlay(state: HolyGrailGameState, player: PlayerPi
 
 // Draw a single random card obeying face card limits
 export function drawRandomCard(
-  state: HolyGrailGameState,
+  state: GrailQuestGameState,
   player: PlayerPiece,
-  tempDrawn: HolyGrailCard[] = []
-): HolyGrailCard {
+  tempDrawn: GrailQuestCard[] = []
+): GrailQuestCard {
   const value = Math.floor(Math.random() * 13) + 1; // 1 to 13 (Ace is replaced by 1)
   const faceCounts = countFaceCardsInPlay(state, player, tempDrawn);
 
@@ -64,13 +64,13 @@ export function getCardLabel(val: number): string {
 }
 
 // Perform deployment draws at start of deploy phase
-export function runDeployDraw(state: HolyGrailGameState, player: PlayerPiece): HolyGrailCard[] {
+export function runDeployDraw(state: GrailQuestGameState, player: PlayerPiece): GrailQuestCard[] {
   const isRound1PlayerX = player === 'X' && (state.history?.length === 0 || !state.history);
   const baseCards = isRound1PlayerX ? 2 : 4;
   const farmLandBonus = getFarmLandsCount(state, player);
   const totalDraw = baseCards + farmLandBonus;
 
-  const drawn: HolyGrailCard[] = [];
+  const drawn: GrailQuestCard[] = [];
   for (let i = 0; i < totalDraw; i++) {
     drawn.push(drawRandomCard(state, player, drawn));
   }

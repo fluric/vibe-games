@@ -36,7 +36,7 @@ export function GameLayout({
   children
 }: GameLayoutProps) {
   const { t } = useTranslation('game');
-  const isHolyGrail = game.gameType === 'holy_grail';
+  const isGrailQuest = game.gameType === 'grail_quest';
 
   return (
     <div className="min-h-screen bg-neutral-950 text-neutral-100 font-sans flex flex-col items-center p-6 md:p-12 relative overflow-x-hidden">
@@ -74,7 +74,7 @@ export function GameLayout({
               </button>
             )}
 
-            {isHolyGrail && (
+            {isGrailQuest && (
               <button
                 type="button"
                 onClick={onShowRules}
@@ -107,7 +107,7 @@ export function GameLayout({
           <p className="text-xs text-neutral-400 font-medium">{bannerSub}</p>
         </div>
 
-        {isHolyGrail ? (
+        {isGrailQuest ? (
           <div className="flex flex-col gap-6 w-full items-center mt-2">
             <div className="flex flex-col sm:flex-row gap-6 w-full max-w-4xl justify-center items-stretch">
               <div className="flex-1"><PlayerStats game={game} player="X" /></div>

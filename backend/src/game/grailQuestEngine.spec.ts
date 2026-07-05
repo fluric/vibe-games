@@ -1,12 +1,12 @@
 import assert from 'assert';
-import { HolyGrailEngine, createInitialState } from './holyGrailEngine';
-import { getDistance, isValidHex, getCellType, getNeighborIndex, getFarmLandsCount } from './holygrail/gridUtils';
-import { evaluateDuel, reassembleCellStack } from './holygrail/combatResolver';
-import { drawRandomCard } from './holygrail/deckManager';
-import { HolyGrailCard, HolyGrailGameState } from '@vibe-games/shared';
+import { GrailQuestEngine, createInitialState } from './grailQuestEngine';
+import { getDistance, isValidHex, getCellType, getNeighborIndex, getFarmLandsCount } from './grailquest/gridUtils';
+import { evaluateDuel, reassembleCellStack } from './grailquest/combatResolver';
+import { drawRandomCard } from './grailquest/deckManager';
+import { GrailQuestCard, GrailQuestGameState } from '@vibe-games/shared';
 
 async function runTests() {
-  console.log('🧪 Starting Holy Grail (Grail Quest) Engine Tests...\n');
+  console.log('🧪 Starting Grail Quest (Grail Quest) Engine Tests...\n');
 
   // 1. Grid Coordinates & Types
   console.log('👉 Testing: Coordinate calculations and hex types');
@@ -28,7 +28,7 @@ async function runTests() {
 
   // 2. Initial State Setup
   console.log('👉 Testing: createInitialState');
-  const state = HolyGrailEngine.createInitialState();
+  const state = GrailQuestEngine.createInitialState();
   assert.strictEqual(state.turn, 'X');
   assert.strictEqual(state.phase, 'deploy');
   assert.strictEqual(state.winner, null);
@@ -99,10 +99,10 @@ async function runTests() {
 
   // 5. Deploy & Face Card Limits
   console.log('👉 Testing: Deploy actions and limits');
-  let sDeploy = HolyGrailEngine.createInitialState();
+  let sDeploy = GrailQuestEngine.createInitialState();
   // Player X deploys King to (0, -3) [home_base]
   assert.strictEqual(sDeploy.phase, 'deploy');
-  sDeploy = HolyGrailEngine.handleMove(sDeploy, { type: 'deploy', cellKey: '0,-3', cardValue: 13 }, 'X');
+  sDeploy = GrailQuestEngine.handleMove(sDeploy, { type: 'deploy', cellKey: '0,-3', cardValue: 13 }, 'X');
   assert.strictEqual(sDeploy.hands.X.length, 4);
   assert.strictEqual(sDeploy.board['0,-3'].soldiers.length, 1);
   assert.strictEqual(sDeploy.board['0,-3'].soldiers[0].value, 13); // King deployed
@@ -112,13 +112,13 @@ async function runTests() {
   sDeploy.board['-1,-2'].soldiers = [];
 
   // Deploying to empty owned urban cell should now succeed!
-  sDeploy = HolyGrailEngine.handleMove(sDeploy, { type: 'deploy', cellKey: '-1,-2', cardValue: 12 }, 'X');
+  sDeploy = GrailQuestEngine.handleMove(sDeploy, { type: 'deploy', cellKey: '-1,-2', cardValue: 12 }, 'X');
   assert.strictEqual(sDeploy.board['-1,-2'].soldiers.length, 1);
   assert.strictEqual(sDeploy.board['-1,-2'].soldiers[0].value, 12);
 
   // Deploying to non-owned or non-urban/non-base cell should fail
   assert.throws(() => {
-    HolyGrailEngine.handleMove(sDeploy, { type: 'deploy', cellKey: '0,0', cardValue: 11 }, 'X');
+    GrailQuestEngine.handleMove(sDeploy, { type: 'deploy', cellKey: '0,0', cardValue: 11 }, 'X');
   });
 
   // Verify farm land counting: X owns farm land (-2,0) but it is empty
@@ -131,13 +131,13 @@ async function runTests() {
   assert.strictEqual(getFarmLandsCount(sDeploy, 'X'), 1); // still 1 when occupied
 
   // End deploy phase
-  sDeploy = HolyGrailEngine.handleMove(sDeploy, { type: 'end_deploy' }, 'X');
+  sDeploy = GrailQuestEngine.handleMove(sDeploy, { type: 'end_deploy' }, 'X');
   assert.strictEqual(sDeploy.phase, 'move');
 
   // 6. Move & Merging
   console.log('👉 Testing: Move stack & Clockwise merging');
   // Move King from (0,-3) to (0,-2) [adjacent]
-  sDeploy = HolyGrailEngine.handleMove(sDeploy, { type: 'move', from: '0,-3', to: '0,-2', count: 1 }, 'X');
+  sDeploy = GrailQuestEngine.handleMove(sDeploy, { type: 'move', from: '0,-3', to: '0,-2', count: 1 }, 'X');
   assert.strictEqual(sDeploy.board['0,-3'].soldiers.length, 0);
   assert.strictEqual(sDeploy.board['0,-2'].soldiers.length, 0); // Not in destination yet (stays in transit on arrow)
   assert.strictEqual(sDeploy.board['0,-2'].owner, 'X');
@@ -145,35 +145,35 @@ async function runTests() {
 
   // Move invalid coordinates / distance should fail
   assert.throws(() => {
-    HolyGrailEngine.handleMove(sDeploy, { type: 'move', from: '0,-3', to: '0,0', count: 1 }, 'X');
+    GrailQuestEngine.handleMove(sDeploy, { type: 'move', from: '0,-3', to: '0,0', count: 1 }, 'X');
   });
 
   // Trying to move a card from the transit destination should fail (since it is empty during the turn)
   assert.throws(() => {
-    HolyGrailEngine.handleMove(sDeploy, { type: 'move', from: '0,-2', to: '0,-1', count: 1 }, 'X');
+    GrailQuestEngine.handleMove(sDeploy, { type: 'move', from: '0,-2', to: '0,-1', count: 1 }, 'X');
   });
 
   // End turn to finalize movement
-  sDeploy = HolyGrailEngine.handleMove(sDeploy, { type: 'end_turn' }, 'X');
+  sDeploy = GrailQuestEngine.handleMove(sDeploy, { type: 'end_turn' }, 'X');
   assert.strictEqual(sDeploy.board['0,-2'].soldiers.length, 1);
   assert.strictEqual(sDeploy.board['0,-2'].soldiers[0].value, 13); // Finalized on destination cell!
 
   // 7. Auto Draw at deploy phase start
   console.log('👉 Testing: Deploy auto-draw mechanism & farm bonuses');
-  let testDrawState = HolyGrailEngine.createInitialState();
+  let testDrawState = GrailQuestEngine.createInitialState();
   // Move to end deploy and move to end turn
-  testDrawState = HolyGrailEngine.handleMove(testDrawState, { type: 'end_deploy' }, 'X');
-  testDrawState = HolyGrailEngine.handleMove(testDrawState, { type: 'end_turn' }, 'X');
+  testDrawState = GrailQuestEngine.handleMove(testDrawState, { type: 'end_deploy' }, 'X');
+  testDrawState = GrailQuestEngine.handleMove(testDrawState, { type: 'end_turn' }, 'X');
   // Turn is O, phase is deploy. Let's deploy all of O's hand to get more cards drawn
-  testDrawState = HolyGrailEngine.handleMove(testDrawState, { type: 'deploy', cellKey: '0,3', cardValue: 13 }, 'O');
-  testDrawState = HolyGrailEngine.handleMove(testDrawState, { type: 'deploy', cellKey: '0,3', cardValue: 12 }, 'O');
-  testDrawState = HolyGrailEngine.handleMove(testDrawState, { type: 'deploy', cellKey: '0,3', cardValue: 11 }, 'O');
-  testDrawState = HolyGrailEngine.handleMove(testDrawState, { type: 'end_deploy' }, 'O');
-  testDrawState = HolyGrailEngine.handleMove(testDrawState, { type: 'end_turn' }, 'O');
+  testDrawState = GrailQuestEngine.handleMove(testDrawState, { type: 'deploy', cellKey: '0,3', cardValue: 13 }, 'O');
+  testDrawState = GrailQuestEngine.handleMove(testDrawState, { type: 'deploy', cellKey: '0,3', cardValue: 12 }, 'O');
+  testDrawState = GrailQuestEngine.handleMove(testDrawState, { type: 'deploy', cellKey: '0,3', cardValue: 11 }, 'O');
+  testDrawState = GrailQuestEngine.handleMove(testDrawState, { type: 'end_deploy' }, 'O');
+  testDrawState = GrailQuestEngine.handleMove(testDrawState, { type: 'end_turn' }, 'O');
 
   // Now turn is X, phase is deploy. Trigger auto-draw!
   // Wait, auto draw runs on first action in deploy phase (or is triggered automatically). Let's deploy a card to trigger it:
-  testDrawState = HolyGrailEngine.handleMove(testDrawState, { type: 'deploy', cellKey: '0,-3', cardValue: 12 }, 'X');
+  testDrawState = GrailQuestEngine.handleMove(testDrawState, { type: 'deploy', cellKey: '0,-3', cardValue: 12 }, 'X');
   // Let's check X's hand. X should have drawn base cards (4 cards) since it is Round 2.
   // Wait, X started with 3 cards (K, Q, J) and 2 cards drawn in Round 1.
   // Deployed Queen (12). So hand was 4 cards before draw.
@@ -182,7 +182,7 @@ async function runTests() {
 
   // 8. Combat & Retreat
   console.log('👉 Testing: Combat fights, Hill advantages, and Retreats');
-  let sCombat = HolyGrailEngine.createInitialState();
+  let sCombat = GrailQuestEngine.createInitialState();
   
   // Set up X King on (0,-3), and O Jack on (0,-2). (0,-2) is not owned by O, but let's place it.
   sCombat.board['0,-3'].owner = 'X';
@@ -195,7 +195,7 @@ async function runTests() {
   sCombat.turn = 'X';
 
   // X moves King from (0,-3) to (0,-2) to initiate combat
-  sCombat = HolyGrailEngine.handleMove(sCombat, { type: 'move', from: '0,-3', to: '0,-2', count: 1 }, 'X');
+  sCombat = GrailQuestEngine.handleMove(sCombat, { type: 'move', from: '0,-3', to: '0,-2', count: 1 }, 'X');
   
   // Verify combat is registered
   assert.strictEqual(sCombat.pendingCombats.length, 1);
@@ -205,12 +205,12 @@ async function runTests() {
   assert.strictEqual(combat.defender, 'O');
   
   // End turn so O can react
-  sCombat = HolyGrailEngine.handleMove(sCombat, { type: 'end_turn' }, 'X');
+  sCombat = GrailQuestEngine.handleMove(sCombat, { type: 'end_turn' }, 'X');
   assert.strictEqual(sCombat.turn, 'O');
   assert.strictEqual(sCombat.phase, 'react');
 
   // Defender O decides to fight
-  sCombat = HolyGrailEngine.handleMove(sCombat, { type: 'react', cellKey: '0,-2', reactType: 'fight' }, 'O');
+  sCombat = GrailQuestEngine.handleMove(sCombat, { type: 'react', cellKey: '0,-2', reactType: 'fight' }, 'O');
   // King (13) vs Jack (11). King wins, Jack is destroyed.
   // King should survive and go to bottom of attacker stack. Cell is occupied by X.
   assert.strictEqual(sCombat.board['0,-2'].owner, 'X');
@@ -220,7 +220,7 @@ async function runTests() {
   assert.strictEqual(sCombat.pendingCombats.length, 0); // Resolved!
 
   // Let's test Retreat option
-  let sRetreat = HolyGrailEngine.createInitialState();
+  let sRetreat = GrailQuestEngine.createInitialState();
   sRetreat.board['0,-3'].owner = 'X';
   sRetreat.board['0,-3'].soldiers = [{ value: 9, revealed: false }];
   sRetreat.board['0,-2'].owner = 'O';
@@ -231,12 +231,12 @@ async function runTests() {
 
   sRetreat.phase = 'move';
   sRetreat.turn = 'X';
-  sRetreat = HolyGrailEngine.handleMove(sRetreat, { type: 'move', from: '0,-3', to: '0,-2', count: 1 }, 'X');
-  sRetreat = HolyGrailEngine.handleMove(sRetreat, { type: 'end_turn' }, 'X');
+  sRetreat = GrailQuestEngine.handleMove(sRetreat, { type: 'move', from: '0,-3', to: '0,-2', count: 1 }, 'X');
+  sRetreat = GrailQuestEngine.handleMove(sRetreat, { type: 'end_turn' }, 'X');
 
   assert.strictEqual(sRetreat.phase, 'react');
   // O retreats to (0,-1)
-  sRetreat = HolyGrailEngine.handleMove(sRetreat, { type: 'react', cellKey: '0,-2', reactType: 'retreat', retreatTo: '0,-1' }, 'O');
+  sRetreat = GrailQuestEngine.handleMove(sRetreat, { type: 'react', cellKey: '0,-2', reactType: 'retreat', retreatTo: '0,-1' }, 'O');
   
   // Kontests resolved, O's (5) is appended to bottom of (0,-1) stack
   assert.strictEqual(sRetreat.board['0,-2'].owner, 'X');
@@ -249,7 +249,7 @@ async function runTests() {
 
   // 9. Hill Defense double-draw
   console.log('👉 Testing: Hill defense advantage');
-  let sHill = HolyGrailEngine.createInitialState();
+  let sHill = GrailQuestEngine.createInitialState();
   // Contested cell (1,1) is a Hill
   assert.strictEqual(getCellType(1, 1), 'hill');
   sHill.board['1,0'].owner = 'X';
@@ -262,11 +262,11 @@ async function runTests() {
 
   sHill.phase = 'move';
   sHill.turn = 'X';
-  sHill = HolyGrailEngine.handleMove(sHill, { type: 'move', from: '1,0', to: '1,1', count: 1 }, 'X');
-  sHill = HolyGrailEngine.handleMove(sHill, { type: 'end_turn' }, 'X');
+  sHill = GrailQuestEngine.handleMove(sHill, { type: 'move', from: '1,0', to: '1,1', count: 1 }, 'X');
+  sHill = GrailQuestEngine.handleMove(sHill, { type: 'end_turn' }, 'X');
 
   // O fights on the Hill
-  sHill = HolyGrailEngine.handleMove(sHill, { type: 'react', cellKey: '1,1', reactType: 'fight' }, 'O');
+  sHill = GrailQuestEngine.handleMove(sHill, { type: 'react', cellKey: '1,1', reactType: 'fight' }, 'O');
   
   // Defender has [6, 9]. Attacker has [8].
   // Hill compares 8 vs 6 (result: Attacker wins, 8 becomes 2) and 8 vs 9 (result: Defender wins, 9 becomes 1).
@@ -284,7 +284,7 @@ async function runTests() {
 
   // 9b. Hill Defense double-draw with Draw Result
   console.log('👉 Testing: Hill defense advantage with draw outcome (Q vs Q & K)');
-  let sHillDraw = HolyGrailEngine.createInitialState();
+  let sHillDraw = GrailQuestEngine.createInitialState();
   sHillDraw.board['1,0'].owner = 'X';
   sHillDraw.board['1,0'].soldiers = [{ value: 12, revealed: false }]; // Attacker Q (12)
   sHillDraw.board['1,1'].owner = 'O';
@@ -295,11 +295,11 @@ async function runTests() {
 
   sHillDraw.phase = 'move';
   sHillDraw.turn = 'X';
-  sHillDraw = HolyGrailEngine.handleMove(sHillDraw, { type: 'move', from: '1,0', to: '1,1', count: 1 }, 'X');
-  sHillDraw = HolyGrailEngine.handleMove(sHillDraw, { type: 'end_turn' }, 'X');
+  sHillDraw = GrailQuestEngine.handleMove(sHillDraw, { type: 'move', from: '1,0', to: '1,1', count: 1 }, 'X');
+  sHillDraw = GrailQuestEngine.handleMove(sHillDraw, { type: 'end_turn' }, 'X');
 
   // O fights on the Hill
-  sHillDraw = HolyGrailEngine.handleMove(sHillDraw, { type: 'react', cellKey: '1,1', reactType: 'fight' }, 'O');
+  sHillDraw = GrailQuestEngine.handleMove(sHillDraw, { type: 'react', cellKey: '1,1', reactType: 'fight' }, 'O');
 
   // Both Qs draw and are destroyed, and the unused K is also destroyed because the chosen card drew.
   assert.strictEqual(sHillDraw.board['1,1'].soldiers.length, 0);
@@ -308,7 +308,7 @@ async function runTests() {
 
   // 10. Grail Movement & Radioactivity
   console.log('👉 Testing: Grail movement & radioactivity');
-  let sGrail = HolyGrailEngine.createInitialState();
+  let sGrail = GrailQuestEngine.createInitialState();
   // Place King for X at (0,0) [Grail cell]
   sGrail.board['0,0'].owner = 'X';
   sGrail.board['0,0'].soldiers = [{ value: 13, revealed: false }]; // King
@@ -317,17 +317,17 @@ async function runTests() {
   sGrail.turn = 'X';
   
   // X moves King from (0,0) to (0,-1) carrying the Grail
-  sGrail = HolyGrailEngine.handleMove(sGrail, { type: 'move', from: '0,0', to: '0,-1', count: 1 }, 'X');
+  sGrail = GrailQuestEngine.handleMove(sGrail, { type: 'move', from: '0,0', to: '0,-1', count: 1 }, 'X');
   assert.strictEqual(sGrail.grailMovementCandidates?.includes('0,-1'), true);
 
   // End turn for X
-  sGrail = HolyGrailEngine.handleMove(sGrail, { type: 'end_turn' }, 'X');
+  sGrail = GrailQuestEngine.handleMove(sGrail, { type: 'end_turn' }, 'X');
   // End turn for O to complete the round
   sGrail.phase = 'move';
   sGrail.turn = 'O';
   const originalRandomGrail = Math.random;
   Math.random = () => 0.1; // Ensure radioactivity kills the King (0.1 < 0.5)
-  sGrail = HolyGrailEngine.handleMove(sGrail, { type: 'end_turn' }, 'O');
+  sGrail = GrailQuestEngine.handleMove(sGrail, { type: 'end_turn' }, 'O');
   Math.random = originalRandomGrail;
 
   // Round completed, Grail should have moved to (0,-1)
@@ -340,33 +340,33 @@ async function runTests() {
 
   // 11. Game ending & Base capture conditions
   console.log('👉 Testing: Victory / Defeat conditions');
-  let sWin = HolyGrailEngine.createInitialState();
+  let sWin = GrailQuestEngine.createInitialState();
   // Move Grail to X Base (0,-3)
   sWin.grailCellKey = '0,-3';
   // End round
   sWin.roundTurnsCompleted = 1;
   sWin.turn = 'O';
-  sWin = HolyGrailEngine.handleMove(sWin, { type: 'end_turn' }, 'O');
+  sWin = GrailQuestEngine.handleMove(sWin, { type: 'end_turn' }, 'O');
   assert.strictEqual(sWin.winner, 'X'); // X wins by bringing Grail to base
 
   // Base Capture: O captures X Base
-  let sCapture = HolyGrailEngine.createInitialState();
+  let sCapture = GrailQuestEngine.createInitialState();
   sCapture.board['0,-3'].owner = 'O'; // X base captured by O
   sCapture.board['0,-3'].soldiers = [{ value: 5, revealed: false }];
   
   // Trigger end-round check
   sCapture.roundTurnsCompleted = 1;
   sCapture.turn = 'O';
-  sCapture = HolyGrailEngine.handleMove(sCapture, { type: 'end_turn' }, 'O');
+  sCapture = GrailQuestEngine.handleMove(sCapture, { type: 'end_turn' }, 'O');
   
   assert.strictEqual(sCapture.winner, 'O');
   assert.strictEqual(sCapture.hands.X.length, 0); // X hand discarded
 
   // 12. AI Behavior & Base Defense
   console.log('👉 Testing: AI base defense logic');
-  let sAi = HolyGrailEngine.createInitialState();
+  let sAi = GrailQuestEngine.createInitialState();
   // Deploy phase: base is empty (since initial creation state doesn't place any cards on base)
-  let aiAction = HolyGrailEngine.getAiAction(sAi, 'minimax', 3, null, 1000);
+  let aiAction = GrailQuestEngine.getAiAction(sAi, 'minimax', 3, null, 1000);
   assert.strictEqual(aiAction.type, 'deploy');
   assert.strictEqual(aiAction.cellKey, '0,-3'); // Must deploy to X base
 
@@ -374,7 +374,7 @@ async function runTests() {
   sAi.board['0,-3'].soldiers = [{ value: 13, revealed: false }];
   sAi.board['0,-3'].owner = 'X';
   // Now deploy phase, hand has cards
-  aiAction = HolyGrailEngine.getAiAction(sAi, 'minimax', 3, null, 1000);
+  aiAction = GrailQuestEngine.getAiAction(sAi, 'minimax', 3, null, 1000);
   // It shouldn't be forced to deploy to base anymore (can deploy to base or urban)
   assert.ok(aiAction.type === 'deploy');
 
@@ -384,7 +384,7 @@ async function runTests() {
   sAi.board['0,-3'].soldiers = [{ value: 13, revealed: false }]; // King at base
   sAi.board['0,-3'].owner = 'X';
   // No other cells have units, so only the base has units
-  aiAction = HolyGrailEngine.getAiAction(sAi, 'minimax', 3, null, 1000);
+  aiAction = GrailQuestEngine.getAiAction(sAi, 'minimax', 3, null, 1000);
   // Since the base only has 1 unit, the AI cannot move it (must leave at least 1 unit).
   // Thus, there are no valid moves, and it should end turn.
   assert.strictEqual(aiAction.type, 'end_turn');
@@ -394,14 +394,14 @@ async function runTests() {
     { value: 13, revealed: false },
     { value: 11, revealed: false }
   ];
-  aiAction = HolyGrailEngine.getAiAction(sAi, 'minimax', 3, null, 1000);
+  aiAction = GrailQuestEngine.getAiAction(sAi, 'minimax', 3, null, 1000);
   // Can move 1 card out
   assert.strictEqual(aiAction.type, 'move');
   assert.strictEqual(aiAction.count, 1);
   assert.strictEqual(aiAction.from, '0,-3');
   
   // React phase test: AI is defender
-  let sAiReact = HolyGrailEngine.createInitialState();
+  let sAiReact = GrailQuestEngine.createInitialState();
   sAiReact.phase = 'react';
   sAiReact.turn = 'O'; // O's turn to react
   sAiReact.board['1,0'].owner = 'O';
@@ -419,13 +419,13 @@ async function runTests() {
     attackerStack: [{ value: 8, revealed: true }]
   }];
 
-  let reactAction = HolyGrailEngine.getAiAction(sAiReact, 'minimax', 3, null, 1000);
+  let reactAction = GrailQuestEngine.getAiAction(sAiReact, 'minimax', 3, null, 1000);
   assert.strictEqual(reactAction.type, 'react');
   assert.strictEqual(reactAction.reactType, 'retreat');
   assert.strictEqual(reactAction.retreatTo, '1,-1'); // Should choose the valid retreat cell
 
   // Execute reaction to verify it doesn't crash
-  sAiReact = HolyGrailEngine.handleMove(sAiReact, reactAction, 'O');
+  sAiReact = GrailQuestEngine.handleMove(sAiReact, reactAction, 'O');
   assert.strictEqual(sAiReact.pendingCombats.length, 0); // Resolved
 
   // ── Test Face Card Draw Limits ──
@@ -499,7 +499,7 @@ async function runTests() {
   sLimit.phase = 'move';
   sLimit.turn = 'X';
   
-  const finalState = HolyGrailEngine.handleMove(sLimit, { type: 'end_turn' }, 'X');
+  const finalState = GrailQuestEngine.handleMove(sLimit, { type: 'end_turn' }, 'X');
   assert.strictEqual(finalState.turnCount, 400);
   assert.strictEqual(finalState.winner, 'draw');
 
@@ -516,7 +516,7 @@ async function runTests() {
   
   // Try to move only 1 soldier out of the Grail cell -> Should throw
   assert.throws(() => {
-    HolyGrailEngine.handleMove(sLock, { type: 'move', from: '0,0', to: '0,-1', count: 1 }, 'X');
+    GrailQuestEngine.handleMove(sLock, { type: 'move', from: '0,0', to: '0,-1', count: 1 }, 'X');
   }, /Must move all soldiers from the Grail cell together/);
   
   // Try to move all soldiers, but without a King
@@ -525,7 +525,7 @@ async function runTests() {
     { value: 5, revealed: false }
   ];
   assert.throws(() => {
-    HolyGrailEngine.handleMove(sLock, { type: 'move', from: '0,0', to: '0,-1', count: 2 }, 'X');
+    GrailQuestEngine.handleMove(sLock, { type: 'move', from: '0,0', to: '0,-1', count: 2 }, 'X');
   }, /Must include the King in the moving stack/);
 
   // Clean move with all soldiers including King
@@ -533,7 +533,7 @@ async function runTests() {
     { value: 13, revealed: false },
     { value: 5, revealed: false }
   ];
-  const lockNextState = HolyGrailEngine.handleMove(sLock, { type: 'move', from: '0,0', to: '0,-1', count: 2 }, 'X');
+  const lockNextState = GrailQuestEngine.handleMove(sLock, { type: 'move', from: '0,0', to: '0,-1', count: 2 }, 'X');
   assert.strictEqual(lockNextState.board['0,0'].soldiers.length, 0);
   assert.strictEqual(lockNextState.movesThisTurn?.[0].cards.length, 2);
 
@@ -555,7 +555,7 @@ async function runTests() {
   sDeath.turn = 'X';
   
   // Try to move carrying Grail to (0,-1) -> Should succeed and initiate combat
-  let sDeathAfter = HolyGrailEngine.handleMove(sDeath, { type: 'move', from: '0,0', to: '0,-1', count: 2 }, 'X');
+  let sDeathAfter = GrailQuestEngine.handleMove(sDeath, { type: 'move', from: '0,0', to: '0,-1', count: 2 }, 'X');
   assert.strictEqual(sDeathAfter.grailCellKey, '0,-1');
   assert.strictEqual(sDeathAfter.pendingCombats.length, 1);
   const combatDeath = sDeathAfter.pendingCombats[0];
@@ -590,10 +590,10 @@ async function runTests() {
   sMergeDeath.turn = 'X';
   
   // Move 1: Jack moves to (0,-1) -> initiates combat
-  sMergeDeath = HolyGrailEngine.handleMove(sMergeDeath, { type: 'move', from: '1,-1', to: '0,-1', count: 1 }, 'X');
+  sMergeDeath = GrailQuestEngine.handleMove(sMergeDeath, { type: 'move', from: '1,-1', to: '0,-1', count: 1 }, 'X');
   
   // Move 2: King + Queen move carrying the Grail to (0,-1) -> Should succeed and merge into combat
-  let sMergeDeathAfter = HolyGrailEngine.handleMove(sMergeDeath, { type: 'move', from: '0,0', to: '0,-1', count: 2 }, 'X');
+  let sMergeDeathAfter = GrailQuestEngine.handleMove(sMergeDeath, { type: 'move', from: '0,0', to: '0,-1', count: 2 }, 'X');
   assert.strictEqual(sMergeDeathAfter.grailCellKey, '0,-1');
   assert.strictEqual(sMergeDeathAfter.pendingCombats.length, 1);
   const combatMerge = sMergeDeathAfter.pendingCombats[0];
@@ -601,32 +601,32 @@ async function runTests() {
 
   // 12. Neutral Soldiers / Empty-Refill Cell Owner Retention Bug Test
   console.log('👉 Testing: Empty-Refill Cell Owner Retention (preventing neutral soldiers)');
-  let sEmptyRefill = HolyGrailEngine.createInitialState();
+  let sEmptyRefill = GrailQuestEngine.createInitialState();
   sEmptyRefill.board['0,-3'].soldiers = [{ value: 10, revealed: false }, { value: 9, revealed: false }];
   sEmptyRefill.board['0,-2'].soldiers = [{ value: 8, revealed: false }, { value: 7, revealed: false }];
   sEmptyRefill.board['0,-2'].owner = 'X';
   
-  sEmptyRefill = HolyGrailEngine.handleMove(sEmptyRefill, { type: 'end_deploy' }, 'X');
+  sEmptyRefill = GrailQuestEngine.handleMove(sEmptyRefill, { type: 'end_deploy' }, 'X');
   
-  sEmptyRefill = HolyGrailEngine.handleMove(sEmptyRefill, { type: 'move', from: '0,-2', to: '0,-1', count: 1 }, 'X');
+  sEmptyRefill = GrailQuestEngine.handleMove(sEmptyRefill, { type: 'move', from: '0,-2', to: '0,-1', count: 1 }, 'X');
   assert.strictEqual(sEmptyRefill.board['0,-2'].soldiers.length, 1);
   assert.strictEqual(sEmptyRefill.board['0,-2'].owner, 'X');
   
-  sEmptyRefill = HolyGrailEngine.handleMove(sEmptyRefill, { type: 'move', from: '0,-3', to: '0,-2', count: 1 }, 'X');
+  sEmptyRefill = GrailQuestEngine.handleMove(sEmptyRefill, { type: 'move', from: '0,-3', to: '0,-2', count: 1 }, 'X');
   assert.strictEqual(sEmptyRefill.board['0,-3'].soldiers.length, 1);
   
-  sEmptyRefill = HolyGrailEngine.handleMove(sEmptyRefill, { type: 'move', from: '0,-2', to: '0,-1', count: 1 }, 'X');
+  sEmptyRefill = GrailQuestEngine.handleMove(sEmptyRefill, { type: 'move', from: '0,-2', to: '0,-1', count: 1 }, 'X');
   assert.strictEqual(sEmptyRefill.board['0,-2'].soldiers.length, 0);
   assert.strictEqual(sEmptyRefill.board['0,-2'].owner, null);
   
-  sEmptyRefill = HolyGrailEngine.handleMove(sEmptyRefill, { type: 'end_turn' }, 'X');
+  sEmptyRefill = GrailQuestEngine.handleMove(sEmptyRefill, { type: 'end_turn' }, 'X');
   
   assert.strictEqual(sEmptyRefill.board['0,-2'].soldiers.length, 1);
   assert.strictEqual(sEmptyRefill.board['0,-2'].owner, 'X');
 
   // 13. Radioactivity Combat Auto-Resolution Test
   console.log('👉 Testing: Radioactivity Combat Auto-Resolution');
-  let sRadio = HolyGrailEngine.createInitialState();
+  let sRadio = GrailQuestEngine.createInitialState();
   sRadio.board['0,0'].soldiers = [{ value: 5, revealed: false }];
   sRadio.board['0,0'].owner = 'O';
   sRadio.grailCellKey = '0,0';
@@ -636,7 +636,7 @@ async function runTests() {
   
   sRadio.board['0,-1'].soldiers = [{ value: 13, revealed: false }];
   sRadio.board['0,-1'].owner = 'X';
-  sRadio = HolyGrailEngine.handleMove(sRadio, { type: 'move', from: '0,-1', to: '0,0', count: 1 }, 'X');
+  sRadio = GrailQuestEngine.handleMove(sRadio, { type: 'move', from: '0,-1', to: '0,0', count: 1 }, 'X');
 
   assert.strictEqual(sRadio.pendingCombats.length, 1);
   assert.strictEqual(sRadio.pendingCombats[0].cellKey, '0,0');
@@ -646,7 +646,7 @@ async function runTests() {
   sRadio.roundTurnsCompleted = 1;
   const originalRandomRadio = Math.random;
   Math.random = () => 0.1; // Ensure radioactivity kills the defender (0.1 < 0.5)
-  sRadio = HolyGrailEngine.handleMove(sRadio, { type: 'end_turn' }, 'X');
+  sRadio = GrailQuestEngine.handleMove(sRadio, { type: 'end_turn' }, 'X');
   Math.random = originalRandomRadio;
 
   assert.strictEqual(sRadio.pendingCombats.length, 0);
@@ -661,7 +661,7 @@ async function runTests() {
   console.log('👉 Testing: Grail cell entry & movement constraints');
   
   // Setup state where Grail is at (0,-1)
-  let sConstraints = HolyGrailEngine.createInitialState();
+  let sConstraints = GrailQuestEngine.createInitialState();
   sConstraints.grailCellKey = '0,-1';
   
   // Cell (0,-2) owned by X, contains soldiers without King: [10, 5]
@@ -671,7 +671,7 @@ async function runTests() {
   sConstraints.turn = 'X';
   
   // 1. Move stack from (0,-2) to Grail cell (0,-1) without King -> Should succeed
-  let sConstraintsAfter = HolyGrailEngine.handleMove(sConstraints, { type: 'move', from: '0,-2', to: '0,-1', count: 2 }, 'X');
+  let sConstraintsAfter = GrailQuestEngine.handleMove(sConstraints, { type: 'move', from: '0,-2', to: '0,-1', count: 2 }, 'X');
   
   // Verify units are in transit to (0,-1)
   assert.strictEqual(sConstraintsAfter.board['0,-2'].soldiers.length, 0);
@@ -679,7 +679,7 @@ async function runTests() {
   
   // 3. Carrying Grail: destination does not need to be empty anymore
   // Reset state
-  let sCarry = HolyGrailEngine.createInitialState();
+  let sCarry = GrailQuestEngine.createInitialState();
   sCarry.grailCellKey = '0,0';
   
   // Grail cell (0,0) has King + number card
@@ -693,11 +693,11 @@ async function runTests() {
   sCarry.board['0,-1'].soldiers = [{ value: 6, revealed: false }];
   
   // Try to move carrying Grail to (0,-1) -> Should succeed and initiate combat
-  let sCarryAfter = HolyGrailEngine.handleMove(sCarry, { type: 'move', from: '0,0', to: '0,-1', count: 2 }, 'X');
+  let sCarryAfter = GrailQuestEngine.handleMove(sCarry, { type: 'move', from: '0,0', to: '0,-1', count: 2 }, 'X');
   assert.strictEqual(sCarryAfter.grailCellKey, '0,-1');
   assert.strictEqual(sCarryAfter.pendingCombats.length, 1);
 
-  console.log('✅ All Holy Grail Engine tests passed successfully!');
+  console.log('✅ All Grail Quest Engine tests passed successfully!');
 }
 
 runTests().catch(error => {

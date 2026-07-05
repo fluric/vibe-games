@@ -65,8 +65,8 @@ export function PlayerStats({ game, player }: PlayerStatsProps) {
 
   const ratingLabel = game.gameType === 'mill' ? t('morris_rating', { defaultValue: 'Morris Rating' }) : game.gameType === 'connect_four' ? t('c4_rating', { defaultValue: 'C4 Rating' }) : t('grail_rating', { defaultValue: 'Grail Rating' });
 
-  const isHolyGrail = game.gameType === 'holy_grail';
-  const innerCardClass = isHolyGrail
+  const isGrailQuest = game.gameType === 'grail_quest';
+  const innerCardClass = isGrailQuest
     ? `p-4 rounded-2xl border h-full transition-all flex flex-col justify-between ${isMyTurn ? activeBg : 'bg-neutral-900/40 border-neutral-800'}`
     : `p-5 rounded-2xl border transition-all ${isMyTurn ? activeBg : 'bg-neutral-900/40 border-neutral-800'}`;
 
@@ -76,19 +76,19 @@ export function PlayerStats({ game, player }: PlayerStatsProps) {
         <span className={`text-[10px] font-bold tracking-widest ${textClass} uppercase`}>{t('player_name', { defaultValue: 'Player' })} {player}</span>
         <span className={`w-2.5 h-2.5 rounded-full ${bgClass} ${shadowClass}`} />
       </div>
-      <div className={`flex items-center gap-3 ${isHolyGrail ? 'mt-2' : 'mt-3'}`}>
+      <div className={`flex items-center gap-3 ${isGrailQuest ? 'mt-2' : 'mt-3'}`}>
         {playerDto && isBotId(playerDto.id) ? (
-          <div className={`w-${isHolyGrail ? '9 h-9 text-base' : '10 h-10 text-lg'} rounded-full bg-neutral-800 border border-neutral-700 flex items-center justify-center shadow-md`}>
+          <div className={`w-${isGrailQuest ? '9 h-9 text-base' : '10 h-10 text-lg'} rounded-full bg-neutral-800 border border-neutral-700 flex items-center justify-center shadow-md`}>
             🤖
           </div>
         ) : playerDto?.avatarUrl ? (
           <img
             src={playerDto.avatarUrl}
             alt={playerDto.username}
-            className={`w-${isHolyGrail ? '9 h-9' : '10 h-10'} rounded-full border border-neutral-800 object-cover shadow-md`}
+            className={`w-${isGrailQuest ? '9 h-9' : '10 h-10'} rounded-full border border-neutral-800 object-cover shadow-md`}
           />
         ) : (
-          <div className={`w-${isHolyGrail ? '9 h-9 text-xs' : '10 h-10 text-xs'} rounded-full bg-gradient-to-br ${gradient} flex items-center justify-center text-white font-extrabold shadow-md`}>
+          <div className={`w-${isGrailQuest ? '9 h-9 text-xs' : '10 h-10 text-xs'} rounded-full bg-gradient-to-br ${gradient} flex items-center justify-center text-white font-extrabold shadow-md`}>
             {(playerDto?.username || 'W').substring(0, 2).toUpperCase()}
           </div>
         )}

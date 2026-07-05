@@ -15,7 +15,7 @@ export async function toUserDto(user: User): Promise<UserDto> {
   const allStats = await statsRepo.findBy({ userId: user.id });
 
   const gameStats = {} as Record<GameType, import('@vibe-games/shared').UserStatsDto>;
-  const gameTypes: GameType[] = ['mill', 'connect_four', 'tic_tac_toe', 'holy_grail'];
+  const gameTypes: GameType[] = ['mill', 'connect_four', 'tic_tac_toe', 'grail_quest'];
 
   for (const gt of gameTypes) {
     const stats = allStats.find((s) => s.gameType === gt);

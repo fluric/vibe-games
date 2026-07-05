@@ -1,4 +1,4 @@
-# Specification: Holy Grail (Hex Wars)
+# Specification: Grail Quest (Hex Wars)
 
 A custom, hex-grid strategy game of tactical card combat and objective transport.
 
@@ -21,7 +21,7 @@ The game uses a **flat-topped hex grid** represented in **axial coordinates** `(
 
 ### Map Layout (Radius 3)
 A standard map has a radius of 3 (37 hexes total):
-- **`(0, 0)`**: Holy Grail Center (Grail starts here).
+- **`(0, 0)`**: Grail Quest Center (Grail starts here).
 - **Home Bases**:
   - **Player X Home Base**: `(0, -3)` (Top pole)
   - **Player O Home Base**: `(0, 3)` (Bottom pole)
@@ -108,9 +108,9 @@ If stacks from different cells are moved into the same destination cell in the s
 
 ---
 
-## 4. Holy Grail & Radioactivity
+## 4. Grail Quest & Radioactivity
 
-- **Initial State**: The Holy Grail is placed at `(0, 0)`.
+- **Initial State**: The Grail Quest is placed at `(0, 0)`.
 - **Radioactivity**: At the end of every round (after both players take their turn), the Grail emits radiation.
   - Each card in the stack occupying the Grail's cell is permanently **destroyed** (killed) with a **50% chance**.
   - If the only King in the Grail's cell dies due to radioactivity, it prevents the Grail from being moved in the next round (since no King is present).

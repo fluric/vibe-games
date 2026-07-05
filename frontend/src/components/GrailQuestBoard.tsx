@@ -1,14 +1,14 @@
-import { useHolyGrailBoard } from './holygrail/useHolyGrailBoard';
-import { HexGridRenderer } from './holygrail/HexGridRenderer';
-import { GrailControls } from './holygrail/GrailControls';
-import { GrailSidePanel } from './holygrail/GrailSidePanel';
-import { CardHand } from './holygrail/CardHand';
+import { useGrailQuestBoard } from './grailquest/useGrailQuestBoard';
+import { HexGridRenderer } from './grailquest/HexGridRenderer';
+import { GrailControls } from './grailquest/GrailControls';
+import { GrailSidePanel } from './grailquest/GrailSidePanel';
+import { CardHand } from './grailquest/CardHand';
 
-import type { HolyGrailBoardProps } from './holygrail/boardUtils';
+import type { GrailQuestBoardProps } from './grailquest/boardUtils';
 
-export const HolyGrailBoard: React.FC<HolyGrailBoardProps> = (props) => {
+export const GrailQuestBoard: React.FC<GrailQuestBoardProps> = (props) => {
   const { state, myPiece, submittingMove, onAction } = props;
-  const hook = useHolyGrailBoard(props);
+  const hook = useGrailQuestBoard(props);
   const { phase, turn, pendingCombats } = state;
 
   const { activeHand } = hook;

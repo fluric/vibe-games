@@ -2,7 +2,7 @@ import { PlayerPiece, GameType } from '@vibe-games/shared';
 import { createInitialState as createMillState, handlePlaceAction, handleMoveAction, handleRemoveAction } from './millEngine';
 import { getAiAction as getMillAiAction } from './millAi';
 import { ConnectFourEngine } from './connectFourEngine';
-import { HolyGrailEngine } from './holyGrailEngine';
+import { GrailQuestEngine } from './grailQuestEngine';
 import { getRLAction } from './rlClient';
 
 export interface IGameEngine {
@@ -79,6 +79,6 @@ export const ENGINES: Record<GameType, IGameEngine> = {
   mill: MillEngine,
   connect_four: ConnectFourEngineWithRL,
   tic_tac_toe: null as any, // Placeholder for future games
-  holy_grail: HolyGrailEngine,
+  grail_quest: GrailQuestEngine,
   escape: null as any, // Single player puzzle
 };

@@ -49,10 +49,10 @@ export function LobbyPage() {
   const [joiningCode, setJoiningCode] = useState(false);
   const [lobbyError, setLobbyError] = useState<string | null>(null);
 
-  const [activeGameTab, setActiveGameTab] = useState<'mill' | 'connect_four' | 'holy_grail' | 'escape'>(() => {
+  const [activeGameTab, setActiveGameTab] = useState<'mill' | 'connect_four' | 'grail_quest' | 'escape'>(() => {
     try {
       const saved = localStorage.getItem('vibe-games-active-tab');
-      return (saved === 'mill' || saved === 'connect_four' || saved === 'holy_grail' || saved === 'escape') ? saved : 'mill';
+      return (saved === 'mill' || saved === 'connect_four' || saved === 'grail_quest' || saved === 'escape') ? saved : 'mill';
     } catch {
       return 'mill';
     }
@@ -145,7 +145,7 @@ export function LobbyPage() {
         const data = await getEscapeLeaderboard();
         setEscapeLeaderboardEntries(data.entries);
       } else {
-        const data = await api.getLeaderboard(activeGameTab as 'mill' | 'connect_four' | 'holy_grail');
+        const data = await api.getLeaderboard(activeGameTab as 'mill' | 'connect_four' | 'grail_quest');
         setLeaderboardEntries(data.entries);
       }
     } catch (err) {

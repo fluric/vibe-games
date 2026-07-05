@@ -44,7 +44,7 @@ export interface AuthStatusResponse {
 
 // ─── Game ─────────────────────────────────────────────────────────────────────
 
-export type GameType = 'mill' | 'connect_four' | 'tic_tac_toe' | 'holy_grail' | 'escape';
+export type GameType = 'mill' | 'connect_four' | 'tic_tac_toe' | 'grail_quest' | 'escape';
 
 export type GameStatus = 'waiting' | 'in_progress' | 'finished';
 
@@ -74,20 +74,20 @@ export interface MillGameState {
   movesSinceLastCapture?: number; // ply count since last capture
   positionHistory?: string[]; // board positions in '........................X' format
 }
-export interface HolyGrailCard {
+export interface GrailQuestCard {
   value: number; // 1 to 10 for numbers, 11=J, 12=Q, 13=K
   revealed: boolean; // Once a card participates in combat, it becomes revealed
   moved?: boolean; // True if card has moved in the current turn
 }
 
-export type HolyGrailCellType = 'grail_center' | 'hill' | 'farm_land' | 'urban' | 'home_base' | 'normal';
+export type GrailQuestCellType = 'grail_center' | 'hill' | 'farm_land' | 'urban' | 'home_base' | 'normal';
 
-export interface HolyGrailCell {
+export interface GrailQuestCell {
   q: number;
   r: number;
-  cellType: HolyGrailCellType;
+  cellType: GrailQuestCellType;
   owner: PlayerPiece | 'neutral' | null; // owner of the stack
-  soldiers: HolyGrailCard[]; // Stack of soldiers (first card is top of stack, i.e. index 0 is top)
+  soldiers: GrailQuestCard[]; // Stack of soldiers (first card is top of stack, i.e. index 0 is top)
 }
 
 export interface PendingCombat {
@@ -95,20 +95,20 @@ export interface PendingCombat {
   attacker: PlayerPiece;
   defender: PlayerPiece | 'neutral';
   // DTO reveals the top cards currently fighting
-  attackerTopCard?: HolyGrailCard | null;
-  defenderTopCard?: HolyGrailCard | null;
+  attackerTopCard?: GrailQuestCard | null;
+  defenderTopCard?: GrailQuestCard | null;
   attackerRemainingCount: number;
   defenderRemainingCount: number;
-  attackerStack?: HolyGrailCard[]; // Full stack of attacker's cards (hidden from client)
+  attackerStack?: GrailQuestCard[]; // Full stack of attacker's cards (hidden from client)
   originKey?: string;
   carriesGrail?: boolean;
 }
 
-export interface HolyGrailGameState {
-  board: Record<string, HolyGrailCell>; // Keyed by "q,r" coord
+export interface GrailQuestGameState {
+  board: Record<string, GrailQuestCell>; // Keyed by "q,r" coord
   hands: {
-    X: HolyGrailCard[];
-    O: HolyGrailCard[];
+    X: GrailQuestCard[];
+    O: GrailQuestCard[];
   };
   phase: 'react' | 'deploy' | 'move';
   turn: PlayerPiece;
@@ -117,7 +117,7 @@ export interface HolyGrailGameState {
   grailCellKey?: string;
   grailMovementCandidates?: string[];
   drawnThisTurn?: boolean;
-  movesThisTurn?: { from: string; to: string; cards: HolyGrailCard[]; carriesGrail?: boolean }[];
+  movesThisTurn?: { from: string; to: string; cards: GrailQuestCard[]; carriesGrail?: boolean }[];
   roundTurnsCompleted?: number;
   history?: string[];
   turnCount?: number;
@@ -130,7 +130,7 @@ export interface GameDto {
   playerX: UserDto | null;
   playerO: UserDto | null;
   winnerId: string | null;
-  state: MillGameState | ConnectFourGameState | HolyGrailGameState; // Generic state, typed based on gameType
+  state: MillGameState | ConnectFourGameState | GrailQuestGameState; // Generic state, typed based on gameType
   isPublic: boolean;
   createdAt: string; // ISO 8601
   updatedAt: string; // ISO 8601
