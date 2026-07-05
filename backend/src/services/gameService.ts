@@ -375,11 +375,18 @@ export async function handleGameFinished(game: Game) {
   const isXBot = BOTS_MAP.has(playerXId);
   const isOBot = BOTS_MAP.has(playerOId);
 
+  const userRepo = AppDataSource.getRepository(User);
+
   if (!isXBot) {
     xStats.elo = newXElo;
     try {
-      await userStatsRepo.save(xStats);
-    } catch (err) {
+      const userExists = await userRepo.findOneBy({ id: playerXId });
+      if (userExists) {
+        await userStatsRepo.save(xStats);
+      } else {
+        console.warn(`[updateElo] Skipped saving stats for player X (${playerXId}). User does not exist.`);
+      }
+    } catch (err: any) {
       const existing = await userStatsRepo.findOneBy({ userId: playerXId, gameType: game.gameType });
       if (existing) {
         existing.wins += winner === 'X' ? 1 : 0;
@@ -388,7 +395,7 @@ export async function handleGameFinished(game: Game) {
         existing.elo = calculateElo(existing.elo, oldOElo, xOutcome);
         await userStatsRepo.save(existing);
       } else {
-        throw err;
+        console.warn(`[updateElo] Failed to save stats for player X (${playerXId}). User may not exist.`, err.message);
       }
     }
   }
@@ -396,8 +403,13 @@ export async function handleGameFinished(game: Game) {
   if (!isOBot) {
     oStats.elo = newOElo;
     try {
-      await userStatsRepo.save(oStats);
-    } catch (err) {
+      const userExists = await userRepo.findOneBy({ id: playerOId });
+      if (userExists) {
+        await userStatsRepo.save(oStats);
+      } else {
+        console.warn(`[updateElo] Skipped saving stats for player O (${playerOId}). User does not exist.`);
+      }
+    } catch (err: any) {
       const existing = await userStatsRepo.findOneBy({ userId: playerOId, gameType: game.gameType });
       if (existing) {
         existing.wins += winner === 'O' ? 1 : 0;
@@ -406,7 +418,7 @@ export async function handleGameFinished(game: Game) {
         existing.elo = calculateElo(existing.elo, oldXElo, oOutcome);
         await userStatsRepo.save(existing);
       } else {
-        throw err;
+        console.warn(`[updateElo] Failed to save stats for player O (${playerOId}). User may not exist.`, err.message);
       }
     }
   }

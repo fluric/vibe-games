@@ -155,7 +155,7 @@
       "elo": 300,
       "type": "rl",
       "botLevel": "rl_novice",
-      "enabled": true
+      "enabled": false
     },
     "rl_intermediate": {
       "id": "00000000-0000-0000-0000-000000000051",
@@ -163,7 +163,7 @@
       "elo": 700,
       "type": "rl",
       "botLevel": "rl_intermediate",
-      "enabled": true
+      "enabled": false
     },
     "rl_strong": {
       "id": "00000000-0000-0000-0000-000000000052",
@@ -171,7 +171,7 @@
       "elo": 1000,
       "type": "rl",
       "botLevel": "rl_strong",
-      "enabled": true
+      "enabled": false
     },
     "rl_master": {
       "id": "00000000-0000-0000-0000-000000000053",
@@ -179,7 +179,7 @@
       "elo": 2000,
       "type": "rl",
       "botLevel": "rl_master",
-      "enabled": true
+      "enabled": false
     },
     "rl_champion": {
       "id": "00000000-0000-0000-0000-000000000054",
@@ -187,7 +187,7 @@
       "elo": 2500,
       "type": "rl",
       "botLevel": "rl_champion",
-      "enabled": true
+      "enabled": false
     }
   },
   "connect_four": {
