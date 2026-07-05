@@ -14,7 +14,7 @@ import torch.nn.functional as F
 import torch.optim as optim
 
 from rl.core.interfaces import BaseEnv, BaseNet
-from rl.core.mcts import MCTS
+from rl.core.mcts import MCTS, MCTSNode
 
 
 # ─── Replay Buffer ─────────────────────────────────────────────────────────────
@@ -39,48 +39,69 @@ class ReplayBuffer:
 
 # ─── Self-Play ────────────────────────────────────────────────────────────────
 
-def self_play_game(
+def batched_self_play(
     env_cls: Type[BaseEnv],
     mcts: MCTS,
+    num_games: int,
     num_simulations: int,
     temp_threshold: int = 20,
 ) -> List[TrainSample]:
     """
-    Play one complete game against itself using MCTS.
+    Play num_games complete games against itself in parallel using Batched MCTS.
     Returns a list of (encoded_state, mcts_policy, outcome) triples.
     """
-    env = env_cls()
-    game_history: List[Tuple[np.ndarray, np.ndarray, int]] = []  # (state, policy, turn)
+    envs = [env_cls() for _ in range(num_games)]
+    roots = [MCTSNode(env=env.clone()) for env in envs]
 
-    move_number = 0
-    while not env.is_terminal():
-        temperature = 1.0 if move_number < temp_threshold else 0.1
+    game_histories: List[List[Tuple[np.ndarray, np.ndarray, int]]] = [[] for _ in range(num_games)]
+    active_indices = list(range(num_games))
+    completed_samples: List[TrainSample] = []
+    move_numbers = [0] * num_games
 
-        policy = mcts.run(env, num_simulations, temperature=temperature, add_noise=True)
-        encoded = env.encode()
+    while active_indices:
+        active_roots = [roots[i] for i in active_indices]
+        mcts.run_batched(active_roots, num_simulations=num_simulations, add_noise=True)
 
-        legal = env.legal_actions()
-        masked_policy = np.array([policy[a] if a in legal else 0.0 for a in range(mcts.action_space_size)])
-        total = masked_policy.sum()
-        if total > 0:
-            masked_policy /= total
-        else:
-            for a in legal:
-                masked_policy[a] = 1.0 / len(legal)
+        next_active_indices = []
+        for idx in active_indices:
+            env = envs[idx]
+            root = roots[idx]
 
-        action = int(np.random.choice(mcts.action_space_size, p=masked_policy))
-        game_history.append((encoded, masked_policy, env.turn))
-        env.step(action)
-        move_number += 1
+            temp = 1.0 if move_numbers[idx] < temp_threshold else 0.1
+            policy = mcts.get_policy(root, temperature=temp)
+            encoded = env.encode()
 
-    samples: List[TrainSample] = []
-    for encoded, policy, turn in game_history:
-        outcome = env.outcome(turn)
-        if outcome is None:
-            outcome = 0.0
-        samples.append((encoded, policy, outcome))
+            legal = env.legal_actions()
+            masked_policy = np.array([policy[a] if a in legal else 0.0 for a in range(mcts.action_space_size)])
+            total = masked_policy.sum()
+            if total > 0:
+                masked_policy /= total
+            else:
+                for a in legal:
+                    masked_policy[a] = 1.0 / len(legal)
 
-    return samples
+            action = int(np.random.choice(mcts.action_space_size, p=masked_policy))
+            game_histories[idx].append((encoded, masked_policy, env.turn))
+            env.step(action)
+            move_numbers[idx] += 1
+
+            if env.is_terminal():
+                for enc, pol, turn in game_histories[idx]:
+                    outcome = env.outcome(turn)
+                    if outcome is None:
+                        outcome = 0.0
+                    completed_samples.append((enc, pol, outcome))
+            else:
+                if action in root.children:
+                    roots[idx] = root.children[action]
+                    roots[idx].parent = None
+                else:
+                    roots[idx] = MCTSNode(env=env.clone())
+                next_active_indices.append(idx)
+
+        active_indices = next_active_indices
+
+    return completed_samples
 
 
 # ─── Training ─────────────────────────────────────────────────────────────────
@@ -169,10 +190,14 @@ def evaluate_champion(
         if p1_outcome is None:
             p1_outcome = 0.0
 
-        if p1_outcome == 0.0:
+        if p1_outcome > 0.9:
+            if challenger_is_p1:
+                challenger_score += 1.0
+        elif p1_outcome < -0.9:
+            if not challenger_is_p1:
+                challenger_score += 1.0
+        else:
             challenger_score += 0.5
-        elif (p1_outcome == 1.0 and challenger_is_p1) or (p1_outcome == -1.0 and not challenger_is_p1):
-            challenger_score += 1.0
 
     return challenger_score / num_games
 
@@ -269,6 +294,7 @@ def run_training_loop(
 
     registry_path = models_dir / "models_registry.json"
     champion_path = models_dir / "champion.pt"
+    challenger_path = models_dir / "latest_challenger.pt"
 
     if resume and champion_path.exists():
         print(f"Resuming from champion: {champion_path}")
@@ -278,7 +304,11 @@ def run_training_loop(
         champion = create_net_fn(device)
         save_checkpoint_fn(champion, str(champion_path))
 
-    challenger = copy.deepcopy(champion)
+    if resume and challenger_path.exists():
+        print(f"Resuming challenger from: {challenger_path}")
+        challenger = load_checkpoint_fn(str(challenger_path), device)
+    else:
+        challenger = copy.deepcopy(champion)
     if hasattr(challenger, "parameters"):
         optimizer = optim.Adam(challenger.parameters(), lr=1e-3, weight_decay=1e-4)
         scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=num_iterations, eta_min=1e-5)
@@ -320,10 +350,7 @@ def run_training_loop(
 
         # 1. Self-play
         mcts.net = challenger
-        game_samples = []
-        for _ in range(games_per_iter):
-            samples = self_play_game(env_cls, mcts, num_simulations)
-            game_samples.extend(samples)
+        game_samples = batched_self_play(env_cls, mcts, games_per_iter, num_simulations)
         buffer.add_game(game_samples)
 
         # 2. Train
@@ -346,6 +373,9 @@ def run_training_loop(
             f"V-loss: {total_v_loss/num_train_steps if num_train_steps > 0 else 0:.4f} | "
             f"Time: {iter_time:.1f}s"
         )
+        
+        # Save latest challenger progress
+        save_checkpoint_fn(challenger, str(challenger_path))
 
         # 3. Champion evaluation
         if iteration % eval_every == 0:

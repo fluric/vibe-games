@@ -1,0 +1,7 @@
+{
+  "rl_champion": {
+    "checkpoint": "champion.pt",
+    "num_simulations": 100,
+    "elo": 1500
+  }
+}

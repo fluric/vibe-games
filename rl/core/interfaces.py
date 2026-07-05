@@ -89,7 +89,18 @@ class BaseNet(ABC):
         """
         Evaluates a single state tensor (unbatched).
         Returns:
-            policy_logits: 1D numpy array of raw logits for the action space.
+            policy_probs: 1D numpy array of probabilities for the action space.
             value: scalar float [-1, 1] predicting the outcome for the current player.
         """
         pass
+
+    @abstractmethod
+    def predict_batch(self, state_tensors: List[np.ndarray]) -> tuple[np.ndarray, np.ndarray]:
+        """
+        Evaluates a batch of state tensors.
+        Returns:
+            policy_probs: 2D numpy array (batch_size, num_actions) of probabilities.
+            values: 1D numpy array (batch_size,) of scalar floats [-1, 1].
+        """
+        pass
+

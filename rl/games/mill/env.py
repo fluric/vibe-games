@@ -310,7 +310,11 @@ class MillEnv(BaseEnv):
         if self.winner is None:
             return None
         if self.winner == 0:
-            return 0.0
+            # Tie-breaker based on pieces remaining to guide the network towards captures
+            pieces_self = self.pieces_on_board[player]
+            pieces_opp = self.pieces_on_board[-player]
+            reward = (pieces_self - pieces_opp) * 0.1
+            return max(-0.9, min(0.9, float(reward)))
         return 1.0 if self.winner == player else -1.0
 
     def encode(self) -> np.ndarray:

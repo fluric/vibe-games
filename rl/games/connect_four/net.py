@@ -12,6 +12,7 @@ from __future__ import annotations
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import numpy as np
 
 from rl.core.interfaces import BaseNet
 
@@ -103,23 +104,39 @@ class ConnectFourNet(nn.Module, BaseNet):
 
         return policy_logits, value
 
-    def predict(self, encoded_state: "torch.Tensor") -> tuple["torch.Tensor", float]:
+    def predict(self, encoded_state: torch.Tensor | np.ndarray) -> tuple[np.ndarray, float]:
         """
         Single-state inference (no gradient).
 
         Args:
-            encoded_state: (3, 6, 7) float32 tensor (no batch dim)
+            encoded_state: (3, 6, 7) float32 tensor or numpy array
 
         Returns:
-            policy_probs: (7,) tensor of probabilities (masked to legal actions if needed)
+            policy_probs: (7,) array of probabilities
             value: scalar float
         """
         self.eval()
         with torch.no_grad():
-            x = encoded_state.unsqueeze(0)  # add batch dim
+            if not isinstance(encoded_state, torch.Tensor):
+                encoded_state = torch.tensor(encoded_state, dtype=torch.float32)
+            
+            device = next(self.parameters()).device
+            x = encoded_state.unsqueeze(0).to(device)  # add batch dim
             logits, v = self(x)
             probs = torch.softmax(logits.squeeze(0), dim=0)
-            return probs, v.item()
+            return probs.cpu().numpy(), v.item()
+
+    def predict_batch(self, state_tensors: list[np.ndarray]) -> tuple[np.ndarray, np.ndarray]:
+        if not state_tensors:
+            return np.array([]), np.array([])
+            
+        self.eval()
+        with torch.no_grad():
+            device = next(self.parameters()).device
+            x = torch.tensor(np.stack(state_tensors), dtype=torch.float32, device=device)
+            logits, v = self(x)
+            probs = torch.softmax(logits, dim=1)
+            return probs.cpu().numpy(), v.squeeze(1).cpu().numpy()
 
 
 def get_device() -> torch.device:

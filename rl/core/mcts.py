@@ -165,20 +165,8 @@ class MCTS:
                 probs_np[a] = 1.0 / len(legal)
         return int(np.argmax(probs_np))
 
-    def _expand(self, node: MCTSNode, add_noise: bool = False) -> float:
+    def _expand_with_preds(self, node: MCTSNode, probs_np: np.ndarray, value_float: float, add_noise: bool = False) -> float:
         env = node.env
-        encoded = torch.tensor(env.encode(), dtype=torch.float32, device=self.device)
-        probs, value = self.net.predict(encoded)
-        if isinstance(probs, torch.Tensor):
-            probs_np = probs.cpu().numpy()
-        else:
-            probs_np = probs
-
-        if isinstance(value, torch.Tensor):
-            value_float = float(value.item())
-        else:
-            value_float = float(value)
-
         legal = env.legal_actions()
         if not legal:
             node.is_expanded = True
@@ -211,6 +199,66 @@ class MCTS:
         node.is_expanded = True
         return value_float
 
+    def _expand(self, node: MCTSNode, add_noise: bool = False) -> float:
+        env = node.env
+        probs, value = self.net.predict(env.encode())
+        return self._expand_with_preds(node, probs, float(value), add_noise)
+
+    def run_batched(self, roots: List[MCTSNode], num_simulations: int, add_noise: bool = True) -> None:
+        """Runs MCTS simulations for a batch of root nodes in parallel."""
+        # 1. Expand all roots (with batched inference)
+        leaf_nodes = []
+        for root in roots:
+            if not root.env.is_terminal() and not root.is_expanded:
+                leaf_nodes.append(root)
+        
+        if leaf_nodes:
+            encoded_states = [node.env.encode() for node in leaf_nodes]
+            probs_batch, values_batch = self.net.predict_batch(encoded_states)
+            for i, node in enumerate(leaf_nodes):
+                self._expand_with_preds(node, probs_batch[i].copy(), float(values_batch[i]), add_noise)
+
+        # 2. Run simulations
+        for _ in range(num_simulations):
+            leaf_nodes = []
+            for root in roots:
+                node = self._select(root)
+                if node.env.is_terminal():
+                    parent_turn = node.parent.env.turn if node.parent else node.env.turn
+                    v = node.env.outcome(parent_turn)
+                    v = v if v is not None else 0.0
+                    self._backpropagate(node, v)
+                else:
+                    leaf_nodes.append(node)
+                    
+            if not leaf_nodes:
+                continue
+                
+            # Expand phase (batched)
+            encoded_states = [node.env.encode() for node in leaf_nodes]
+            probs_batch, values_batch = self.net.predict_batch(encoded_states)
+            
+            for i, node in enumerate(leaf_nodes):
+                self._expand_with_preds(node, probs_batch[i].copy(), float(values_batch[i]), add_noise=False)
+                self._backpropagate(node, -float(values_batch[i]))
+
+    def get_policy(self, root: MCTSNode, temperature: float) -> np.ndarray:
+        visits = np.array(
+            [root.children[a].visit_count if a in root.children else 0 for a in range(self.action_space_size)],
+            dtype=np.float32,
+        )
+
+        if temperature == 0 or temperature < 1e-6:
+            policy = np.zeros(self.action_space_size, dtype=np.float32)
+            if visits.sum() > 0:
+                policy[int(np.argmax(visits))] = 1.0
+        else:
+            visits_t = visits ** (1.0 / temperature)
+            total = visits_t.sum()
+            policy = visits_t / total if total > 0 else visits_t
+
+        return policy
+
     def _select(self, node: MCTSNode) -> MCTSNode:
         while not node.is_leaf() and not node.env.is_terminal():
             node = node.best_child(self.c_puct)
@@ -224,3 +272,4 @@ class MCTS:
             current.value_sum += v
             v = -v
             current = current.parent
+
