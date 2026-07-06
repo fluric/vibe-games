@@ -185,7 +185,7 @@
   "game": {
     "waiting_for_opponent": "Waiting for opponent to join...",
     "share_invite_link": "Share the invite link below so they can join.",
-    "draw": "It",
+    "draw": "It's a Draw!",
     "winner": "{{winner}} Wins!",
     "gg_return": "GG! Return to the lobby to host or join another match.",
     "spectating_turn": "Spectating: Turn belongs to {{turn}}",
