@@ -111,15 +111,13 @@ class MCTS:
             node = self._select(root)
 
             if node.env.is_terminal():
-                parent_turn = node.parent.env.turn if node.parent else node.env.turn
-                value_for_parent = node.env.outcome(parent_turn)
-                if value_for_parent is None:
-                    value_for_parent = 0.0
+                v = node.env.outcome(node.env.turn)
+                if v is None:
+                    v = 0.0
             else:
-                value_from_child = self._expand(node)
-                value_for_parent = -value_from_child
+                v = self._expand(node)
 
-            self._backpropagate(node, value_for_parent)
+            self._backpropagate(node, v)
 
         visits = np.array(
             [root.children[a].visit_count if a in root.children else 0 for a in range(self.action_space_size)],
@@ -224,8 +222,7 @@ class MCTS:
             for root in roots:
                 node = self._select(root)
                 if node.env.is_terminal():
-                    parent_turn = node.parent.env.turn if node.parent else node.env.turn
-                    v = node.env.outcome(parent_turn)
+                    v = node.env.outcome(node.env.turn)
                     v = v if v is not None else 0.0
                     self._backpropagate(node, v)
                 else:
@@ -239,8 +236,9 @@ class MCTS:
             probs_batch, values_batch = self.net.predict_batch(encoded_states)
             
             for i, node in enumerate(leaf_nodes):
-                self._expand_with_preds(node, probs_batch[i].copy(), float(values_batch[i]), add_noise=False)
-                self._backpropagate(node, -float(values_batch[i]))
+                v = float(values_batch[i])
+                self._expand_with_preds(node, probs_batch[i].copy(), v, add_noise=False)
+                self._backpropagate(node, v)
 
     def get_policy(self, root: MCTSNode, temperature: float) -> np.ndarray:
         visits = np.array(
@@ -264,12 +262,13 @@ class MCTS:
             node = node.best_child(self.c_puct)
         return node
 
-    def _backpropagate(self, node: MCTSNode, value_for_parent: float) -> None:
+    def _backpropagate(self, node: MCTSNode, value_for_leaf_turn: float) -> None:
+        leaf_turn = node.env.turn
         current = node
-        v = value_for_parent
         while current is not None:
             current.visit_count += 1
+            chooser_turn = current.parent.env.turn if current.parent else current.env.turn
+            v = value_for_leaf_turn if chooser_turn == leaf_turn else -value_for_leaf_turn
             current.value_sum += v
-            v = -v
             current = current.parent
 
