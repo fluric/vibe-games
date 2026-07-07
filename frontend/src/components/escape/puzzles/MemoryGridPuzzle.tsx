@@ -210,7 +210,7 @@ export const MemoryGridPuzzle: React.FC<{ config: MemoryGridRoomConfig, onSolved
               onClick={() => handleCellClick(idx)}
               disabled={phase !== 'waiting_input'}
               className={`
-                relative w-full h-full rounded-lg shadow-md flex items-center justify-center text-7xl transition-all duration-300
+                relative w-full h-full rounded-lg shadow-md flex items-center justify-center transition-all duration-300
                 ${isHighlighted ? 'scale-95 brightness-150 ring-4 ring-white z-10' : 'hover:brightness-110 active:scale-95'}
                 ${isFailedClick ? 'ring-4 ring-red-500' : ''}
                 ${isInputted ? 'opacity-50 scale-95' : ''}
@@ -221,7 +221,12 @@ export const MemoryGridPuzzle: React.FC<{ config: MemoryGridRoomConfig, onSolved
                 boxShadow: isHighlighted ? '0 0 20px rgba(255,255,255,0.6)' : 'inset 0 2px 4px rgba(255,255,255,0.2), inset 0 -2px 4px rgba(0,0,0,0.3)'
               }}
             >
-              <span className="drop-shadow-lg select-none opacity-90 text-white font-bold">{cell.shape}</span>
+              <span 
+                className="drop-shadow-lg select-none opacity-90 text-white font-bold"
+                style={{ fontSize: '4.5rem', lineHeight: 1 }}
+              >
+                {cell.shape}
+              </span>
             </button>
           );
         })}
