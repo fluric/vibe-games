@@ -63,7 +63,12 @@ export interface RiddleRoomConfig {
   clues: string[];
 }
 
-export type RoomConfig = KeypadRoomConfig | CipherRoomConfig | FuseRoomConfig | SymbolGridRoomConfig | ValvesRoomConfig | ImageKeypadRoomConfig | RiddleRoomConfig;
+export interface MemoryGridRoomConfig {
+  puzzleType: 'memory_grid';
+  // Grid config is handled internally by the puzzle component
+}
+
+export type RoomConfig = KeypadRoomConfig | CipherRoomConfig | FuseRoomConfig | SymbolGridRoomConfig | ValvesRoomConfig | ImageKeypadRoomConfig | RiddleRoomConfig | MemoryGridRoomConfig;
 
 export interface EscapeRoom {
   id: number;
@@ -154,6 +159,15 @@ export function useEscapeRooms(): EscapeRoom[] {
         clues: [
           t('room4.clue1', { defaultValue: 'It fits in a lock.' })
         ]
+      }
+    },
+    {
+      id: 5,
+      name: t('room5.name', { defaultValue: 'The Memory Matrix' }),
+      description: t('room5.description', { defaultValue: 'A stark white room with a 3x3 terminal. You must prove your memory to pass.' }),
+      atmosphere: t('room5.atmosphere', { defaultValue: 'Neon lights pulse. A mechanical voice demands sequences.' }),
+      config: {
+        puzzleType: 'memory_grid',
       }
     }
   ], [t]);

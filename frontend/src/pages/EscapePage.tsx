@@ -16,6 +16,7 @@ import { CipherWheelPuzzle } from '../components/escape/puzzles/CipherWheelPuzzl
 import { FuseBoxPuzzle } from '../components/escape/puzzles/FuseBoxPuzzle';
 import { ImageKeypadPuzzle } from '../components/escape/puzzles/ImageKeypadPuzzle';
 import { RiddlePuzzle } from '../components/escape/puzzles/RiddlePuzzle';
+import { MemoryGridPuzzle } from '../components/escape/puzzles/MemoryGridPuzzle';
 
 import { useTranslation } from 'react-i18next';
 
@@ -121,6 +122,8 @@ export function EscapePage() {
           return <ImageKeypadPuzzle config={room.config} onSolved={handlePuzzleSolved} />;
         case 'riddle':
           return <RiddlePuzzle config={room.config} onSolved={handlePuzzleSolved} />;
+        case 'memory_grid':
+          return <MemoryGridPuzzle config={room.config} onSolved={handlePuzzleSolved} />;
       }
     };
 
