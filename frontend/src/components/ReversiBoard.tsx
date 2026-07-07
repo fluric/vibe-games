@@ -67,26 +67,56 @@ interface CellContentProps {
   value: PlayerPiece;
   isFlipping: boolean;
   isInitial: boolean;
+  flipDelayMs?: number;
 }
 
-const ReversiCellContent: React.FC<CellContentProps> = ({ value, isFlipping, isInitial }) => {
-  const [animating, setAnimating] = useState(isFlipping && !isInitial);
+const ReversiCellContent: React.FC<CellContentProps> = ({ value, isFlipping, isInitial, flipDelayMs = 0 }) => {
+  const [visualValue, setVisualValue] = useState(value);
+  const [animating, setAnimating] = useState(false);
 
   useEffect(() => {
-    if (isInitial || !isFlipping) return;
-    setAnimating(true);
-    const timer = setTimeout(() => {
+    if (isInitial) {
+      setVisualValue(value);
       setAnimating(false);
-    }, 400);
-    return () => clearTimeout(timer);
-  }, [isFlipping, isInitial]);
+      return;
+    }
+    
+    if (value !== visualValue) {
+      let active = true;
+      if (isFlipping) {
+        const delayTimer = setTimeout(() => {
+          if (!active) return;
+          setAnimating(true);
+          
+          setTimeout(() => {
+            if (!active) return;
+            setVisualValue(value);
+          }, 300);
+          
+          setTimeout(() => {
+            if (!active) return;
+            setAnimating(false);
+          }, 600);
+        }, flipDelayMs);
+        
+        return () => { active = false; clearTimeout(delayTimer); };
+      } else {
+        setVisualValue(value);
+      }
+    }
+  }, [value, isFlipping, visualValue, isInitial, flipDelayMs]);
 
-  const discColorClasses = value === 'X'
+  const discColorClasses = visualValue === 'X'
     ? 'bg-neutral-900 border-black shadow-[inset_0_4px_6px_rgba(255,255,255,0.2)]' // Black
     : 'bg-neutral-100 border-neutral-300 shadow-[inset_0_-4px_6px_rgba(0,0,0,0.1)]'; // White
 
   return (
-    <div className={`w-[85%] h-[85%] rounded-full border-2 ${discColorClasses} transition-transform duration-400 ${animating ? 'animate-[flip_0.4s_ease-in-out]' : ''}`} />
+    <div 
+      className={`w-[85%] h-[85%] rounded-full border-2 ${discColorClasses} transition-transform`} 
+      style={{
+        animation: animating ? 'flip 0.6s ease-in-out forwards' : 'none'
+      }}
+    />
   );
 };
 
@@ -140,6 +170,18 @@ export const ReversiBoard: React.FC<ReversiBoardProps> = ({
 
   const displayLastMove = lastMoveIndex ?? lastDiffIndex;
 
+  const getStaggerDelay = (index: number) => {
+    if (displayLastMove === null || displayLastMove === undefined) return 0;
+    
+    const r1 = Math.floor(index / COLS);
+    const c1 = index % COLS;
+    const r2 = Math.floor(displayLastMove / COLS);
+    const c2 = displayLastMove % COLS;
+    
+    const distance = Math.max(Math.abs(r1 - r2), Math.abs(c1 - c2));
+    return distance * 150; // 150ms per tile distance
+  };
+
   useEffect(() => {
     if (board.every(cell => cell === null) || board.filter(cell => cell !== null).length === 4) {
       setInitialBoard(board);
@@ -167,15 +209,14 @@ export const ReversiBoard: React.FC<ReversiBoardProps> = ({
 
   const renderCellContent = (index: number) => {
     const cellValue = board[index];
-    const isInitialPiece = initialBoard[index] !== null;
-    const isFlipping = recentlyFlipped.has(index);
     
     if (cellValue !== null) {
       return (
-        <ReversiCellContent 
+        <ReversiCellContent
           value={cellValue}
-          isFlipping={isFlipping}
-          isInitial={isInitialPiece}
+          isFlipping={recentlyFlipped.has(index)}
+          isInitial={initialBoard[index] === cellValue}
+          flipDelayMs={getStaggerDelay(index)}
         />
       );
     }
