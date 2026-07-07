@@ -64,7 +64,7 @@ function generateGrid(): CellProps[] {
 
 export const MemoryGridPuzzle: React.FC<{ config: MemoryGridRoomConfig, onSolved: () => void }> = ({ onSolved }) => {
   const [level, setLevel] = useState(1);
-  const [phase, setPhase] = useState<'idle' | 'showing' | 'waiting_input' | 'success_anim' | 'fail_anim'>('idle');
+  const [phase, setPhase] = useState<'idle' | 'showing' | 'shuffling' | 'waiting_input' | 'success_anim' | 'fail_anim'>('idle');
   const [grid, setGrid] = useState<CellProps[]>([]);
   const [gridA, setGridA] = useState<CellProps[]>([]);
   const [targetSequence, setTargetSequence] = useState<number[]>([]);
@@ -110,11 +110,22 @@ export const MemoryGridPuzzle: React.FC<{ config: MemoryGridRoomConfig, onSolved
       } else {
         // Done showing
         if (level >= 2) {
-          // Shuffle grid
-          const newGridB = generateGrid();
-          setGrid(newGridB);
+          setPhase('shuffling');
+          setTimeout(() => {
+            if (!isMounted.current) return;
+            // Halfway through the flip, change the grid
+            const newGridB = generateGrid();
+            setGrid(newGridB);
+            
+            setTimeout(() => {
+              if (!isMounted.current) return;
+              // Trigger the flip back
+              setPhase('waiting_input');
+            }, 50);
+          }, 300); // Wait for the 300ms flip out animation
+        } else {
+          setPhase('waiting_input');
         }
-        setPhase('waiting_input');
       }
     };
 
@@ -227,7 +238,8 @@ export const MemoryGridPuzzle: React.FC<{ config: MemoryGridRoomConfig, onSolved
               `}
               style={{
                 backgroundColor: isFailedClick ? '#7f1d1d' : cell.color,
-                boxShadow: isHighlighted ? '0 0 30px rgba(255,255,255,0.9)' : 'inset 0 2px 4px rgba(255,255,255,0.2), inset 0 -2px 4px rgba(0,0,0,0.3)'
+                boxShadow: isHighlighted ? '0 0 30px rgba(255,255,255,0.9)' : 'inset 0 2px 4px rgba(255,255,255,0.2), inset 0 -2px 4px rgba(0,0,0,0.3)',
+                transform: phase === 'shuffling' ? 'perspective(600px) rotateY(90deg)' : 'perspective(600px) rotateY(0deg)'
               }}
             >
               <span 
