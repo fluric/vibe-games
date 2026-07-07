@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import type { PlayerPiece } from '@vibe-games/shared';
 import { useTranslation } from 'react-i18next';
 
@@ -63,64 +63,28 @@ function getLegalMoves(board: (PlayerPiece | null)[], player: PlayerPiece): numb
 }
 
 
-interface CellContentProps {
-  value: PlayerPiece;
-  isFlipping: boolean;
-  isInitial: boolean;
-  flipDelayMs?: number;
-}
-
-const ReversiCellContent: React.FC<CellContentProps> = ({ value, isFlipping, isInitial, flipDelayMs = 0 }) => {
-  const [visualValue, setVisualValue] = useState(value);
-  const [animating, setAnimating] = useState(false);
-  const prevValueRef = useRef(value);
-
-  useEffect(() => {
-    if (isInitial) {
-      setVisualValue(value);
-      setAnimating(false);
-      prevValueRef.current = value;
-      return;
-    }
-    
-    if (value !== prevValueRef.current) {
-      prevValueRef.current = value;
-      let active = true;
-      
-      if (isFlipping) {
-        const delayTimer = setTimeout(() => {
-          if (!active) return;
-          setAnimating(true);
-          
-          setTimeout(() => {
-            if (!active) return;
-            setVisualValue(value);
-          }, 600);
-          
-          setTimeout(() => {
-            if (!active) return;
-            setAnimating(false);
-          }, 1200);
-        }, flipDelayMs);
-        
-        return () => { active = false; clearTimeout(delayTimer); };
-      } else {
-        setVisualValue(value);
-      }
-    }
-  }, [value, isFlipping, isInitial, flipDelayMs]);
-
-  const discColorClasses = visualValue === 'X'
-    ? 'bg-neutral-900 border-black shadow-[inset_0_4px_6px_rgba(255,255,255,0.2)]' // Black
-    : 'bg-neutral-100 border-neutral-300 shadow-[inset_0_-4px_6px_rgba(0,0,0,0.1)]'; // White
-
+const ReversiCellContent: React.FC<{ value: PlayerPiece }> = ({ value }) => {
   return (
-    <div 
-      className={`w-[85%] h-[85%] rounded-full border-2 ${discColorClasses} transition-transform`} 
-      style={{
-        animation: animating ? 'flip 1.2s ease-in-out forwards' : 'none'
-      }}
-    />
+    <div className="w-[85%] h-[85%] relative" style={{ perspective: '1000px' }}>
+      <div 
+        className="w-full h-full relative transition-transform duration-700 ease-in-out"
+        style={{ 
+          transformStyle: 'preserve-3d', 
+          transform: value === 'X' ? 'rotateY(0deg)' : 'rotateY(180deg)' 
+        }}
+      >
+        {/* Front face (X / Black) */}
+        <div 
+          className="absolute inset-0 rounded-full border-2 bg-neutral-900 border-black shadow-[inset_0_4px_6px_rgba(255,255,255,0.2)]"
+          style={{ backfaceVisibility: 'hidden' }}
+        />
+        {/* Back face (O / White) */}
+        <div 
+          className="absolute inset-0 rounded-full border-2 bg-neutral-100 border-neutral-300 shadow-[inset_0_-4px_6px_rgba(0,0,0,0.1)]"
+          style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}
+        />
+      </div>
+    </div>
   );
 };
 
@@ -147,51 +111,19 @@ export const ReversiBoard: React.FC<ReversiBoardProps> = ({
   const ROWS = 8;
   const COLS = 8;
 
-  const [initialBoard, setInitialBoard] = useState(board);
   const prevBoardRef = useRef(board);
   const lastDiffRef = useRef<number | null>(null);
-  const flippedRef = useRef<Set<number>>(new Set());
 
-  // Derive state during render so children receive correct isFlipping immediately
   if (board.some((v, i) => v !== prevBoardRef.current[i])) {
     const prev = prevBoardRef.current;
-    
     const addedIdx = board.findIndex((v, i) => v !== null && prev[i] === null);
     if (addedIdx !== -1) {
       lastDiffRef.current = addedIdx;
     }
-    
-    const flipped = new Set<number>();
-    for (let i = 0; i < 64; i++) {
-      if (prev[i] !== null && board[i] !== null && prev[i] !== board[i]) {
-        flipped.add(i);
-      }
-    }
-    flippedRef.current = flipped;
     prevBoardRef.current = board;
   }
 
   const displayLastMove = lastMoveIndex ?? lastDiffRef.current;
-
-  const getStaggerDelay = (index: number) => {
-    if (displayLastMove === null || displayLastMove === undefined) return 0;
-    
-    const r1 = Math.floor(index / COLS);
-    const c1 = index % COLS;
-    const r2 = Math.floor(displayLastMove / COLS);
-    const c2 = displayLastMove % COLS;
-    
-    const distance = Math.max(Math.abs(r1 - r2), Math.abs(c1 - c2));
-    return distance * 250; // 250ms per tile distance
-  };
-
-  useEffect(() => {
-    if (board.every(cell => cell === null) || board.filter(cell => cell !== null).length === 4) {
-      setInitialBoard(board);
-      lastDiffRef.current = null;
-      flippedRef.current = new Set();
-    }
-  }, [board]);
 
   const legalMoves = currentPlayerPiece ? getLegalMoves(board, currentPlayerPiece) : [];
   const isMyTurn = currentPlayerPiece === turn && !disabled;
@@ -215,12 +147,7 @@ export const ReversiBoard: React.FC<ReversiBoardProps> = ({
     
     if (cellValue !== null) {
       return (
-        <ReversiCellContent
-          value={cellValue}
-          isFlipping={flippedRef.current.has(index)}
-          isInitial={initialBoard[index] === cellValue}
-          flipDelayMs={getStaggerDelay(index)}
-        />
+        <ReversiCellContent value={cellValue} />
       );
     }
 
@@ -307,13 +234,6 @@ export const ReversiBoard: React.FC<ReversiBoardProps> = ({
           ))}
         </div>
       </div>
-      <style>{`
-        @keyframes flip {
-          0% { transform: scaleX(1); }
-          50% { transform: scaleX(0); }
-          100% { transform: scaleX(1); }
-        }
-      `}</style>
     </div>
   );
 };
