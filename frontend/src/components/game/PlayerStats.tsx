@@ -1,4 +1,4 @@
-import type { GameDto, MillGameState } from '@vibe-games/shared';
+import type { GameDto, MillGameState, PlayerPiece } from '@vibe-games/shared';
 import { isBotId } from '../../utils/botUtils';
 import { useTranslation } from 'react-i18next';
 
@@ -63,6 +63,11 @@ export function PlayerStats({ game, player }: PlayerStatsProps) {
     captured = Math.max(0, 9 - placed - rem);
   }
 
+  let reversiScore = 0;
+  if (game.gameType === 'reversi') {
+    reversiScore = (game.state.board as (PlayerPiece | null)[]).filter(p => p === player).length;
+  }
+
   const ratingLabel = game.gameType === 'mill' ? t('morris_rating', { defaultValue: 'Morris Rating' }) : game.gameType === 'connect_four' ? t('c4_rating', { defaultValue: 'C4 Rating' }) : game.gameType === 'reversi' ? t('reversi_rating', { defaultValue: 'Reversi Rating' }) : t('grail_rating', { defaultValue: 'Grail Rating' });
 
   const isGrailQuest = game.gameType === 'grail_quest';
@@ -114,6 +119,17 @@ export function PlayerStats({ game, player }: PlayerStatsProps) {
           <div className="flex justify-between">
             <span>{t('pieces_lost', { defaultValue: 'Pieces Lost:' })}</span>
             <span className="font-bold text-rose-500">{captured}</span>
+          </div>
+        </div>
+      )}
+      {game.gameType === 'reversi' && (
+        <div className="border-t border-neutral-800/80 pt-3 mt-3 flex flex-col gap-1.5 text-xs text-neutral-400">
+          <div className="flex justify-between items-center">
+            <span>{t('discs_on_board', { defaultValue: 'Discs on Board:' })}</span>
+            <div className="flex items-center gap-1.5 bg-neutral-900 px-2 py-0.5 rounded border border-neutral-800">
+              <span className={`w-2.5 h-2.5 rounded-full ${bgClass} ${shadowClass}`} />
+              <span className="font-bold text-white text-sm">{reversiScore}</span>
+            </div>
           </div>
         </div>
       )}
