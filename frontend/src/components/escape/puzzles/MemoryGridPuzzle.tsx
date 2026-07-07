@@ -109,23 +109,19 @@ export const MemoryGridPuzzle: React.FC<{ config: MemoryGridRoomConfig, onSolved
         }, 800); // highlight duration
       } else {
         // Done showing
-        if (level >= 2) {
-          setPhase('shuffling');
+        setPhase('shuffling');
+        setTimeout(() => {
+          if (!isMounted.current) return;
+          // Halfway through the flip, change the grid
+          const newGridB = generateGrid();
+          setGrid(newGridB);
+          
           setTimeout(() => {
             if (!isMounted.current) return;
-            // Halfway through the flip, change the grid
-            const newGridB = generateGrid();
-            setGrid(newGridB);
-            
-            setTimeout(() => {
-              if (!isMounted.current) return;
-              // Trigger the flip back
-              setPhase('waiting_input');
-            }, 50);
-          }, 300); // Wait for the 300ms flip out animation
-        } else {
-          setPhase('waiting_input');
-        }
+            // Trigger the flip back
+            setPhase('waiting_input');
+          }, 50);
+        }, 300); // Wait for the 300ms flip out animation
       }
     };
 
