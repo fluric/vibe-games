@@ -210,7 +210,7 @@ export const MemoryGridPuzzle: React.FC<{ config: MemoryGridRoomConfig, onSolved
               onClick={() => handleCellClick(idx)}
               disabled={phase !== 'waiting_input'}
               className={`
-                relative w-full h-full rounded-lg shadow-md flex items-center justify-center text-5xl transition-all duration-300
+                relative w-full h-full rounded-lg shadow-md flex items-center justify-center text-7xl transition-all duration-300
                 ${isHighlighted ? 'scale-95 brightness-150 ring-4 ring-white z-10' : 'hover:brightness-110 active:scale-95'}
                 ${isFailedClick ? 'ring-4 ring-red-500' : ''}
                 ${isInputted ? 'opacity-50 scale-95' : ''}
