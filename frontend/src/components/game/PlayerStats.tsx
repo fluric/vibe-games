@@ -63,7 +63,7 @@ export function PlayerStats({ game, player }: PlayerStatsProps) {
     captured = Math.max(0, 9 - placed - rem);
   }
 
-  const ratingLabel = game.gameType === 'mill' ? t('morris_rating', { defaultValue: 'Morris Rating' }) : game.gameType === 'connect_four' ? t('c4_rating', { defaultValue: 'C4 Rating' }) : t('grail_rating', { defaultValue: 'Grail Rating' });
+  const ratingLabel = game.gameType === 'mill' ? t('morris_rating', { defaultValue: 'Morris Rating' }) : game.gameType === 'connect_four' ? t('c4_rating', { defaultValue: 'C4 Rating' }) : game.gameType === 'reversi' ? t('reversi_rating', { defaultValue: 'Reversi Rating' }) : t('grail_rating', { defaultValue: 'Grail Rating' });
 
   const isGrailQuest = game.gameType === 'grail_quest';
   const innerCardClass = isGrailQuest

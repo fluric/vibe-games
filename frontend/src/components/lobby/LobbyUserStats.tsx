@@ -57,11 +57,13 @@ export function LobbyUserStats({
                   ? t('morris_rating_label', { defaultValue: "Nine Men's Morris Rating:" })
                   : activeGameTab === 'connect_four'
                   ? t('c4_rating_label', { defaultValue: 'Connect Four Rating:' })
+                  : activeGameTab === 'reversi'
+                  ? t('reversi_rating_label', { defaultValue: 'Reversi Rating:' })
                   : t('grail_rating_label', { defaultValue: 'Grail Quest Rating:' })}
               </span>
               <span className="font-bold text-indigo-400">
                 {(() => {
-                  const tab = activeGameTab as 'mill' | 'connect_four' | 'grail_quest';
+                  const tab = activeGameTab as 'mill' | 'connect_four' | 'grail_quest' | 'reversi';
                   const stats = currentUser.gameStats?.[tab] || currentUser;
                   return stats?.elo ?? 1200;
                 })()}{' '}
