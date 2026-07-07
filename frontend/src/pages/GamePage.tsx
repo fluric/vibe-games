@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import * as api from '../api/games';
-import type { GameDto, PlayerPiece, UserDto, MillGameState, GrailQuestGameState } from '@vibe-games/shared';
+import type { GameDto, PlayerPiece, UserDto, MillGameState, GrailQuestGameState, ConnectFourGameState } from '@vibe-games/shared';
 import { MillBoard } from '../components/MillBoard';
 import { ConnectFourBoard } from '../components/ConnectFourBoard';
 import { GrailQuestBoard } from '../components/GrailQuestBoard';
