@@ -11,7 +11,7 @@ const COLORS = [
   '#f97316', // orange-500
   '#06b6d4', // cyan-500
   '#ec4899', // pink-500
-  '#14b8a6', // teal-500
+  '#9ca3af', // gray-400 (replaced teal)
 ];
 const SHAPES = ['circle', 'square', 'triangle', 'diamond', 'star', 'heart', 'cross', 'hexagon', 'pentagon'];
 
