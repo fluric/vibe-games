@@ -64,7 +64,7 @@ export function MillBoard({
   const isMyTurn = !disabled && turn === currentPlayerPiece;
 
   const prevBoardRef = useRef(board);
-  const [lastDiff, setLastDiff] = useState<{ added: number | null; removed: number | null; isMove: boolean }>({ added: null, removed: null, isMove: false });
+  const [lastDiff, setLastDiff] = useState<{ added: number | null; movedFrom: number | null; captured: number | null }>({ added: null, movedFrom: null, captured: null });
 
   useEffect(() => {
     let refBoard: (PlayerPiece | null)[] | null = null;
@@ -100,19 +100,37 @@ export function MillBoard({
     }
 
     if (refBoard) {
-      let added: number | null = null;
-      let removed: number | null = null;
+      const addedNodes: { index: number; piece: PlayerPiece }[] = [];
+      const removedNodes: { index: number; piece: PlayerPiece }[] = [];
       
       for (let i = 0; i < 24; i++) {
-        if (refBoard[i] === null && board[i] !== null) added = i;
-        if (refBoard[i] !== null && board[i] === null) removed = i;
+        if (refBoard[i] === null && board[i] !== null) {
+          addedNodes.push({ index: i, piece: board[i]! });
+        }
+        if (refBoard[i] !== null && board[i] === null) {
+          removedNodes.push({ index: i, piece: refBoard[i]! });
+        }
       }
       
-      const addedPiece = added !== null ? board[added] : null;
-      const removedPiece = removed !== null ? refBoard[removed] : null;
-      const isMove = addedPiece !== null && removedPiece !== null && addedPiece === removedPiece;
+      const addedNode = addedNodes.length > 0 ? addedNodes[0] : null;
+      
+      let movedFrom: number | null = null;
+      let captured: number | null = null;
 
-      setLastDiff({ added, removed, isMove });
+      if (addedNode) {
+        // If there's an added node, the moved source is the removed node of the same color
+        const sourceNode = removedNodes.find(n => n.piece === addedNode.piece);
+        if (sourceNode) movedFrom = sourceNode.index;
+        
+        // The captured piece is the removed node of the opposite color
+        const capturedNode = removedNodes.find(n => n.piece !== addedNode.piece);
+        if (capturedNode) captured = capturedNode.index;
+      } else {
+        // If nothing was added, it was just a pure removal
+        if (removedNodes.length > 0) captured = removedNodes[0].index;
+      }
+
+      setLastDiff({ added: addedNode?.index ?? null, movedFrom, captured });
     }
     
     prevBoardRef.current = board;
@@ -320,10 +338,10 @@ export function MillBoard({
         />
 
         {/* ── Last Move Indicators ──────────────────────────────────────────────── */}
-        {lastDiff.isMove && lastDiff.added !== null && lastDiff.removed !== null && (
+        {lastDiff.movedFrom !== null && lastDiff.added !== null && (
           <line
-            x1={getPositionCoords(lastDiff.removed).x}
-            y1={getPositionCoords(lastDiff.removed).y}
+            x1={getPositionCoords(lastDiff.movedFrom).x}
+            y1={getPositionCoords(lastDiff.movedFrom).y}
             x2={getPositionCoords(lastDiff.added).x}
             y2={getPositionCoords(lastDiff.added).y}
             stroke="#fbbf24" /* Amber 400 */
@@ -333,11 +351,11 @@ export function MillBoard({
             className="pointer-events-none animate-pulse"
           />
         )}
-        {!lastDiff.isMove && lastDiff.removed !== null && (
+        {lastDiff.captured !== null && (
            // Highlight captured piece's former spot briefly
            <circle
-             cx={getPositionCoords(lastDiff.removed).x}
-             cy={getPositionCoords(lastDiff.removed).y}
+             cx={getPositionCoords(lastDiff.captured).x}
+             cy={getPositionCoords(lastDiff.captured).y}
              r="4"
              fill="none"
              stroke="#ef4444"
