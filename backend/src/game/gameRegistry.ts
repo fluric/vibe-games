@@ -3,6 +3,7 @@ import { createInitialState as createMillState, handlePlaceAction, handleMoveAct
 import { getAiAction as getMillAiAction } from './millAi';
 import { ConnectFourEngine } from './connectFourEngine';
 import { GrailQuestEngine } from './grailQuestEngine';
+import { ReversiEngine } from './reversiEngine';
 import { getRLAction } from './rlClient';
 
 export interface IGameEngine {
@@ -75,9 +76,20 @@ export const ConnectFourEngineWithRL: IGameEngine = {
   },
 };
 
+export const ReversiEngineWithRL: IGameEngine = {
+  ...ReversiEngine,
+  getAiActionAsync(state: any, botType: string, _depth: number, _weights: any, _timeLimitMs: number): Promise<any> | null {
+    if (botType.startsWith('rl_')) {
+      return getRLAction('reversi', state, botType);
+    }
+    return null;
+  },
+};
+
 export const ENGINES: Record<GameType, IGameEngine> = {
   mill: MillEngine,
   connect_four: ConnectFourEngineWithRL,
+  reversi: ReversiEngineWithRL,
   tic_tac_toe: null as any, // Placeholder for future games
   grail_quest: GrailQuestEngine,
   escape: null as any, // Single player puzzle

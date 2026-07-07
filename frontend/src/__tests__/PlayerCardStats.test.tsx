@@ -69,8 +69,9 @@ const mockUser: UserDto = {
     mill:         { elo: 1350, wins: 5, losses: 3, draws: 1 },
     connect_four: { elo: 1176, wins: 0, losses: 1, draws: 0 },
     tic_tac_toe:  { elo: 1200, wins: 0, losses: 0, draws: 0 },
-    grail_quest:   { elo: 1450, wins: 2, losses: 0, draws: 0 },
+    grail_quest:  { elo: 1450, wins: 2, losses: 0, draws: 0 },
     escape:       { elo: 1200, wins: 0, losses: 0, draws: 0 },
+    reversi:      { elo: 1200, wins: 0, losses: 0, draws: 0 },
   },
 };
 

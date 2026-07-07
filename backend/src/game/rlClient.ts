@@ -9,14 +9,14 @@
  *   const action = await getRLAction('connect_four', state, 'rl_strong');
  */
 
-import type { ConnectFourGameState, MillGameState } from '@vibe-games/shared';
+import type { ConnectFourGameState, MillGameState, ReversiGameState } from '@vibe-games/shared';
 
 const SIDECAR_URL = process.env.RL_SIDECAR_URL ?? 'http://localhost:8765';
 const SIDECAR_TIMEOUT_MS = 300_000; // 5 mins — extremely generous for parallel local tournaments
 
 export interface RLPredictRequest {
-  game_type: 'connect_four' | 'mill';
-  state: ConnectFourGameState | MillGameState;
+  game_type: 'connect_four' | 'mill' | 'reversi';
+  state: ConnectFourGameState | MillGameState | ReversiGameState;
   bot_level: string;
   num_simulations?: number; // optional override of registry value
 }
@@ -62,8 +62,8 @@ export async function checkSidecarHealth(): Promise<SidecarHealthResponse | null
  * @throws Error if the sidecar is unreachable or returns an error.
  */
 export async function getRLAction(
-  gameType: 'connect_four' | 'mill',
-  state: ConnectFourGameState | MillGameState,
+  gameType: 'connect_four' | 'mill' | 'reversi',
+  state: ConnectFourGameState | MillGameState | ReversiGameState,
   botLevel: string,
   numSimulations?: number,
 ): Promise<RLPredictResponse['action']> {

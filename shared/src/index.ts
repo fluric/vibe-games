@@ -44,7 +44,7 @@ export interface AuthStatusResponse {
 
 // ─── Game ─────────────────────────────────────────────────────────────────────
 
-export type GameType = 'mill' | 'connect_four' | 'tic_tac_toe' | 'grail_quest' | 'escape';
+export type GameType = 'mill' | 'connect_four' | 'tic_tac_toe' | 'grail_quest' | 'escape' | 'reversi';
 
 export type GameStatus = 'waiting' | 'in_progress' | 'finished';
 
@@ -52,6 +52,13 @@ export type PlayerPiece = 'X' | 'O';
 
 export interface ConnectFourGameState {
   board: (PlayerPiece | null)[]; // 42 board positions (6 rows * 7 cols, row-major)
+  turn: PlayerPiece;
+  winner: PlayerPiece | 'draw' | null;
+  lastMoveIndex?: number;
+}
+
+export interface ReversiGameState {
+  board: (PlayerPiece | null)[]; // 64 board positions (8 rows * 8 cols, row-major)
   turn: PlayerPiece;
   winner: PlayerPiece | 'draw' | null;
   lastMoveIndex?: number;
@@ -131,7 +138,7 @@ export interface GameDto {
   playerX: UserDto | null;
   playerO: UserDto | null;
   winnerId: string | null;
-  state: MillGameState | ConnectFourGameState | GrailQuestGameState; // Generic state, typed based on gameType
+  state: MillGameState | ConnectFourGameState | GrailQuestGameState | ReversiGameState; // Generic state, typed based on gameType
   isPublic: boolean;
   createdAt: string; // ISO 8601
   updatedAt: string; // ISO 8601

@@ -5,6 +5,7 @@ import type { GameDto, PlayerPiece, UserDto, MillGameState, GrailQuestGameState,
 import { MillBoard } from '../components/MillBoard';
 import { ConnectFourBoard } from '../components/ConnectFourBoard';
 import { GrailQuestBoard } from '../components/GrailQuestBoard';
+import { ReversiBoard } from '../components/ReversiBoard';
 import * as audio from '../components/AudioEffects';
 import { ConfirmModal } from '../components/ConfirmModal';
 import { RulesModal } from '../components/RulesModal';
@@ -282,6 +283,15 @@ export function GamePage() {
             disabled={game.status !== 'in_progress' || !isMyTurn || submittingMove}
             submittingMove={submittingMove}
             onAction={(act) => handleBoardAction(act.type, act)}
+          />
+        ) : game.gameType === 'reversi' ? (
+          <ReversiBoard
+            board={game.state.board as (PlayerPiece | null)[]}
+            turn={game.state.turn}
+            lastMoveIndex={(game.state as any).lastMoveIndex}
+            currentPlayerPiece={myPiece}
+            disabled={game.status !== 'in_progress' || !isMyTurn || submittingMove}
+            onAction={(act) => handleBoardAction(act.action, { position: act.position })}
           />
         ) : (
           <ConnectFourBoard

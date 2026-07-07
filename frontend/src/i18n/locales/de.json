@@ -193,7 +193,8 @@
       "mill": "Mühle",
       "connect_four": "4 Gewinnt",
       "tic_tac_toe": "Tic-Tac-Toe",
-      "grail_quest": "Gral"
+      "grail_quest": "Gral",
+      "reversi": "Reversi"
     },
     "your_turn": "Dein Zug",
     "opponent_turn": "Gegner am Zug",
@@ -465,6 +466,9 @@
     "reacting_to_combat": "Reagiere auf Kampf...",
     "opponent_turn_btn": "Gegnerischer Zug",
     "battle_log": "KAMPFLOG",
-    "no_events_yet": "Noch keine Ereignisse."
+    "no_events_yet": "Bisher keine Ereignisse.",
+    "reversi_drop_black": "Lege deine ⚫ schwarze Scheibe",
+    "reversi_drop_white": "Lege deine ⚪ weiße Scheibe",
+    "reversi_pass": "Kein Zug möglich - Passen"
   }
 }

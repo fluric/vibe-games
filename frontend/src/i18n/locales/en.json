@@ -79,7 +79,8 @@
       "mill": "Nine Men's Morris",
       "connect_four": "Connect Four",
       "tic_tac_toe": "Tic Tac Toe",
-      "grail_quest": "Grail Quest"
+      "grail_quest": "Grail Quest",
+      "reversi": "Reversi"
     },
     "your_turn": "Your Turn",
     "opponent_turn": "Opponent Turn",
@@ -255,6 +256,9 @@
     "reacting_to_combat": "Reacting to combat...",
     "opponent_turn_btn": "Opponent Turn",
     "battle_log": "Battle Log",
-    "no_events_yet": "No events yet."
+    "no_events_yet": "No events yet.",
+    "reversi_drop_black": "Place your ⚫ Black disc",
+    "reversi_drop_white": "Place your ⚪ White disc",
+    "reversi_pass": "No Moves - Pass Turn"
   }
 }

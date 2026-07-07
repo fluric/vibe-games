@@ -192,8 +192,9 @@
     "game_type": {
       "mill": "Molino",
       "connect_four": "4 en Raya",
-      "tic_tac_toe": "Tres en raya",
-      "grail_quest": "Grial"
+      "tic_tac_toe": "Tres en Raya",
+      "grail_quest": "Búsqueda del Grial",
+      "reversi": "Reversi"
     },
     "your_turn": "Tu Turno",
     "opponent_turn": "Turno Oponente",
@@ -465,6 +466,9 @@
     "reacting_to_combat": "Reacting to combat...",
     "opponent_turn_btn": "Opponent Turn",
     "battle_log": "Battle Log",
-    "no_events_yet": "No events yet."
+    "no_events_yet": "Todavía no hay eventos.",
+    "reversi_drop_black": "Coloca tu ficha Negra ⚫",
+    "reversi_drop_white": "Coloca tu ficha Blanca ⚪",
+    "reversi_pass": "Sin Movimientos - Pasar Turno"
   }
 }

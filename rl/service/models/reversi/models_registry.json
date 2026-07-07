@@ -1,0 +1,5 @@
+{
+  "rl_novice":   { "checkpoint": null, "num_simulations": 0,  "elo": 0 },
+  "rl_strong":   { "checkpoint": null, "num_simulations": 50, "elo": 0 },
+  "rl_master":   { "checkpoint": null, "num_simulations": 100,"elo": 0 }
+}

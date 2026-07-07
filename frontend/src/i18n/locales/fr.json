@@ -193,7 +193,8 @@
       "mill": "Moulin",
       "connect_four": "Puissance 4",
       "tic_tac_toe": "Morpion",
-      "grail_quest": "Graal"
+      "grail_quest": "Quête du Graal",
+      "reversi": "Reversi"
     },
     "your_turn": "Ton Tour",
     "opponent_turn": "Tour Adverse",
@@ -465,6 +466,9 @@
     "reacting_to_combat": "Reacting to combat...",
     "opponent_turn_btn": "Opponent Turn",
     "battle_log": "Battle Log",
-    "no_events_yet": "No events yet."
+    "no_events_yet": "Aucun événement pour le moment.",
+    "reversi_drop_black": "Placez votre disque Noir ⚫",
+    "reversi_drop_white": "Placez votre disque Blanc ⚪",
+    "reversi_pass": "Aucun coup possible - Passer le tour"
   }
 }

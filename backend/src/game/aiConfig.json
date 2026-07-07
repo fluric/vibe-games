@@ -370,5 +370,105 @@
       "depth": 1,
       "timeLimitMs": 4000
     }
+  },
+  "reversi": {
+    "easy_random": {
+      "id": "00000000-0000-0000-0000-000000000060",
+      "username": "Random Randy (Easy)",
+      "elo": 0,
+      "type": "random"
+    },
+    "medium_aggressive": {
+      "id": "00000000-0000-0000-0000-000000000061",
+      "username": "Aggressive Archie (Hard)",
+      "elo": 800,
+      "type": "minimax",
+      "depth": 3,
+      "timeLimitMs": 500,
+      "weights": {
+        "corner": 150,
+        "mobility": 20,
+        "discCount": 0,
+        "stability": 50
+      }
+    },
+    "medium_defensive": {
+      "id": "00000000-0000-0000-0000-000000000062",
+      "username": "Defensive Debbie (Hard)",
+      "elo": 800,
+      "type": "minimax",
+      "depth": 3,
+      "timeLimitMs": 500
+    },
+    "medium_mobile": {
+      "id": "00000000-0000-0000-0000-000000000063",
+      "username": "Mobile Monty (Hard)",
+      "elo": 800,
+      "type": "minimax",
+      "depth": 3,
+      "timeLimitMs": 500,
+      "weights": {
+        "corner": 100,
+        "mobility": 50,
+        "discCount": 0,
+        "stability": 10
+      }
+    },
+    "hard_tactical": {
+      "id": "00000000-0000-0000-0000-000000000064",
+      "username": "Tactical Toby (Medium)",
+      "elo": 1100,
+      "type": "minimax",
+      "depth": 4,
+      "timeLimitMs": 4000
+    },
+    "expert_garry": {
+      "id": "00000000-0000-0000-0000-000000000065",
+      "username": "Grandmaster Garry (Expert)",
+      "elo": 1300,
+      "type": "minimax",
+      "depth": 5,
+      "timeLimitMs": 4000
+    },
+    "legendary_magnus": {
+      "id": "00000000-0000-0000-0000-000000000066",
+      "username": "Champion Magnus (Legendary)",
+      "elo": 1400,
+      "type": "minimax",
+      "depth": 6,
+      "timeLimitMs": 4000
+    },
+    "perfect_oracle": {
+      "id": "00000000-0000-0000-0000-000000000067",
+      "username": "Perfect Oracle (Grandmaster)",
+      "elo": 1500,
+      "type": "minimax",
+      "depth": 7,
+      "timeLimitMs": 4000
+    },
+    "rl_novice": {
+      "id": "00000000-0000-0000-0000-000000000080",
+      "username": "Neural Novice (RL)",
+      "elo": 300,
+      "type": "rl",
+      "botLevel": "rl_novice",
+      "enabled": false
+    },
+    "rl_strong": {
+      "id": "00000000-0000-0000-0000-000000000081",
+      "username": "Neural Expert (RL)",
+      "elo": 1400,
+      "type": "rl",
+      "botLevel": "rl_strong",
+      "enabled": false
+    },
+    "rl_master": {
+      "id": "00000000-0000-0000-0000-000000000082",
+      "username": "Neural Master (RL)",
+      "elo": 1700,
+      "type": "rl",
+      "botLevel": "rl_master",
+      "enabled": false
+    }
   }
 }
