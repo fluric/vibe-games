@@ -1,9 +1,4 @@
 {
-  "rl_champion": {
-    "checkpoint": "champion.pt",
-    "num_simulations": 100,
-    "elo": 1500
-  },
   "rl_novice": {
     "checkpoint": "mill_elo_200.pt",
     "num_simulations": 0,
@@ -14,24 +9,14 @@
     "num_simulations": 0,
     "elo": 600
   },
-  "rl_scout": {
+  "rl_strong": {
     "checkpoint": "mill_elo_1000.pt",
-    "num_simulations": 10,
-    "elo": 1000
-  },
-  "rl_strategist": {
-    "checkpoint": "mill_elo_1000.pt",
-    "num_simulations": 25,
+    "num_simulations": 50,
     "elo": 1000
   },
   "rl_master": {
     "checkpoint": "mill_elo_3800.pt",
     "num_simulations": 100,
     "elo": 3921
-  },
-  "rl_strong": {
-    "checkpoint": "mill_elo_1000.pt",
-    "num_simulations": 50,
-    "elo": 1000
   }
 }

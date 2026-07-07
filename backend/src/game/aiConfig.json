@@ -165,22 +165,6 @@
       "botLevel": "rl_intermediate",
       "enabled": true
     },
-    "rl_scout": {
-      "id": "00000000-0000-0000-0000-000000000060",
-      "username": "Neural Scout (RL)",
-      "elo": 1325,
-      "type": "rl",
-      "botLevel": "rl_scout",
-      "enabled": true
-    },
-    "rl_strategist": {
-      "id": "00000000-0000-0000-0000-000000000061",
-      "username": "Neural Strategist (RL)",
-      "elo": 1337,
-      "type": "rl",
-      "botLevel": "rl_strategist",
-      "enabled": true
-    },
     "rl_strong": {
       "id": "00000000-0000-0000-0000-000000000052",
       "username": "Neural Expert (RL)",
