@@ -242,6 +242,8 @@ export function GamePage() {
         if (grailState.phase === 'react') bannerMessage = t('your_turn_react', { defaultValue: 'Your Turn: React to Attack! ⚔️' });
         else if (grailState.phase === 'deploy') bannerMessage = t('your_turn_deploy', { defaultValue: 'Your Turn: Deploy Units 🛖' });
         else if (grailState.phase === 'move') bannerMessage = t('your_turn_move_units', { defaultValue: 'Your Turn: Move Units 🛡️' });
+      } else if (game.gameType === 'reversi') {
+        bannerMessage = t('your_turn_place_reversi', { defaultValue: 'Your Turn: Place Disc' });
       }
     } else {
       bannerMessage = t('opponents_turn', { defaultValue: 'Opponent\'s Turn ({{turn}})', turn: game.state.turn });

@@ -94,7 +94,7 @@ export function GameLayout({
           </div>
         </div>
 
-        <div className={`p-6 rounded-2xl border backdrop-blur-md text-center flex flex-col gap-1.5 shadow-xl transition-all duration-300 ${
+        <div className={`min-h-[104px] justify-center p-6 rounded-2xl border backdrop-blur-md text-center flex flex-col gap-1.5 shadow-xl transition-all duration-300 ${
           game.status === 'finished'
             ? game.state.winner === 'draw'
               ? 'bg-amber-500/10 border-amber-500/20 text-amber-400'
