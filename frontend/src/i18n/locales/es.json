@@ -280,17 +280,9 @@
       "clue1": "Encaja en una cerradura."
     },
     "room5": {
-      "name": "La Sala de Calderas",
-      "description": "Tuberías recubren las paredes, silbando con vapor. Cuatro válvulas oxidadas controlan la presión.",
-      "atmosphere": "Irradia calor. El metal gime. Equilibra el sistema.",
-      "valveA": "Prin",
-      "valveB": "Aux",
-      "valveC": "Flujo",
-      "valveD": "Vent",
-      "clue1": "1. Flujo está completamente abierto (5).",
-      "clue2": "2. Prin es el doble de Aux.",
-      "clue3": "3. Vent es el más bajo, pero no cerrado (0).",
-      "clue4": "4. Aux es uno más que Vent."
+      "name": "La Matriz de Memoria",
+      "description": "Una habitación completamente blanca con un terminal 3x3. Debes demostrar tu memoria para pasar.",
+      "atmosphere": "Las luces de neón parpadean. Una voz mecánica exige secuencias."
     },
     "ui_entered_symbols": "Símbolos Ingresados",
     "ui_reset": "Reiniciar Secuencia",

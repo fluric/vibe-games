@@ -280,17 +280,9 @@
       "clue1": "Ça rentre dans une serrure."
     },
     "room5": {
-      "name": "La Chaufferie",
-      "description": "Des tuyaux tapissent les murs, sifflant avec la vapeur. Quatre valves rouillées contrôlent la pression.",
-      "atmosphere": "La chaleur irradie. Le métal gémit. Équilibrez le système.",
-      "valveA": "Prin",
-      "valveB": "Aux",
-      "valveC": "Débit",
-      "valveD": "Vent",
-      "clue1": "1. Débit est grand ouvert (5).",
-      "clue2": "2. Prin est le double de Aux.",
-      "clue3": "3. Vent est le plus bas, mais pas fermé (0).",
-      "clue4": "4. Aux est un de plus que Vent."
+      "name": "La Matrice de Mémoire",
+      "description": "Une pièce d'un blanc immaculé avec un terminal 3x3. Vous devez prouver votre mémoire pour passer.",
+      "atmosphere": "Les néons clignotent. Une voix mécanique demande des séquences."
     },
     "ui_entered_symbols": "Symboles Entrés",
     "ui_reset": "Réinitialiser la Séquence",

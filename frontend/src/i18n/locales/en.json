@@ -166,17 +166,9 @@
       "clue1": "It fits in a lock."
     },
     "room5": {
-      "name": "The Boiler Room",
-      "description": "Pipes line the walls, hissing with steam. Four rusty valves control the pressure.",
-      "atmosphere": "Heat radiates. Metal groans. Balance the system.",
-      "valveA": "Main",
-      "valveB": "Aux",
-      "valveC": "Flow",
-      "valveD": "Vent",
-      "clue1": "1. Flow is fully open (5).",
-      "clue2": "2. Main is double Aux.",
-      "clue3": "3. Vent is the lowest, but not closed (0).",
-      "clue4": "4. Aux is one more than Vent."
+      "name": "The Memory Matrix",
+      "description": "A stark white room with a 3x3 terminal. You must prove your memory to pass.",
+      "atmosphere": "Neon lights pulse. A mechanical voice demands sequences."
     },
     "ui_entered_symbols": "Entered Symbols",
     "ui_reset": "Reset Sequence",

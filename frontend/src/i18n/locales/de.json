@@ -280,17 +280,9 @@
       "clue1": "Es passt in ein Schloss."
     },
     "room5": {
-      "name": "Der Heizungskeller",
-      "description": "Rohre säumen die Wände und zischen vor Dampf. Vier rostige Ventile steuern den Druck.",
-      "atmosphere": "Hitze strahlt aus. Metall ächzt. Balanciere das System aus.",
-      "valveA": "Haupt",
-      "valveB": "Aux",
-      "valveC": "Fluss",
-      "valveD": "Entl",
-      "clue1": "1. Fluss ist voll geöffnet (5).",
-      "clue2": "2. Haupt ist das Doppelte von Aux.",
-      "clue3": "3. Entl ist am niedrigsten, aber nicht geschlossen (0).",
-      "clue4": "4. Aux ist eins mehr als Entl."
+      "name": "Die Speichermatrix",
+      "description": "Ein reinweißer Raum mit einem 3x3-Terminal. Du musst dein Gedächtnis beweisen, um zu bestehen.",
+      "atmosphere": "Neonlichter pulsieren. Eine mechanische Stimme fordert Sequenzen."
     },
     "ui_entered_symbols": "Eingegebene Symbole",
     "ui_reset": "Sequenz Zurücksetzen",
