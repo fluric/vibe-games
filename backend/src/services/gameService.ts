@@ -80,8 +80,15 @@ export async function getOrCreateUser(userId: string): Promise<User> {
     });
     try {
       await userRepo.save(user);
-    } catch (err) {
-      const existing = await userRepo.findOneBy({ id: userId });
+    } catch (err: any) {
+      const username = botInfo ? botInfo.username : `Player_${userId.substring(0, 5)}`;
+      const existing = await userRepo.findOne({
+        where: [
+          { id: userId },
+          { username: username }
+        ]
+      });
+      
       if (existing) {
         user = existing;
       } else {
@@ -447,13 +454,13 @@ export async function createGame(user: User, gameType: GameType, isPublic: boole
     const botUser = await getOrCreateUser(botConfig.id);
 
     if (aiStarts) {
-      playerXId = botConfig.id;
+      playerXId = botUser.id;
       playerOId = user.id;
       playerXEntity = botUser;
       playerOEntity = user;
     } else {
       playerXId = user.id;
-      playerOId = botConfig.id;
+      playerOId = botUser.id;
       playerXEntity = user;
       playerOEntity = botUser;
     }
