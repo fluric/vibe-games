@@ -149,30 +149,29 @@ export const ReversiBoard: React.FC<ReversiBoardProps> = ({
 
   const [initialBoard, setInitialBoard] = useState(board);
   const prevBoardRef = useRef(board);
-  const [lastDiffIndex, setLastDiffIndex] = useState<number | null>(null);
-  const [recentlyFlipped, setRecentlyFlipped] = useState<Set<number>>(new Set());
+  const lastDiffRef = useRef<number | null>(null);
+  const flippedRef = useRef<Set<number>>(new Set());
 
-  useEffect(() => {
+  // Derive state during render so children receive correct isFlipping immediately
+  if (board.some((v, i) => v !== prevBoardRef.current[i])) {
     const prev = prevBoardRef.current;
-    if (board.some((v, i) => v !== prev[i])) {
-      const addedIdx = board.findIndex((v, i) => v !== null && prev[i] === null);
-      if (addedIdx !== -1) {
-        setLastDiffIndex(addedIdx);
-      }
-      
-      const flipped = new Set<number>();
-      for (let i = 0; i < 64; i++) {
-        if (prev[i] !== null && board[i] !== null && prev[i] !== board[i]) {
-          flipped.add(i);
-        }
-      }
-      setRecentlyFlipped(flipped);
-      
-      prevBoardRef.current = board;
+    
+    const addedIdx = board.findIndex((v, i) => v !== null && prev[i] === null);
+    if (addedIdx !== -1) {
+      lastDiffRef.current = addedIdx;
     }
-  }, [board]);
+    
+    const flipped = new Set<number>();
+    for (let i = 0; i < 64; i++) {
+      if (prev[i] !== null && board[i] !== null && prev[i] !== board[i]) {
+        flipped.add(i);
+      }
+    }
+    flippedRef.current = flipped;
+    prevBoardRef.current = board;
+  }
 
-  const displayLastMove = lastMoveIndex ?? lastDiffIndex;
+  const displayLastMove = lastMoveIndex ?? lastDiffRef.current;
 
   const getStaggerDelay = (index: number) => {
     if (displayLastMove === null || displayLastMove === undefined) return 0;
@@ -189,8 +188,8 @@ export const ReversiBoard: React.FC<ReversiBoardProps> = ({
   useEffect(() => {
     if (board.every(cell => cell === null) || board.filter(cell => cell !== null).length === 4) {
       setInitialBoard(board);
-      setLastDiffIndex(null);
-      setRecentlyFlipped(new Set());
+      lastDiffRef.current = null;
+      flippedRef.current = new Set();
     }
   }, [board]);
 
@@ -218,7 +217,7 @@ export const ReversiBoard: React.FC<ReversiBoardProps> = ({
       return (
         <ReversiCellContent
           value={cellValue}
-          isFlipping={recentlyFlipped.has(index)}
+          isFlipping={flippedRef.current.has(index)}
           isInitial={initialBoard[index] === cellValue}
           flipDelayMs={getStaggerDelay(index)}
         />
