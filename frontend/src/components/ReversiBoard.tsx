@@ -73,16 +73,20 @@ interface CellContentProps {
 const ReversiCellContent: React.FC<CellContentProps> = ({ value, isFlipping, isInitial, flipDelayMs = 0 }) => {
   const [visualValue, setVisualValue] = useState(value);
   const [animating, setAnimating] = useState(false);
+  const prevValueRef = useRef(value);
 
   useEffect(() => {
     if (isInitial) {
       setVisualValue(value);
       setAnimating(false);
+      prevValueRef.current = value;
       return;
     }
     
-    if (value !== visualValue) {
+    if (value !== prevValueRef.current) {
+      prevValueRef.current = value;
       let active = true;
+      
       if (isFlipping) {
         const delayTimer = setTimeout(() => {
           if (!active) return;
@@ -104,7 +108,7 @@ const ReversiCellContent: React.FC<CellContentProps> = ({ value, isFlipping, isI
         setVisualValue(value);
       }
     }
-  }, [value, isFlipping, visualValue, isInitial, flipDelayMs]);
+  }, [value, isFlipping, isInitial, flipDelayMs]);
 
   const discColorClasses = visualValue === 'X'
     ? 'bg-neutral-900 border-black shadow-[inset_0_4px_6px_rgba(255,255,255,0.2)]' // Black
