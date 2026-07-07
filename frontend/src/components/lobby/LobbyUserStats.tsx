@@ -3,7 +3,7 @@ import type { UserDto } from '@vibe-games/shared';
 
 interface Props {
   currentUser: UserDto;
-  activeGameTab: 'mill' | 'connect_four' | 'grail_quest' | 'escape';
+  activeGameTab: 'mill' | 'connect_four' | 'grail_quest' | 'escape' | 'reversi';
 }
 
 export function LobbyUserStats({

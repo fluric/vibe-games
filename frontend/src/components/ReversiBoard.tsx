@@ -229,7 +229,7 @@ export const ReversiBoard: React.FC<ReversiBoardProps> = ({
       )}
 
       <div className="relative p-2 md:p-4 bg-emerald-950 border-4 border-emerald-900 rounded-lg shadow-[inset_0_4px_12px_rgba(0,0,0,0.5),0_8px_32px_rgba(0,0,0,0.6)]">
-        <div className="grid grid-cols-8 place-items-center gap-1 sm:gap-1.5 md:gap-2 bg-emerald-800 p-2 sm:p-3 rounded border border-emerald-700/50">
+        <div className="grid grid-cols-8 place-items-center bg-emerald-800 p-2 sm:p-3 rounded border-2 border-emerald-950">
           {Array.from({ length: ROWS }).map((_, r) => (
             <React.Fragment key={r}>
               {Array.from({ length: COLS }).map((_, c) => {
@@ -241,15 +241,15 @@ export const ReversiBoard: React.FC<ReversiBoardProps> = ({
                 return (
                   <div
                     key={index}
-                    className={`w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 flex items-center justify-center relative transition-colors duration-200 ${
-                      isLegal ? 'cursor-pointer hover:bg-emerald-700/80' : ''
+                    className={`w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 flex items-center justify-center relative transition-colors duration-200 bg-emerald-700 ${
+                      isLegal ? 'cursor-pointer hover:bg-emerald-600' : ''
                     }`}
                     onMouseEnter={() => isMyTurn && setHoveredPos(index)}
                     onMouseLeave={() => setHoveredPos(null)}
                     onClick={() => handleCellClick(index)}
                   >
                     {/* Grid lines styling */}
-                    <div className="absolute inset-0 border-[0.5px] border-emerald-900/40 pointer-events-none" />
+                    <div className="absolute inset-0 border border-emerald-950/80 pointer-events-none" />
                     
                     {renderCellContent(index)}
                     

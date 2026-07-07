@@ -29,6 +29,17 @@ export const AI_BOT_IDS = [
   '00000000-0000-0000-0000-000000000041', // Neural Scout (C4 RL)
   '00000000-0000-0000-0000-000000000042', // Neural Strategist (C4 RL)
   '00000000-0000-0000-0000-000000000043', // Neural Master (C4 RL)
+  '00000000-0000-0000-0000-000000000060', // Random Randy (RV Easy)
+  '00000000-0000-0000-0000-000000000061', // Aggressive Archie (RV Hard)
+  '00000000-0000-0000-0000-000000000062', // Defensive Debbie (RV Hard)
+  '00000000-0000-0000-0000-000000000063', // Mobile Monty (RV Hard)
+  '00000000-0000-0000-0000-000000000064', // Tactical Toby (RV Medium)
+  '00000000-0000-0000-0000-000000000065', // Grandmaster Garry (RV Expert)
+  '00000000-0000-0000-0000-000000000066', // Champion Magnus (RV Legendary)
+  '00000000-0000-0000-0000-000000000067', // Perfect Oracle (RV Grandmaster)
+  '00000000-0000-0000-0000-000000000080', // Neural Novice (RV RL)
+  '00000000-0000-0000-0000-000000000081', // Neural Expert (RV RL)
+  '00000000-0000-0000-0000-000000000082', // Neural Master (RV RL)
 ];
 
 export function isBotId(id?: string | null): boolean {

@@ -4,11 +4,11 @@ import { useTranslation } from 'react-i18next';
 import aiConfig from '../../../../backend/src/game/aiConfig.json';
 import { BOT_DESCRIPTIONS, BOT_EMOJIS, BOT_HELP_TEXT } from '../../data/bots';
 
-const typedConfig = aiConfig as unknown as Record<'mill' | 'connect_four' | 'grail_quest', Record<string, { id: string; username: string; elo: number; type: string }>>;
+const typedConfig = aiConfig as unknown as Record<'mill' | 'connect_four' | 'grail_quest' | 'reversi', Record<string, { id: string; username: string; elo: number; type: string }>>;
 type BotLevel = 'easy' | 'medium' | 'hard' | 'easy_random' | 'easy_cowardly' | 'easy_greedy' | 'easy_aggressive' | 'medium_aggressive' | 'medium_defensive' | 'medium_mobile' | 'hard_tactical' | 'expert_garry' | 'legendary_magnus' | 'perfect_oracle' | 'expert_smart' | 'rl_novice' | 'rl_intermediate' | 'rl_strong' | 'rl_master';
 
 interface CreateGamePanelProps {
-  activeGameTab: 'mill' | 'connect_four' | 'grail_quest' | 'escape';
+  activeGameTab: 'mill' | 'connect_four' | 'grail_quest' | 'escape' | 'reversi';
   creatingGame: boolean;
   syncStatus: 'synced' | 'warn' | 'mismatch';
   onCreateGame: (vsAi: boolean, isPublic: boolean, aiLevel?: BotLevel, aiStarts?: boolean) => void;
@@ -29,25 +29,31 @@ export function CreateGamePanel({ activeGameTab, creatingGame, syncStatus, onCre
   const [aiLevelMill, setAiLevelMill] = useState<BotLevel>(() => loadPref('aiLevel_mill', 'medium_aggressive'));
   const [aiLevelConnectFour, setAiLevelConnectFour] = useState<BotLevel>(() => loadPref('aiLevel_connect_four', 'medium_aggressive'));
   const [aiLevelGrailQuest, setAiLevelGrailQuest] = useState<BotLevel>(() => loadPref('aiLevel_grail_quest', 'medium_aggressive'));
+  const [aiLevelReversi, setAiLevelReversi] = useState<BotLevel>(() => loadPref('aiLevel_reversi', 'medium_aggressive'));
 
   const [aiStartsMill, setAiStartsMill] = useState<boolean>(() => loadPref('aiStarts_mill', false));
   const [aiStartsConnectFour, setAiStartsConnectFour] = useState<boolean>(() => loadPref('aiStarts_connect_four', false));
   const [aiStartsGrailQuest, setAiStartsGrailQuest] = useState<boolean>(() => loadPref('aiStarts_grail_quest', false));
+  const [aiStartsReversi, setAiStartsReversi] = useState<boolean>(() => loadPref('aiStarts_reversi', false));
 
   const [gameModeMill, setGameModeMill] = useState<'ai' | 'human'>(() => loadPref('gameMode_mill', 'human'));
   const [gameModeConnectFour, setGameModeConnectFour] = useState<'ai' | 'human'>(() => loadPref('gameMode_connect_four', 'human'));
   const [gameModeGrailQuest, setGameModeGrailQuest] = useState<'ai' | 'human'>(() => loadPref('gameMode_grail_quest', 'human'));
+  const [gameModeReversi, setGameModeReversi] = useState<'ai' | 'human'>(() => loadPref('gameMode_reversi', 'human'));
 
   // Save preferences
   useEffect(() => { localStorage.setItem('aiLevel_mill', JSON.stringify(aiLevelMill)); }, [aiLevelMill]);
   useEffect(() => { localStorage.setItem('aiLevel_connect_four', JSON.stringify(aiLevelConnectFour)); }, [aiLevelConnectFour]);
   useEffect(() => { localStorage.setItem('aiLevel_grail_quest', JSON.stringify(aiLevelGrailQuest)); }, [aiLevelGrailQuest]);
+  useEffect(() => { localStorage.setItem('aiLevel_reversi', JSON.stringify(aiLevelReversi)); }, [aiLevelReversi]);
   useEffect(() => { localStorage.setItem('aiStarts_mill', JSON.stringify(aiStartsMill)); }, [aiStartsMill]);
   useEffect(() => { localStorage.setItem('aiStarts_connect_four', JSON.stringify(aiStartsConnectFour)); }, [aiStartsConnectFour]);
   useEffect(() => { localStorage.setItem('aiStarts_grail_quest', JSON.stringify(aiStartsGrailQuest)); }, [aiStartsGrailQuest]);
+  useEffect(() => { localStorage.setItem('aiStarts_reversi', JSON.stringify(aiStartsReversi)); }, [aiStartsReversi]);
   useEffect(() => { localStorage.setItem('gameMode_mill', JSON.stringify(gameModeMill)); }, [gameModeMill]);
   useEffect(() => { localStorage.setItem('gameMode_connect_four', JSON.stringify(gameModeConnectFour)); }, [gameModeConnectFour]);
   useEffect(() => { localStorage.setItem('gameMode_grail_quest', JSON.stringify(gameModeGrailQuest)); }, [gameModeGrailQuest]);
+  useEffect(() => { localStorage.setItem('gameMode_reversi', JSON.stringify(gameModeReversi)); }, [gameModeReversi]);
 
   if (activeGameTab === 'escape') {
     return (
@@ -72,9 +78,9 @@ export function CreateGamePanel({ activeGameTab, creatingGame, syncStatus, onCre
     );
   }
 
-  const currentAiStarts = activeGameTab === 'mill' ? aiStartsMill : activeGameTab === 'connect_four' ? aiStartsConnectFour : aiStartsGrailQuest;
-  const currentGameMode = activeGameTab === 'mill' ? gameModeMill : activeGameTab === 'connect_four' ? gameModeConnectFour : gameModeGrailQuest;
-  const currentAiLevel = activeGameTab === 'mill' ? aiLevelMill : activeGameTab === 'connect_four' ? aiLevelConnectFour : aiLevelGrailQuest;
+  const currentAiStarts = activeGameTab === 'mill' ? aiStartsMill : activeGameTab === 'connect_four' ? aiStartsConnectFour : activeGameTab === 'grail_quest' ? aiStartsGrailQuest : aiStartsReversi;
+  const currentGameMode = activeGameTab === 'mill' ? gameModeMill : activeGameTab === 'connect_four' ? gameModeConnectFour : activeGameTab === 'grail_quest' ? gameModeGrailQuest : gameModeReversi;
+  const currentAiLevel = activeGameTab === 'mill' ? aiLevelMill : activeGameTab === 'connect_four' ? aiLevelConnectFour : activeGameTab === 'grail_quest' ? aiLevelGrailQuest : aiLevelReversi;
 
   const handleCreate = (vsAi: boolean, isPublic: boolean) => {
     onCreateGame(vsAi, isPublic, currentAiLevel, currentAiStarts);
@@ -99,7 +105,8 @@ export function CreateGamePanel({ activeGameTab, creatingGame, syncStatus, onCre
             onClick={() => {
               if (activeGameTab === 'mill') setGameModeMill('ai');
               else if (activeGameTab === 'connect_four') setGameModeConnectFour('ai');
-              else setGameModeGrailQuest('ai');
+              else if (activeGameTab === 'grail_quest') setGameModeGrailQuest('ai');
+              else setGameModeReversi('ai');
             }}
             className={`flex-1 py-2 text-xs rounded-lg font-semibold transition-all ${
               currentGameMode === 'ai'
@@ -114,7 +121,8 @@ export function CreateGamePanel({ activeGameTab, creatingGame, syncStatus, onCre
             onClick={() => {
               if (activeGameTab === 'mill') setGameModeMill('human');
               else if (activeGameTab === 'connect_four') setGameModeConnectFour('human');
-              else setGameModeGrailQuest('human');
+              else if (activeGameTab === 'grail_quest') setGameModeGrailQuest('human');
+              else setGameModeReversi('human');
             }}
             className={`flex-1 py-2 text-xs rounded-lg font-semibold transition-all ${
               currentGameMode === 'human'
@@ -142,8 +150,10 @@ export function CreateGamePanel({ activeGameTab, creatingGame, syncStatus, onCre
                     setAiLevelMill(val);
                   } else if (activeGameTab === 'connect_four') {
                     setAiLevelConnectFour(val);
-                  } else {
+                  } else if (activeGameTab === 'grail_quest') {
                     setAiLevelGrailQuest(val);
+                  } else {
+                    setAiLevelReversi(val);
                   }
                 }}
                 className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2.5 text-xs text-neutral-100 focus:outline-none focus:border-indigo-500 transition-all font-sans"
@@ -172,7 +182,8 @@ export function CreateGamePanel({ activeGameTab, creatingGame, syncStatus, onCre
               onClick={() => {
                 if (activeGameTab === 'mill') setAiStartsMill(false);
                 else if (activeGameTab === 'connect_four') setAiStartsConnectFour(false);
-                else setAiStartsGrailQuest(false);
+                else if (activeGameTab === 'grail_quest') setAiStartsGrailQuest(false);
+                else setAiStartsReversi(false);
               }}
               className={`flex-1 py-2 text-xs rounded-xl font-semibold border transition-all ${
                 !currentAiStarts
@@ -187,7 +198,8 @@ export function CreateGamePanel({ activeGameTab, creatingGame, syncStatus, onCre
               onClick={() => {
                 if (activeGameTab === 'mill') setAiStartsMill(true);
                 else if (activeGameTab === 'connect_four') setAiStartsConnectFour(true);
-                else setAiStartsGrailQuest(true);
+                else if (activeGameTab === 'grail_quest') setAiStartsGrailQuest(true);
+                else setAiStartsReversi(true);
               }}
               className={`flex-1 py-2 text-xs rounded-xl font-semibold border transition-all ${
                 currentAiStarts

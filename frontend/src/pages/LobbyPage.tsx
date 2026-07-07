@@ -49,10 +49,10 @@ export function LobbyPage() {
   const [joiningCode, setJoiningCode] = useState(false);
   const [lobbyError, setLobbyError] = useState<string | null>(null);
 
-  const [activeGameTab, setActiveGameTab] = useState<'mill' | 'connect_four' | 'grail_quest' | 'escape'>(() => {
+  const [activeGameTab, setActiveGameTab] = useState<'mill' | 'connect_four' | 'grail_quest' | 'escape' | 'reversi'>(() => {
     try {
       const saved = localStorage.getItem('vibe-games-active-tab');
-      return (saved === 'mill' || saved === 'connect_four' || saved === 'grail_quest' || saved === 'escape') ? saved : 'mill';
+      return (saved === 'mill' || saved === 'connect_four' || saved === 'grail_quest' || saved === 'escape' || saved === 'reversi') ? saved : 'mill';
     } catch {
       return 'mill';
     }
