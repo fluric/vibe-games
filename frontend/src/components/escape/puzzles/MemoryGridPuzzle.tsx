@@ -39,14 +39,6 @@ const LEVEL_COLORS = [
   'bg-red-950/40'     // Level 5
 ];
 
-const LEVEL_INSTRUCTIONS = [
-  'Level 1: Remember the position.',
-  'Level 2: The grid shuffles! Remember the original positions.',
-  'Level 3: The grid shuffles! Remember the SHAPES.',
-  'Level 4: The grid shuffles! Remember the COLORS.',
-  'Level 5: The grid shuffles! Remember the original positions in REVERSE order.'
-];
-
 interface CellProps {
   color: string;
   shape: string;
@@ -204,7 +196,7 @@ export const MemoryGridPuzzle: React.FC<{ config: MemoryGridRoomConfig, onSolved
       <div className="text-center space-y-2">
         <h3 className="text-xl font-bold text-white tracking-widest">LEVEL {level}</h3>
         <p className="text-sm text-neutral-300 min-h-[40px] flex items-center justify-center">
-          {feedback || LEVEL_INSTRUCTIONS[level - 1]}
+          {feedback}
         </p>
       </div>
 
