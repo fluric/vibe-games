@@ -13,7 +13,23 @@ const COLORS = [
   '#ec4899', // pink-500
   '#14b8a6', // teal-500
 ];
-const SHAPES = ['⬤', '■', '▲', '◆', '★', '♥', '✖', '⬢', '⬟'];
+const SHAPES = ['circle', 'square', 'triangle', 'diamond', 'star', 'heart', 'cross', 'hexagon', 'pentagon'];
+
+const ShapeIcon = ({ shape }: { shape: string }) => {
+  const props = { viewBox: "0 0 24 24", fill: "currentColor", className: "w-16 h-16 drop-shadow-lg" };
+  switch (shape) {
+    case 'circle': return <svg {...props}><circle cx="12" cy="12" r="10" /></svg>;
+    case 'square': return <svg {...props}><rect x="3" y="3" width="18" height="18" rx="2" /></svg>;
+    case 'triangle': return <svg {...props}><path d="M12 2L22 20H2L12 2Z" /></svg>;
+    case 'diamond': return <svg {...props}><path d="M12 2L22 12L12 22L2 12L12 2Z" /></svg>;
+    case 'star': return <svg {...props}><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>;
+    case 'heart': return <svg {...props}><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" /></svg>;
+    case 'cross': return <svg {...props}><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z" /></svg>;
+    case 'hexagon': return <svg {...props}><path d="M12 2L22 7V17L12 22L2 17V7L12 2Z" /></svg>;
+    case 'pentagon': return <svg {...props}><path d="M12 2L22 9.5L18 21H6L2 9.5L12 2Z" /></svg>;
+    default: return null;
+  }
+};
 
 const LEVEL_COLORS = [
   'bg-blue-950/40',   // Level 1
@@ -222,10 +238,9 @@ export const MemoryGridPuzzle: React.FC<{ config: MemoryGridRoomConfig, onSolved
               }}
             >
               <span 
-                className="drop-shadow-lg select-none opacity-90 text-white font-bold"
-                style={{ fontSize: '3.5rem', lineHeight: 1 }}
+                className="select-none opacity-90 text-white flex items-center justify-center"
               >
-                {cell.shape}
+                <ShapeIcon shape={cell.shape} />
               </span>
             </button>
           );
