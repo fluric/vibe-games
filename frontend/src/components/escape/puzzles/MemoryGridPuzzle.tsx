@@ -79,7 +79,7 @@ export const MemoryGridPuzzle: React.FC<{ config: MemoryGridRoomConfig, onSolved
     return () => { isMounted.current = false; };
   }, []);
 
-  const startLevel = useCallback(() => {
+  const startLevel = useCallback((currentLevel: number) => {
     if (!isMounted.current) return;
     setPhase('showing');
     setFeedback('');
@@ -90,7 +90,7 @@ export const MemoryGridPuzzle: React.FC<{ config: MemoryGridRoomConfig, onSolved
     setGrid(newGridA);
 
     // Sequence length is equal to the level
-    const seqLength = level;
+    const seqLength = currentLevel;
     const indices = [0, 1, 2, 3, 4, 5, 6, 7, 8];
     const sequence = shuffleArray(indices).slice(0, seqLength);
     setTargetSequence(sequence);
@@ -127,14 +127,14 @@ export const MemoryGridPuzzle: React.FC<{ config: MemoryGridRoomConfig, onSolved
 
     // Larger delay before starting so the user is ready and page fade-ins complete
     setTimeout(showNext, 2500);
-  }, [level]);
+  }, []);
 
   // Start Level 1 on mount
   useEffect(() => {
-    if (phase === 'idle') {
-      startLevel();
-    }
-  }, [phase, startLevel]);
+    isMounted.current = true;
+    startLevel(1);
+    return () => { isMounted.current = false; };
+  }, [startLevel]);
 
   const handleCellClick = (index: number) => {
     if (phase !== 'waiting_input') return;
@@ -178,8 +178,13 @@ export const MemoryGridPuzzle: React.FC<{ config: MemoryGridRoomConfig, onSolved
           if (level === 5) {
             onSolved();
           } else {
-            setLevel(l => l + 1);
-            setPhase('idle'); // will trigger startLevel
+            setPhase('shuffling'); // Flip out
+            setTimeout(() => {
+              if (!isMounted.current) return;
+              const nextLvl = level + 1;
+              setLevel(nextLvl);
+              startLevel(nextLvl);
+            }, 300);
           }
         }, 1500);
       }
@@ -192,8 +197,13 @@ export const MemoryGridPuzzle: React.FC<{ config: MemoryGridRoomConfig, onSolved
       setTimeout(() => {
         if (!isMounted.current) return;
         setHighlightIndex(null);
-        setLevel(l => Math.max(1, l - 1));
-        setPhase('idle'); // will trigger startLevel
+        setPhase('shuffling'); // Flip out
+        setTimeout(() => {
+          if (!isMounted.current) return;
+          const nextLvl = Math.max(1, level - 1);
+          setLevel(nextLvl);
+          startLevel(nextLvl);
+        }, 300);
       }, 2000);
     }
   };
