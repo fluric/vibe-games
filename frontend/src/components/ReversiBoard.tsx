@@ -91,12 +91,12 @@ const ReversiCellContent: React.FC<CellContentProps> = ({ value, isFlipping, isI
           setTimeout(() => {
             if (!active) return;
             setVisualValue(value);
-          }, 300);
+          }, 600);
           
           setTimeout(() => {
             if (!active) return;
             setAnimating(false);
-          }, 600);
+          }, 1200);
         }, flipDelayMs);
         
         return () => { active = false; clearTimeout(delayTimer); };
@@ -114,7 +114,7 @@ const ReversiCellContent: React.FC<CellContentProps> = ({ value, isFlipping, isI
     <div 
       className={`w-[85%] h-[85%] rounded-full border-2 ${discColorClasses} transition-transform`} 
       style={{
-        animation: animating ? 'flip 0.6s ease-in-out forwards' : 'none'
+        animation: animating ? 'flip 1.2s ease-in-out forwards' : 'none'
       }}
     />
   );
@@ -179,7 +179,7 @@ export const ReversiBoard: React.FC<ReversiBoardProps> = ({
     const c2 = displayLastMove % COLS;
     
     const distance = Math.max(Math.abs(r1 - r2), Math.abs(c1 - c2));
-    return distance * 150; // 150ms per tile distance
+    return distance * 250; // 250ms per tile distance
   };
 
   useEffect(() => {
