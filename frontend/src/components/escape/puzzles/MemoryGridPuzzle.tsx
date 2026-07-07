@@ -125,8 +125,8 @@ export const MemoryGridPuzzle: React.FC<{ config: MemoryGridRoomConfig, onSolved
       }
     };
 
-    // Small delay before starting
-    setTimeout(showNext, 1000);
+    // Larger delay before starting so the user is ready and page fade-ins complete
+    setTimeout(showNext, 2500);
   }, [level]);
 
   // Start Level 1 on mount
@@ -227,14 +227,15 @@ export const MemoryGridPuzzle: React.FC<{ config: MemoryGridRoomConfig, onSolved
               disabled={phase !== 'waiting_input'}
               className={`
                 relative w-full h-full rounded-lg shadow-md flex items-center justify-center transition-all duration-300
-                ${isHighlighted ? 'scale-95 brightness-150 ring-4 ring-white z-10' : 'hover:brightness-110 active:scale-95'}
+                ${isHighlighted ? 'scale-110 brightness-200 ring-8 ring-white z-20' : 'hover:brightness-110 active:scale-95'}
                 ${isFailedClick ? 'ring-4 ring-red-500' : ''}
                 ${isInputted ? 'opacity-50 scale-95' : ''}
                 ${phase !== 'waiting_input' && !isHighlighted ? 'opacity-90' : ''}
               `}
               style={{
                 backgroundColor: isFailedClick ? '#7f1d1d' : cell.color,
-                boxShadow: isHighlighted ? '0 0 20px rgba(255,255,255,0.6)' : 'inset 0 2px 4px rgba(255,255,255,0.2), inset 0 -2px 4px rgba(0,0,0,0.3)'
+                boxShadow: isHighlighted ? '0 0 30px rgba(255,255,255,0.9)' : 'inset 0 2px 4px rgba(255,255,255,0.2), inset 0 -2px 4px rgba(0,0,0,0.3)',
+                transform: isHighlighted ? 'scale(1.15)' : 'none'
               }}
             >
               <span 
