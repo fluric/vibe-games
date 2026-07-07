@@ -223,7 +223,7 @@ export const MemoryGridPuzzle: React.FC<{ config: MemoryGridRoomConfig, onSolved
             >
               <span 
                 className="drop-shadow-lg select-none opacity-90 text-white font-bold"
-                style={{ fontSize: '4.5rem', lineHeight: 1 }}
+                style={{ fontSize: '3.5rem', lineHeight: 1 }}
               >
                 {cell.shape}
               </span>
