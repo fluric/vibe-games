@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import type { PlayerPiece } from '@vibe-games/shared';
 import * as audio from './AudioEffects';
 
@@ -60,6 +60,31 @@ export function MillBoard({
   const [loadingNode, setLoadingNode] = useState<number | null>(null);
 
   const isMyTurn = !disabled && turn === currentPlayerPiece;
+
+  const prevBoardRef = useRef(board);
+  const [lastDiff, setLastDiff] = useState<{ added: number | null; removed: number | null; isMove: boolean }>({ added: null, removed: null, isMove: false });
+
+  useEffect(() => {
+    const prev = prevBoardRef.current;
+    const boardChanged = board.some((val, i) => val !== prev[i]);
+
+    if (boardChanged) {
+      let added: number | null = null;
+      let removed: number | null = null;
+      
+      for (let i = 0; i < 24; i++) {
+        if (prev[i] === null && board[i] !== null) added = i;
+        if (prev[i] !== null && board[i] === null) removed = i;
+      }
+      
+      const addedPiece = added !== null ? board[added] : null;
+      const removedPiece = removed !== null ? prev[removed] : null;
+      const isMove = addedPiece !== null && removedPiece !== null && addedPiece === removedPiece;
+
+      setLastDiff({ added, removed, isMove });
+      prevBoardRef.current = board;
+    }
+  }, [board]);
 
   const handleNodeClick = async (index: number) => {
     if (disabled || loadingNode !== null) return;
@@ -262,6 +287,34 @@ export function MillBoard({
           filter="url(#glow-grid)"
         />
 
+        {/* ── Last Move Indicators ──────────────────────────────────────────────── */}
+        {lastDiff.isMove && lastDiff.added !== null && lastDiff.removed !== null && (
+          <line
+            x1={getPositionCoords(lastDiff.removed).x}
+            y1={getPositionCoords(lastDiff.removed).y}
+            x2={getPositionCoords(lastDiff.added).x}
+            y2={getPositionCoords(lastDiff.added).y}
+            stroke="#fbbf24" /* Amber 400 */
+            strokeWidth="1.5"
+            strokeDasharray="2 2"
+            opacity="0.6"
+            className="pointer-events-none animate-pulse"
+          />
+        )}
+        {!lastDiff.isMove && lastDiff.removed !== null && (
+           // Highlight captured piece's former spot briefly
+           <circle
+             cx={getPositionCoords(lastDiff.removed).x}
+             cy={getPositionCoords(lastDiff.removed).y}
+             r="4"
+             fill="none"
+             stroke="#ef4444"
+             strokeWidth="1"
+             opacity="0.4"
+             className="pointer-events-none"
+           />
+        )}
+
         {/* ── Render Board Points & Interactive Hotspots ───────────────────────── */}
         {Array.from({ length: 24 }).map((_, index) => {
           const coords = getPositionCoords(index);
@@ -282,6 +335,20 @@ export function MillBoard({
                 className="cursor-pointer"
                 onClick={() => handleNodeClick(index)}
               />
+
+              {/* Last placed/moved piece aura */}
+              {lastDiff.added === index && (
+                <circle
+                  cx={coords.x}
+                  cy={coords.y}
+                  r="5.5"
+                  fill="none"
+                  stroke="#fbbf24"
+                  strokeWidth="1.2"
+                  opacity="0.8"
+                  className="pointer-events-none animate-pulse"
+                />
+              )}
 
               {/* Node backing dot */}
               {piece === null && (
