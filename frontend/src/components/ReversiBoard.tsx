@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import type { PlayerPiece } from '@vibe-games/shared';
 import { useTranslation } from 'react-i18next';
 
@@ -112,18 +112,20 @@ export const ReversiBoard: React.FC<ReversiBoardProps> = ({
   const COLS = 8;
 
   const prevBoardRef = useRef(board);
-  const lastDiffRef = useRef<number | null>(null);
+  const [localLastMove, setLocalLastMove] = useState<number | null>(null);
 
-  if (board.some((v, i) => v !== prevBoardRef.current[i])) {
-    const prev = prevBoardRef.current;
-    const addedIdx = board.findIndex((v, i) => v !== null && prev[i] === null);
-    if (addedIdx !== -1) {
-      lastDiffRef.current = addedIdx;
+  useEffect(() => {
+    if (board.some((v, i) => v !== prevBoardRef.current[i])) {
+      const prev = prevBoardRef.current;
+      const addedIdx = board.findIndex((v, i) => v !== null && prev[i] === null);
+      if (addedIdx !== -1) {
+        setLocalLastMove(addedIdx);
+      }
+      prevBoardRef.current = board;
     }
-    prevBoardRef.current = board;
-  }
+  }, [board]);
 
-  const displayLastMove = lastMoveIndex ?? lastDiffRef.current;
+  const displayLastMove = lastMoveIndex ?? localLastMove;
 
   const legalMoves = currentPlayerPiece ? getLegalMoves(board, currentPlayerPiece) : [];
   const isMyTurn = currentPlayerPiece === turn && !disabled;
