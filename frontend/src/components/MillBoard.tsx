@@ -17,6 +17,7 @@ interface MillBoardProps {
   turn: PlayerPiece;
   phase: 'placement' | 'movement' | 'flying';
   millFormedThisTurn: boolean;
+  positionHistory?: string[];
   currentPlayerPiece: PlayerPiece | null;
   disabled: boolean;
   onAction: (
@@ -52,6 +53,7 @@ export function MillBoard({
   turn,
   phase,
   millFormedThisTurn,
+  positionHistory,
   currentPlayerPiece,
   disabled,
   onAction,
@@ -65,26 +67,56 @@ export function MillBoard({
   const [lastDiff, setLastDiff] = useState<{ added: number | null; removed: number | null; isMove: boolean }>({ added: null, removed: null, isMove: false });
 
   useEffect(() => {
-    const prev = prevBoardRef.current;
-    const boardChanged = board.some((val, i) => val !== prev[i]);
+    let refBoard: (PlayerPiece | null)[] | null = null;
 
-    if (boardChanged) {
+    if (positionHistory && positionHistory.length >= 2) {
+      const currentHistoryState = positionHistory[positionHistory.length - 1];
+      const currentTurn = currentHistoryState.slice(-1) as PlayerPiece;
+      
+      let refIndex = positionHistory.length - 2;
+      
+      if (millFormedThisTurn) {
+        // Current player is mid-turn. Find start of their current sequence.
+        while (refIndex > 0 && positionHistory[refIndex - 1].endsWith(currentTurn)) {
+          refIndex--;
+        }
+      } else {
+        // Current player just started. Find start of the PREVIOUS sequence.
+        const prevTurn = positionHistory[refIndex].slice(-1);
+        while (refIndex > 0 && positionHistory[refIndex - 1].endsWith(prevTurn)) {
+          refIndex--;
+        }
+      }
+
+      const refBoardStr = positionHistory[refIndex].slice(0, 24);
+      refBoard = refBoardStr.split('').map(c => c === '.' ? null : c as PlayerPiece);
+    } else {
+      // Fallback to in-memory ref
+      const prev = prevBoardRef.current;
+      const boardChanged = board.some((val, i) => val !== prev[i]);
+      if (boardChanged) {
+        refBoard = prev;
+      }
+    }
+
+    if (refBoard) {
       let added: number | null = null;
       let removed: number | null = null;
       
       for (let i = 0; i < 24; i++) {
-        if (prev[i] === null && board[i] !== null) added = i;
-        if (prev[i] !== null && board[i] === null) removed = i;
+        if (refBoard[i] === null && board[i] !== null) added = i;
+        if (refBoard[i] !== null && board[i] === null) removed = i;
       }
       
       const addedPiece = added !== null ? board[added] : null;
-      const removedPiece = removed !== null ? prev[removed] : null;
+      const removedPiece = removed !== null ? refBoard[removed] : null;
       const isMove = addedPiece !== null && removedPiece !== null && addedPiece === removedPiece;
 
       setLastDiff({ added, removed, isMove });
-      prevBoardRef.current = board;
     }
-  }, [board]);
+    
+    prevBoardRef.current = board;
+  }, [board, positionHistory, millFormedThisTurn]);
 
   const handleNodeClick = async (index: number) => {
     if (disabled || loadingNode !== null) return;

@@ -270,6 +270,7 @@ export function GamePage() {
             turn={game.state.turn}
             phase={(game.state as MillGameState).phase}
             millFormedThisTurn={(game.state as MillGameState).millFormedThisTurn}
+            positionHistory={(game.state as MillGameState).positionHistory}
             currentPlayerPiece={myPiece}
             disabled={game.status !== 'in_progress' || !isMyTurn}
             onAction={handleBoardAction}
