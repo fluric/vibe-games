@@ -19,6 +19,9 @@ const INCLUDE_RL = includeRlIdx !== -1;
 const roundsArgIdx = process.argv.indexOf('--rounds');
 const TOTAL_ROUNDS = roundsArgIdx !== -1 ? parseInt(process.argv[roundsArgIdx + 1], 10) : 3;
 
+const gameArgIdx = process.argv.indexOf('--game');
+const TARGET_GAME = gameArgIdx !== -1 ? process.argv[gameArgIdx + 1] : null;
+
 // Game loop runner that both master and workers can run
 async function runGame(
   gameType: GameType,
@@ -89,7 +92,10 @@ if (!isMainThread) {
   // Main thread logic
   config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
 
-  const millBots = Object.keys(config.mill).filter(k => !k.startsWith('rl_'));
+  let millBots = Object.keys(config.mill);
+  if (!INCLUDE_RL) {
+    millBots = millBots.filter(k => !k.startsWith('rl_'));
+  }
   let c4Bots = Object.keys(config.connect_four);
   if (!INCLUDE_RL) {
     c4Bots = c4Bots.filter(k => !k.startsWith('rl_'));
@@ -133,9 +139,15 @@ if (!isMainThread) {
     console.log('🤖 Starting Offline Parallel AI Tournament Calibration (MINIMAX ONLY)...');
   }
 
-  const MATCHUPS = [
-    { gameType: 'connect_four' as GameType, bots: c4Bots, baselineKey: 'easy_random' }
+  let MATCHUPS = [
+    { gameType: 'connect_four' as GameType, bots: c4Bots, baselineKey: 'easy_random' },
+    { gameType: 'mill' as GameType, bots: millBots, baselineKey: 'easy_random' }
   ];
+
+  if (TARGET_GAME) {
+    MATCHUPS = MATCHUPS.filter(m => m.gameType === TARGET_GAME);
+    console.log(`🎮 Filtering tournament to game: ${TARGET_GAME}`);
+  }
 
   // Generate all tasks (matchups)
   interface Task {

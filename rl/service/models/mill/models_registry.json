@@ -14,6 +14,16 @@
     "num_simulations": 0,
     "elo": 600
   },
+  "rl_scout": {
+    "checkpoint": "mill_elo_1000.pt",
+    "num_simulations": 10,
+    "elo": 1000
+  },
+  "rl_strategist": {
+    "checkpoint": "mill_elo_1000.pt",
+    "num_simulations": 25,
+    "elo": 1000
+  },
   "rl_master": {
     "checkpoint": "champion.pt",
     "num_simulations": 100,
