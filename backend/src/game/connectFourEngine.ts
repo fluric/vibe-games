@@ -52,6 +52,7 @@ export const ConnectFourEngine = {
       board: newBoard,
       turn: player === 'X' ? 'O' : 'X',
       winner: nextWinner,
+      lastMoveIndex: targetRow * 7 + column,
     };
   },
 

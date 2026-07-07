@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import type { PlayerPiece } from '@vibe-games/shared';
 import { useTranslation } from 'react-i18next';
 
@@ -34,6 +34,7 @@ const ConnectFourCellContent: React.FC<CellContentProps> = ({ value, row, isInit
 interface ConnectFourBoardProps {
   board: (PlayerPiece | null)[];
   turn: PlayerPiece;
+  lastMoveIndex?: number;
   currentPlayerPiece: PlayerPiece | null;
   disabled: boolean;
   onAction: (action: { action: 'place'; column: number }) => void;
@@ -42,6 +43,7 @@ interface ConnectFourBoardProps {
 export const ConnectFourBoard: React.FC<ConnectFourBoardProps> = ({
   board,
   turn,
+  lastMoveIndex,
   currentPlayerPiece,
   disabled,
   onAction,
@@ -56,11 +58,28 @@ export const ConnectFourBoard: React.FC<ConnectFourBoardProps> = ({
   // Track initial board state on mount to prevent existing stones from animating on refresh/load
   const [initialBoard, setInitialBoard] = useState(board);
 
+  // Fallback state for detecting moves live if lastMoveIndex is missing (e.g., legacy games)
+  const prevBoardRef = useRef(board);
+  const [lastDiffIndex, setLastDiffIndex] = useState<number | null>(null);
+
+  useEffect(() => {
+    const prev = prevBoardRef.current;
+    if (board.some((v, i) => v !== prev[i])) {
+      const addedIdx = board.findIndex((v, i) => v !== null && prev[i] === null);
+      if (addedIdx !== -1) {
+        setLastDiffIndex(addedIdx);
+      }
+      prevBoardRef.current = board;
+    }
+  }, [board]);
+
+  const displayLastMove = lastMoveIndex ?? lastDiffIndex;
+
   // If the board is reset to completely empty, reset the initial board reference
   useEffect(() => {
     if (board.every(cell => cell === null)) {
-       
       setInitialBoard(board);
+      setLastDiffIndex(null);
     }
   }, [board]);
 
@@ -138,6 +157,8 @@ export const ConnectFourBoard: React.FC<ConnectFourBoardProps> = ({
               {Array.from({ length: COLS }).map((_, c) => {
                 const isColumnFull = getLowestEmptyRow(c) === -1;
                 const isHovered = hoveredCol === c;
+                const index = r * COLS + c;
+                const isLastMove = displayLastMove === index;
                 
                 return (
                   <div
@@ -154,6 +175,10 @@ export const ConnectFourBoard: React.FC<ConnectFourBoardProps> = ({
                     onClick={() => handleColumnClick(c)}
                   >
                     {renderCellContent(r, c)}
+                    {/* Last Move Indicator Ring */}
+                    {isLastMove && (
+                      <div className="absolute inset-0 rounded-full border-2 border-white opacity-80 animate-pulse pointer-events-none shadow-[0_0_12px_rgba(255,255,255,0.8)]" />
+                    )}
                   </div>
                 );
               })}

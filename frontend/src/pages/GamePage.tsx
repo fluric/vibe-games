@@ -287,6 +287,7 @@ export function GamePage() {
           <ConnectFourBoard
             board={game.state.board as (PlayerPiece | null)[]}
             turn={game.state.turn}
+            lastMoveIndex={(game.state as ConnectFourGameState).lastMoveIndex}
             currentPlayerPiece={myPiece}
             disabled={game.status !== 'in_progress' || !isMyTurn || submittingMove}
             onAction={(act) => handleBoardAction('place', { position: act.column })}

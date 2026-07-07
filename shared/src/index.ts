@@ -54,6 +54,7 @@ export interface ConnectFourGameState {
   board: (PlayerPiece | null)[]; // 42 board positions (6 rows * 7 cols, row-major)
   turn: PlayerPiece;
   winner: PlayerPiece | 'draw' | null;
+  lastMoveIndex?: number;
 }
 
 // State definition for the game of Mill (Nine Men's Morris)
