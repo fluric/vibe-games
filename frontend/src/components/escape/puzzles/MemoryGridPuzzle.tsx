@@ -70,7 +70,6 @@ export const MemoryGridPuzzle: React.FC<{ config: MemoryGridRoomConfig, onSolved
   const [targetSequence, setTargetSequence] = useState<number[]>([]);
   const [inputSequence, setInputSequence] = useState<number[]>([]);
   const [highlightIndex, setHighlightIndex] = useState<number | null>(null);
-  const [feedback, setFeedback] = useState<string>('');
 
   const isMounted = useRef(true);
 
@@ -82,7 +81,6 @@ export const MemoryGridPuzzle: React.FC<{ config: MemoryGridRoomConfig, onSolved
   const startLevel = useCallback((currentLevel: number) => {
     if (!isMounted.current) return;
     setPhase('showing');
-    setFeedback('');
     setInputSequence([]);
 
     const newGridA = generateGrid();
@@ -172,7 +170,6 @@ export const MemoryGridPuzzle: React.FC<{ config: MemoryGridRoomConfig, onSolved
       if (newInput.length === targetSequence.length) {
         // Passed level
         setPhase('success_anim');
-        setFeedback('Correct!');
         setTimeout(() => {
           if (!isMounted.current) return;
           if (level === 5) {
@@ -191,7 +188,6 @@ export const MemoryGridPuzzle: React.FC<{ config: MemoryGridRoomConfig, onSolved
     } else {
       // Failed level
       setPhase('fail_anim');
-      setFeedback('Incorrect sequence!');
       // Highlight wrong click in red (handled by phase)
       setHighlightIndex(index);
       setTimeout(() => {
@@ -210,11 +206,8 @@ export const MemoryGridPuzzle: React.FC<{ config: MemoryGridRoomConfig, onSolved
 
   return (
     <div className={`w-full max-w-sm mx-auto p-6 rounded-2xl border border-neutral-700/50 shadow-2xl transition-colors duration-1000 ${LEVEL_COLORS[level - 1]} flex flex-col items-center gap-6`}>
-      <div className="text-center space-y-2">
+      <div className="text-center space-y-2 mb-4">
         <h3 className="text-xl font-bold text-white tracking-widest">LEVEL {level}</h3>
-        <p className="text-sm text-neutral-300 min-h-[40px] flex items-center justify-center">
-          {feedback}
-        </p>
       </div>
 
       <div className="grid grid-cols-3 gap-3 p-4 bg-neutral-900/80 rounded-xl border border-neutral-800 shadow-inner w-full aspect-square relative">
