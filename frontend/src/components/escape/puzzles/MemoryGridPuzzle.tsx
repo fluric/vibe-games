@@ -2,8 +2,8 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import type { MemoryGridRoomConfig } from '../../../data/escapeRooms';
 
 const COLORS = [
-  'bg-red-500', 'bg-blue-500', 'bg-emerald-500', 'bg-yellow-500', 
-  'bg-purple-500', 'bg-orange-500', 'bg-cyan-500', 'bg-pink-500', 'bg-teal-500'
+  'text-red-500', 'text-blue-500', 'text-emerald-500', 'text-yellow-500', 
+  'text-purple-500', 'text-orange-500', 'text-cyan-500', 'text-pink-500', 'text-teal-500'
 ];
 const SHAPES = ['⬤', '■', '▲', '◆', '★', '♥', '✖', '⬢', '⬟'];
 
@@ -202,18 +202,18 @@ export const MemoryGridPuzzle: React.FC<{ config: MemoryGridRoomConfig, onSolved
               onClick={() => handleCellClick(idx)}
               disabled={phase !== 'waiting_input'}
               className={`
-                relative w-full h-full rounded-lg shadow-md flex items-center justify-center text-4xl transition-all duration-300
-                ${cell.color}
+                relative w-full h-full rounded-lg shadow-md flex items-center justify-center text-5xl transition-all duration-300
+                bg-neutral-800
                 ${isHighlighted ? 'scale-95 brightness-150 ring-4 ring-white z-10' : 'hover:brightness-110 active:scale-95'}
-                ${isFailedClick ? 'ring-4 ring-red-500 bg-red-600' : ''}
+                ${isFailedClick ? 'ring-4 ring-red-500 bg-red-900' : ''}
                 ${isInputted ? 'opacity-50 scale-95' : ''}
                 ${phase !== 'waiting_input' && !isHighlighted ? 'opacity-90' : ''}
               `}
               style={{
-                boxShadow: isHighlighted ? '0 0 20px rgba(255,255,255,0.6)' : 'inset 0 2px 4px rgba(255,255,255,0.2), inset 0 -2px 4px rgba(0,0,0,0.3)'
+                boxShadow: isHighlighted ? '0 0 20px rgba(255,255,255,0.6)' : 'inset 0 2px 4px rgba(255,255,255,0.1), inset 0 -2px 4px rgba(0,0,0,0.5)'
               }}
             >
-              <span className="drop-shadow-md select-none text-white mix-blend-overlay opacity-80">{cell.shape}</span>
+              <span className={`drop-shadow-lg select-none opacity-100 ${cell.color}`}>{cell.shape}</span>
             </button>
           );
         })}
