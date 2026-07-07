@@ -1,9 +1,17 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import type { MemoryGridRoomConfig } from '../../../data/escapeRooms';
 
+// Using hex colors to avoid Tailwind JIT purging issues during dev server runtime
 const COLORS = [
-  'bg-red-500', 'bg-blue-500', 'bg-emerald-500', 'bg-yellow-500', 
-  'bg-purple-500', 'bg-orange-500', 'bg-cyan-500', 'bg-pink-500', 'bg-teal-500'
+  '#ef4444', // red-500
+  '#3b82f6', // blue-500
+  '#10b981', // emerald-500
+  '#eab308', // yellow-500
+  '#a855f7', // purple-500
+  '#f97316', // orange-500
+  '#06b6d4', // cyan-500
+  '#ec4899', // pink-500
+  '#14b8a6', // teal-500
 ];
 const SHAPES = ['⬤', '■', '▲', '◆', '★', '♥', '✖', '⬢', '⬟'];
 
@@ -203,13 +211,13 @@ export const MemoryGridPuzzle: React.FC<{ config: MemoryGridRoomConfig, onSolved
               disabled={phase !== 'waiting_input'}
               className={`
                 relative w-full h-full rounded-lg shadow-md flex items-center justify-center text-5xl transition-all duration-300
-                ${cell.color}
                 ${isHighlighted ? 'scale-95 brightness-150 ring-4 ring-white z-10' : 'hover:brightness-110 active:scale-95'}
-                ${isFailedClick ? 'ring-4 ring-red-500 bg-red-900' : ''}
+                ${isFailedClick ? 'ring-4 ring-red-500' : ''}
                 ${isInputted ? 'opacity-50 scale-95' : ''}
                 ${phase !== 'waiting_input' && !isHighlighted ? 'opacity-90' : ''}
               `}
               style={{
+                backgroundColor: isFailedClick ? '#7f1d1d' : cell.color,
                 boxShadow: isHighlighted ? '0 0 20px rgba(255,255,255,0.6)' : 'inset 0 2px 4px rgba(255,255,255,0.2), inset 0 -2px 4px rgba(0,0,0,0.3)'
               }}
             >
