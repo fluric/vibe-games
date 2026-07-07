@@ -83,6 +83,7 @@ export const MemoryGridPuzzle: React.FC<{ config: MemoryGridRoomConfig, onSolved
   const isMounted = useRef(true);
 
   useEffect(() => {
+    isMounted.current = true;
     return () => { isMounted.current = false; };
   }, []);
 
@@ -234,8 +235,7 @@ export const MemoryGridPuzzle: React.FC<{ config: MemoryGridRoomConfig, onSolved
               `}
               style={{
                 backgroundColor: isFailedClick ? '#7f1d1d' : cell.color,
-                boxShadow: isHighlighted ? '0 0 30px rgba(255,255,255,0.9)' : 'inset 0 2px 4px rgba(255,255,255,0.2), inset 0 -2px 4px rgba(0,0,0,0.3)',
-                transform: isHighlighted ? 'scale(1.15)' : 'none'
+                boxShadow: isHighlighted ? '0 0 30px rgba(255,255,255,0.9)' : 'inset 0 2px 4px rgba(255,255,255,0.2), inset 0 -2px 4px rgba(0,0,0,0.3)'
               }}
             >
               <span 
