@@ -207,7 +207,9 @@ export const MemoryGridPuzzle: React.FC<{ config: MemoryGridRoomConfig, onSolved
   return (
     <div className={`w-full max-w-sm mx-auto p-6 rounded-2xl border border-neutral-700/50 shadow-2xl transition-colors duration-1000 ${LEVEL_COLORS[level - 1]} flex flex-col items-center gap-6`}>
       <div className="text-center space-y-2 mb-4">
-        <h3 className="text-xl font-bold text-white tracking-widest">LEVEL {level}</h3>
+        <h3 className="text-xl font-bold text-white tracking-widest">
+          {level === 5 ? '5 LEVEL' : `LEVEL ${level}`}
+        </h3>
       </div>
 
       <div className="grid grid-cols-3 gap-3 p-4 bg-neutral-900/80 rounded-xl border border-neutral-800 shadow-inner w-full aspect-square relative">
