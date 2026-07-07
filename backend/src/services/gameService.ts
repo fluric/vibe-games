@@ -82,14 +82,16 @@ export async function getOrCreateUser(userId: string): Promise<User> {
       await userRepo.save(user);
     } catch (err: any) {
       const username = botInfo ? botInfo.username : `Player_${userId.substring(0, 5)}`;
-      const existing = await userRepo.findOne({
-        where: [
-          { id: userId },
-          { username: username }
-        ]
-      });
+      const existing = await userRepo.findOne({ where: { username } });
       
-      if (existing) {
+      if (existing && existing.id !== userId) {
+        // The username is taken by an old bot ID. Rename the old bot to free up the username.
+        existing.username = `${existing.username}_old_${existing.id.substring(0, 5)}`;
+        await userRepo.save(existing);
+        
+        // Now save the new bot user successfully!
+        await userRepo.save(user);
+      } else if (existing && existing.id === userId) {
         user = existing;
       } else {
         throw err;
@@ -454,13 +456,13 @@ export async function createGame(user: User, gameType: GameType, isPublic: boole
     const botUser = await getOrCreateUser(botConfig.id);
 
     if (aiStarts) {
-      playerXId = botUser.id;
+      playerXId = botConfig.id;
       playerOId = user.id;
       playerXEntity = botUser;
       playerOEntity = user;
     } else {
       playerXId = user.id;
-      playerOId = botUser.id;
+      playerOId = botConfig.id;
       playerXEntity = user;
       playerOEntity = botUser;
     }
