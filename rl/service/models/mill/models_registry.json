@@ -3,5 +3,25 @@
     "checkpoint": "champion.pt",
     "num_simulations": 100,
     "elo": 1500
+  },
+  "rl_novice": {
+    "checkpoint": "mill_elo_200.pt",
+    "num_simulations": 0,
+    "elo": 200
+  },
+  "rl_intermediate": {
+    "checkpoint": "mill_elo_600.pt",
+    "num_simulations": 0,
+    "elo": 600
+  },
+  "rl_master": {
+    "checkpoint": "champion.pt",
+    "num_simulations": 100,
+    "elo": 3921
+  },
+  "rl_strong": {
+    "checkpoint": "mill_elo_1000.pt",
+    "num_simulations": 50,
+    "elo": 1000
   }
 }
