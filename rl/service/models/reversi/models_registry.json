@@ -4,19 +4,29 @@
     "num_simulations": 0,
     "elo": 200
   },
-  "rl_strong": {
+  "rl_intermediate": {
     "checkpoint": "reversi_elo_1000.pt",
-    "num_simulations": 200,
+    "num_simulations": 50,
     "elo": 1000
+  },
+  "rl_strong": {
+    "checkpoint": "reversi_elo_2400.pt",
+    "num_simulations": 200,
+    "elo": 2400
+  },
+  "rl_expert": {
+    "checkpoint": "reversi_elo_4800.pt",
+    "num_simulations": 400,
+    "elo": 4800
   },
   "rl_master": {
     "checkpoint": "champion.pt",
     "num_simulations": 800,
     "elo": 7184
   },
-  "rl_intermediate": {
-    "checkpoint": "reversi_elo_600.pt",
-    "num_simulations": 50,
-    "elo": 600
+  "rl_challenger": {
+    "checkpoint": "latest_challenger.pt",
+    "num_simulations": 800,
+    "elo": 7500
   }
 }
