@@ -292,9 +292,7 @@ if (!isMainThread) {
 
     console.log('\n📈 Calibrated ELO Ratings (relative to Easy baseline = 0):');
     for (const group of MATCHUPS) {
-      for (const bot of group.bots) {
-        console.log(`- ${config[group.gameType][bot].username}:   ${Math.round(ratings[group.gameType][bot])}`);
-      }
+      printStandings(group.gameType, group.bots);
     }
 
     // Write updated ELOs directly back to aiConfig.json

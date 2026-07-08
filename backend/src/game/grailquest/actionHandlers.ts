@@ -22,6 +22,16 @@ export function handleReactAction(state: GrailQuestGameState, action: any, playe
   if (action.reactType === 'fight') {
     if (attackerStack.length === 0 || defenderStack.length === 0) {
       state.pendingCombats.splice(combatIdx, 1);
+      const remainingDefenses = state.pendingCombats.some(c => c.defender === player);
+      if (!remainingDefenses) {
+        state.phase = 'deploy';
+        if (!state.drawnThisTurn) {
+          const drawn = runDeployDraw(state, player);
+          state.hands[player] = [...(state.hands[player] || []), ...drawn];
+          state.drawnThisTurn = true;
+        }
+      }
+      checkGameEnd(state);
       return state;
     }
 
@@ -183,6 +193,16 @@ export function handleReactAction(state: GrailQuestGameState, action: any, playe
         cell.soldiers = defenderStack;
       }
 
+      const remainingDefenses = state.pendingCombats.some(c => c.defender === player);
+      if (!remainingDefenses) {
+        state.phase = 'deploy';
+        if (!state.drawnThisTurn) {
+          const drawn = runDeployDraw(state, player);
+          state.hands[player] = [...(state.hands[player] || []), ...drawn];
+          state.drawnThisTurn = true;
+        }
+      }
+      checkGameEnd(state);
       return state;
     }
 

@@ -124,6 +124,11 @@ export async function seedBots() {
           } catch (err) {
             // Safe to ignore if concurrent seed process inserted first
           }
+        } else {
+          // Update username if it changed
+          if (existing.username !== bot.username) {
+            await userRepo.update(bot.id, { username: bot.username });
+          }
         }
 
         let stats = await userStatsRepo.findOneBy({ userId: bot.id, gameType: targetGameType });
@@ -137,6 +142,11 @@ export async function seedBots() {
             await userStatsRepo.save(stats);
           } catch (err) {
             // Safe to ignore if concurrent seed process inserted first
+          }
+        } else {
+          // Update ELO if it changed in config
+          if (stats.elo !== bot.elo) {
+            await userStatsRepo.update({ userId: bot.id, gameType: targetGameType }, { elo: bot.elo });
           }
         }
       })());
