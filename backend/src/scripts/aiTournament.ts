@@ -102,6 +102,10 @@ if (!isMainThread) {
   }
   const hgBots = Object.keys(config.grail_quest).filter(k => !k.startsWith('rl_'));
 
+  let reversiBots = Object.keys(config.reversi);
+  if (!INCLUDE_RL) {
+    reversiBots = reversiBots.filter(k => !k.startsWith('rl_'));
+  }
   if (MOVE_TIME_MS !== null) {
     console.log(`⏱️  Move time budget: Overridden to ${MOVE_TIME_MS}ms per move`);
   } else {
@@ -112,12 +116,14 @@ if (!isMainThread) {
   const ratings: Record<string, Record<string, number>> = {
     mill: {},
     connect_four: {},
-    grail_quest: {}
+    grail_quest: {},
+    reversi: {}
   };
   const winCounts: Record<string, Record<string, Record<string, number>>> = {
     mill: {},
     connect_four: {},
-    grail_quest: {}
+    grail_quest: {},
+    reversi: {}
   };
   for (const key of millBots) {
     ratings.mill[key] = 0;
@@ -131,6 +137,10 @@ if (!isMainThread) {
     ratings.grail_quest[key] = 0;
     winCounts.grail_quest[key] = { wins: 0, losses: 0, draws: 0 };
   }
+  for (const key of reversiBots) {
+    ratings.reversi[key] = 0;
+    winCounts.reversi[key] = { wins: 0, losses: 0, draws: 0 };
+  }
 
   if (INCLUDE_RL) {
     console.log('🤖 Starting Offline Parallel AI Tournament Calibration (INCLUDING RL BOTS)...');
@@ -141,7 +151,8 @@ if (!isMainThread) {
 
   let MATCHUPS = [
     { gameType: 'connect_four' as GameType, bots: c4Bots, baselineKey: 'easy_random' },
-    { gameType: 'mill' as GameType, bots: millBots, baselineKey: 'easy_random' }
+    { gameType: 'mill' as GameType, bots: millBots, baselineKey: 'easy_random' },
+    { gameType: 'reversi' as GameType, bots: reversiBots, baselineKey: 'easy_random' }
   ];
 
   if (TARGET_GAME) {
@@ -261,16 +272,19 @@ if (!isMainThread) {
     }
   };
 
+  const printStandings = (gameType: GameType, bots: string[]) => {
+    console.log(`\n🏆 Standings for ${gameType}:`);
+    for (const bot of bots) {
+      const stats = winCounts[gameType][bot];
+      const total = stats.wins + stats.losses + stats.draws;
+      console.log(`- ${config[gameType][bot].username}: ${stats.wins} Wins, ${stats.losses} Losses, ${stats.draws} Draws, ELO: ${Math.round(ratings[gameType][bot])}`);
+    }
+  };
+
+  const startTime = Date.now();
+
   const onAllCompleted = () => {
     console.log('\n🏁 Parallel Tournament Completed.');
-    console.log('\n📊 Win/Loss Stats:');
-    for (const group of MATCHUPS) {
-      for (const bot of group.bots) {
-        const stats = winCounts[group.gameType][bot];
-        const total = stats.wins + stats.losses + stats.draws;
-        console.log(`- ${config[group.gameType][bot].username}: ${stats.wins} Wins, ${stats.losses} Losses, ${stats.draws} Draws (Total: ${total})`);
-      }
-    }
 
     console.log('\n📈 Calibrated ELO Ratings (relative to Easy baseline = 0):');
     for (const group of MATCHUPS) {
@@ -282,12 +296,10 @@ if (!isMainThread) {
     // Write updated ELOs directly back to aiConfig.json
     const outConfig = JSON.parse(fs.readFileSync(configPath, 'utf8'));
     for (const group of MATCHUPS) {
-      if (group.gameType === 'connect_four') {
-        for (const bot of group.bots) {
-          // Keep RL bots with their own ELO if they weren't included in the tournament
-          if (!bot.startsWith('rl_') || INCLUDE_RL) {
-            outConfig[group.gameType][bot].elo = Math.round(ratings[group.gameType][bot]);
-          }
+      for (const bot of group.bots) {
+        // Keep RL bots with their own ELO if they weren't included in the tournament
+        if (!bot.startsWith('rl_') || INCLUDE_RL) {
+          outConfig[group.gameType][bot].elo = Math.round(ratings[group.gameType][bot]);
         }
       }
     }
