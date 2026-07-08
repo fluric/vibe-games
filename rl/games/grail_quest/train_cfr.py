@@ -129,79 +129,111 @@ class GrailQuestMCCFR:
         state = GrailQuestState()
         # Randomize the RNG seed slightly per iteration for diverse sampling
         state._rng = random.Random(self._rng.randint(0, 2**32))
-        return self._traverse(state, update_player, 1.0, 1.0, 1.0)
+        return self._traverse_iterative(state, update_player)
 
-    def _traverse(
-        self,
-        state: GrailQuestState,
-        update_player: int,
-        reach_p0: float,
-        reach_p1: float,
-        sample_prob: float,
-    ) -> float:
+    # Maximum number of actions per game trajectory to prevent infinite loops
+    MAX_DEPTH = 600
+
+    def _traverse_iterative(self, root_state: GrailQuestState, update_player: int) -> float:
         """
-        Recursive OS-MCCFR traversal.
+        Iterative OS-MCCFR traversal (replaces recursive version).
 
-        Returns: sampled utility for player `update_player`.
+        Simulates the recursive call stack explicitly to avoid Python's 1000-frame
+        limit. Grail Quest games can be 400 turns × 10+ actions = 4000+ steps deep.
+
+        Each 'frame' on the stack stores everything needed to compute the regret
+        update once the sampled child returns its utility.
         """
-        if state.is_terminal():
-            return state.outcome(update_player) / sample_prob
+        # Stack frames: list of dicts with fields:
+        #   info_state, player, legal, action, strategy,
+        #   my_reach, opp_reach, sample_prob
+        stack: list = []
 
-        player = state.turn
-        legal = state.legal_actions()
-        if not legal:
-            return 0.0
+        state = root_state
+        reach_p0 = 1.0
+        reach_p1 = 1.0
+        sample_prob = 1.0
 
-        info_state = state.information_state_string(player)
-        strategy = self.policy.get_strategy(info_state, legal)
+        # ── Forward pass: walk down the sampled trajectory ──────────────────
+        for _ in range(self.MAX_DEPTH):
+            if state.is_terminal():
+                break
 
-        # OS-MCCFR: sample one action from strategy (for update_player's subtree)
-        # and compute the value with importance weighting
-        action = self._sample_action(strategy, legal)
-        action_prob = strategy[action]
+            player = state.turn
+            legal = state.legal_actions()
+            if not legal:
+                break
 
-        # Reach probabilities
-        if player == PLAYER_X:
-            child_reach_p0 = reach_p0 * action_prob
-            child_reach_p1 = reach_p1
-            my_reach = reach_p0
-            opp_reach = reach_p1
-        else:
-            child_reach_p0 = reach_p0
-            child_reach_p1 = reach_p1 * action_prob
-            my_reach = reach_p1
-            opp_reach = reach_p0
+            info_state = state.information_state_string(player)
+            strategy = self.policy.get_strategy(info_state, legal)
 
-        child_state = state.clone()
-        child_state.apply_action(action)
+            action = self._sample_action(strategy, legal)
+            action_prob = strategy.get(action, 1.0 / max(len(legal), 1))
 
-        util = self._traverse(child_state, update_player, child_reach_p0,
-                               child_reach_p1, sample_prob * action_prob)
+            if player == PLAYER_X:
+                my_reach  = reach_p0
+                opp_reach = reach_p1
+                child_reach_p0 = reach_p0 * action_prob
+                child_reach_p1 = reach_p1
+            else:
+                my_reach  = reach_p1
+                opp_reach = reach_p0
+                child_reach_p0 = reach_p0
+                child_reach_p1 = reach_p1 * action_prob
 
-        # Only update regrets/strategy for the update_player's information sets
-        if player == update_player:
-            # Counterfactual reach (opponent's reach * sample correction)
-            cf_reach = opp_reach / sample_prob
+            # Push frame for backward pass
+            stack.append({
+                "info_state": info_state,
+                "player":     player,
+                "legal":      legal,
+                "action":     action,
+                "strategy":   strategy,
+                "my_reach":   my_reach,
+                "opp_reach":  opp_reach,
+                "sample_prob": sample_prob,
+            })
 
-            # Update regrets for all legal actions (counterfactual values)
-            for a in legal:
-                if a == action:
-                    regret = cf_reach * (util - util)  # sampled action: regret = 0 inline
-                else:
-                    # Counterfactual: we don't know the value of unsampled actions
-                    # In OS-MCCFR, we set regret for unsampled = 0 (baseline variant)
-                    regret = 0.0
-                self.policy.regret_sum[info_state][a] += regret
+            # Advance state (in-place mutation on a fresh clone)
+            next_state = state.clone()
+            next_state.apply_action(action)
+            state = next_state
 
-            # Actually: for the sampled action, regret = util (since utility of others = 0 in OS)
-            # This is the "baseline-free" OS-MCCFR update
-            self.policy.regret_sum[info_state][action] += cf_reach * util
+            reach_p0   = child_reach_p0
+            reach_p1   = child_reach_p1
+            sample_prob = sample_prob * action_prob
 
-            # Update strategy sum (accumulates towards Nash average)
-            for a in legal:
-                self.policy.strategy_sum[info_state][a] += my_reach * strategy[a]
+        # ── Leaf utility ─────────────────────────────────────────────────────
+        # Avoid division by zero
+        sp = sample_prob if sample_prob > 1e-300 else 1e-300
+        util = state.outcome(update_player) / sp
+
+        # ── Backward pass: propagate utility and update regrets ───────────────
+        for frame in reversed(stack):
+            player    = frame["player"]
+            info_state = frame["info_state"]
+            legal     = frame["legal"]
+            action    = frame["action"]
+            strategy  = frame["strategy"]
+            opp_reach = frame["opp_reach"]
+            sp_frame  = frame["sample_prob"] if frame["sample_prob"] > 1e-300 else 1e-300
+
+            if player == update_player:
+                # Counterfactual reach weight
+                cf_reach = opp_reach / sp_frame
+
+                # Baseline-free OS-MCCFR update:
+                # Only the sampled action gets regret = cf_reach * util
+                # All unsampled actions get regret = 0 (implicit, no update needed)
+                self.policy.regret_sum[info_state][action] += cf_reach * util
+
+                # Strategy sum accumulation (for average policy / Nash approx)
+                my_reach = frame["my_reach"]
+                for a in legal:
+                    self.policy.strategy_sum[info_state][a] += my_reach * strategy.get(a, 0.0)
 
         return util
+
+
 
     def _sample_action(self, strategy: Dict[int, float], legal: List[int]) -> int:
         r = self._rng.random()

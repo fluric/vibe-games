@@ -376,8 +376,7 @@
       "elo": 300,
       "type": "rl",
       "botLevel": "cfr_novice",
-      "enabled": false,
-      "note": "Enable after running: python -m rl.games.grail_quest.train_cfr --iterations 1000"
+      "enabled": true
     },
     "cfr_master": {
       "id": "00000000-0000-0000-0000-000000000071",
@@ -385,8 +384,7 @@
       "elo": 600,
       "type": "rl",
       "botLevel": "cfr_master",
-      "enabled": false,
-      "note": "Enable after running: python -m rl.games.grail_quest.train_cfr --iterations 50000"
+      "enabled": true
     }
   },
   "reversi": {
