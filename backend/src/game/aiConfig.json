@@ -468,7 +468,7 @@
       "elo": 1700,
       "type": "rl",
       "botLevel": "rl_master",
-      "enabled": false
+      "enabled": true
     }
   }
 }
