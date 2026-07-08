@@ -542,7 +542,7 @@ export async function getUserActiveGames(userId: string): Promise<Game[]> {
 }
 
 export async function getLeaderboard(gameType: GameType): Promise<LeaderboardResponse> {
-  if (gameType !== 'mill' && gameType !== 'connect_four' && gameType !== 'grail_quest') {
+  if (gameType !== 'mill' && gameType !== 'connect_four' && gameType !== 'grail_quest' && gameType !== 'reversi') {
     throw new Error('Unsupported game type');
   }
 

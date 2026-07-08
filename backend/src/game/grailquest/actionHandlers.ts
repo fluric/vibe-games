@@ -21,7 +21,8 @@ export function handleReactAction(state: GrailQuestGameState, action: any, playe
 
   if (action.reactType === 'fight') {
     if (attackerStack.length === 0 || defenderStack.length === 0) {
-      throw new Error('Cannot fight with empty stack');
+      state.pendingCombats.splice(combatIdx, 1);
+      return state;
     }
 
     const attackerCard = attackerStack[0];

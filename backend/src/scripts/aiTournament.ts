@@ -58,7 +58,7 @@ async function runGame(
 
     try {
       let action;
-      if (botType.startsWith('rl_') && engine.getAiActionAsync) {
+      if ((botType.startsWith('rl_') || botType.startsWith('cfr_')) && engine.getAiActionAsync) {
         action = await engine.getAiActionAsync(state, botType, botDepth, botWeights, botTimeLimit);
       } else {
         action = engine.getAiAction(state, botType, botDepth, botWeights, botTimeLimit);
@@ -100,7 +100,10 @@ if (!isMainThread) {
   if (!INCLUDE_RL) {
     c4Bots = c4Bots.filter(k => !k.startsWith('rl_'));
   }
-  const hgBots = Object.keys(config.grail_quest).filter(k => !k.startsWith('rl_'));
+  let hgBots = Object.keys(config.grail_quest);
+  if (!INCLUDE_RL) {
+    hgBots = hgBots.filter(k => !k.startsWith('rl_') && !k.startsWith('cfr_'));
+  }
 
   let reversiBots = Object.keys(config.reversi);
   if (!INCLUDE_RL) {
@@ -152,7 +155,8 @@ if (!isMainThread) {
   let MATCHUPS = [
     { gameType: 'connect_four' as GameType, bots: c4Bots, baselineKey: 'easy_random' },
     { gameType: 'mill' as GameType, bots: millBots, baselineKey: 'easy_random' },
-    { gameType: 'reversi' as GameType, bots: reversiBots, baselineKey: 'easy_random' }
+    { gameType: 'reversi' as GameType, bots: reversiBots, baselineKey: 'easy_random' },
+    { gameType: 'grail_quest' as GameType, bots: hgBots, baselineKey: 'easy_random' }
   ];
 
   if (TARGET_GAME) {
@@ -298,7 +302,7 @@ if (!isMainThread) {
     for (const group of MATCHUPS) {
       for (const bot of group.bots) {
         // Keep RL bots with their own ELO if they weren't included in the tournament
-        if (!bot.startsWith('rl_') || INCLUDE_RL) {
+        if ((!bot.startsWith('rl_') && !bot.startsWith('cfr_')) || INCLUDE_RL) {
           outConfig[group.gameType][bot].elo = Math.round(ratings[group.gameType][bot]);
         }
       }
