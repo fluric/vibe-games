@@ -278,7 +278,7 @@ export function GamePage() {
             disabled={game.status !== 'in_progress' || !isMyTurn}
             onAction={handleBoardAction}
           />
-        ) : game.gameType === 'grail_quest' ? (
+        ) : game.gameType === 'grail_quest' || (game.gameType as string) === 'holy_grale' ? (
           <GrailQuestBoard
             state={game.state as GrailQuestGameState}
             myPiece={myPiece}
@@ -295,7 +295,7 @@ export function GamePage() {
             disabled={game.status !== 'in_progress' || !isMyTurn || submittingMove}
             onAction={(act) => handleBoardAction(act.action, { position: act.position })}
           />
-        ) : (
+        ) : game.gameType === 'connect_four' ? (
           <ConnectFourBoard
             board={game.state.board as (PlayerPiece | null)[]}
             turn={game.state.turn}
@@ -304,6 +304,10 @@ export function GamePage() {
             disabled={game.status !== 'in_progress' || !isMyTurn || submittingMove}
             onAction={(act) => handleBoardAction('place', { position: act.column })}
           />
+        ) : (
+          <div className="flex items-center justify-center h-64 text-neutral-400">
+            Unknown game mode: {game.gameType}
+          </div>
         )}
       </GameLayout>
 

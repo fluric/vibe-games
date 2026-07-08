@@ -8,7 +8,8 @@ import { parseCombatText } from './historyUtils';
 
 export function useGrailQuestBoard(props: GrailQuestBoardProps) {
   const { state, myPiece, disabled, submittingMove, onAction } = props;
-  const { board: stateBoard, phase, turn, winner, hands, pendingCombats = [], grailCellKey: stateGrailCellKey = '0,0' } = state;
+  const { board: stateBoard, phase, turn, winner, hands, pendingCombats: rawPendingCombats, grailCellKey: stateGrailCellKey = '0,0' } = state;
+  const pendingCombats = rawPendingCombats || [];
 
   const { id: gameId } = useParams<{ id: string }>();
 
