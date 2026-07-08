@@ -566,21 +566,13 @@ export async function getLeaderboard(gameType: GameType): Promise<LeaderboardRes
 
   const entries: LeaderboardEntryDto[] = statsList.map(stats => {
     const isBot = BOTS_MAP.has(stats.userId);
-    let currentElo = stats.elo;
     let username = stats.user ? stats.user.username : `Player_${stats.userId.substring(0, 5)}`;
-    if (isBot) {
-      const botInfo = BOTS_MAP.get(stats.userId);
-      if (botInfo) {
-        currentElo = botInfo.elo;
-        username = botInfo.username;
-      }
-    }
 
     return {
       userId: stats.userId,
       username,
       avatarUrl: stats.user ? stats.user.avatarUrl : null,
-      elo: currentElo,
+      elo: stats.elo,
       wins: stats.wins,
       losses: stats.losses,
       draws: stats.draws,
