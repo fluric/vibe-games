@@ -278,7 +278,7 @@ export function GamePage() {
             disabled={game.status !== 'in_progress' || !isMyTurn}
             onAction={handleBoardAction}
           />
-        ) : game.gameType === 'grail_quest' || (game.gameType as string) === 'holy_grale' ? (
+        ) : game.gameType === 'grail_quest' ? (
           <GrailQuestBoard
             state={game.state as GrailQuestGameState}
             myPiece={myPiece}
