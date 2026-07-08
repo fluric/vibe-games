@@ -9,25 +9,31 @@
  *   const action = await getRLAction('connect_four', state, 'rl_strong');
  */
 
-import type { ConnectFourGameState, MillGameState, ReversiGameState } from '@vibe-games/shared';
+import type { ConnectFourGameState, GrailQuestGameState, MillGameState, ReversiGameState } from '@vibe-games/shared';
 
 const SIDECAR_URL = process.env.RL_SIDECAR_URL ?? 'http://localhost:8765';
 const SIDECAR_TIMEOUT_MS = 300_000; // 5 mins — extremely generous for parallel local tournaments
 
 export interface RLPredictRequest {
-  game_type: 'connect_four' | 'mill' | 'reversi';
-  state: ConnectFourGameState | MillGameState | ReversiGameState;
+  game_type: 'connect_four' | 'mill' | 'reversi' | 'grail_quest';
+  state: ConnectFourGameState | MillGameState | ReversiGameState | GrailQuestGameState;
   bot_level: string;
   num_simulations?: number; // optional override of registry value
 }
 
 export interface RLPredictResponse {
   action: {
-    action: string;
-    column?: number; // connect_four
-    position?: number; // mill place/remove
-    from?: number; // mill move
-    to?: number; // mill move
+    action?: string;
+    type?: string;        // grail_quest actions use 'type' not 'action'
+    column?: number;      // connect_four
+    position?: number;    // mill/reversi place/remove
+    from?: number | string; // mill move (int) or grail_quest ("q,r" string)
+    to?: number | string;   // mill move (int) or grail_quest ("q,r" string)
+    count?: number;         // grail_quest move count
+    cellKey?: string;       // grail_quest deploy/react
+    cardValue?: number;     // grail_quest deploy
+    reactType?: string;     // grail_quest react
+    retreatTo?: string;     // grail_quest retreat
   };
   bot_level: string;
   num_simulations: number;
@@ -62,8 +68,8 @@ export async function checkSidecarHealth(): Promise<SidecarHealthResponse | null
  * @throws Error if the sidecar is unreachable or returns an error.
  */
 export async function getRLAction(
-  gameType: 'connect_four' | 'mill' | 'reversi',
-  state: ConnectFourGameState | MillGameState | ReversiGameState,
+  gameType: 'connect_four' | 'mill' | 'reversi' | 'grail_quest',
+  state: ConnectFourGameState | MillGameState | ReversiGameState | GrailQuestGameState,
   botLevel: string,
   numSimulations?: number,
 ): Promise<RLPredictResponse['action']> {

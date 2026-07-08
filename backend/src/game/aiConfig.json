@@ -369,6 +369,24 @@
       "type": "smart",
       "depth": 1,
       "timeLimitMs": 4000
+    },
+    "cfr_novice": {
+      "id": "00000000-0000-0000-0000-000000000070",
+      "username": "CFR Apprentice (RL)",
+      "elo": 300,
+      "type": "rl",
+      "botLevel": "cfr_novice",
+      "enabled": false,
+      "note": "Enable after running: python -m rl.games.grail_quest.train_cfr --iterations 1000"
+    },
+    "cfr_master": {
+      "id": "00000000-0000-0000-0000-000000000071",
+      "username": "CFR Master (RL)",
+      "elo": 600,
+      "type": "rl",
+      "botLevel": "cfr_master",
+      "enabled": false,
+      "note": "Enable after running: python -m rl.games.grail_quest.train_cfr --iterations 50000"
     }
   },
   "reversi": {

@@ -1,0 +1,14 @@
+{
+  "cfr_novice": {
+    "checkpoint": "cfr_policy_iter_1000.pkl",
+    "num_simulations": 0,
+    "elo": 0,
+    "note": "Early-stage CFR policy — run train_cfr.py --iterations 1000 to generate"
+  },
+  "cfr_master": {
+    "checkpoint": "cfr_policy.pkl",
+    "num_simulations": 0,
+    "elo": 0,
+    "note": "Latest CFR policy — run train_cfr.py to generate"
+  }
+}

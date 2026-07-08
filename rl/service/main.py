@@ -39,6 +39,8 @@ from rl.games.mill.net import load_checkpoint as load_mill_checkpoint
 from rl.games.reversi.env import ReversiEnv
 from rl.games.reversi.net import ReversiNet
 from rl.games.reversi.net import load_checkpoint as load_reversi_checkpoint
+from rl.games.grail_quest.engine import GrailQuestState, PLAYER_X, PLAYER_O
+from rl.games.grail_quest.train_cfr import CFRPolicy
 from rl.core.mcts import MCTS
 
 # ─── App ──────────────────────────────────────────────────────────────────────
@@ -63,6 +65,10 @@ device = get_device()
 
 # { "connect_four": { "rl_novice": (net, num_sims), ... } }
 loaded_models: Dict[str, Dict[str, tuple[Any, int]]] = {}
+
+# CFR policies for imperfect-info games (no neural net — pure strategy table)
+# { "grail_quest": { "cfr_novice": CFRPolicy, ... } }
+cfr_policies: Dict[str, Dict[str, CFRPolicy]] = {}
 
 
 def _load_game_models(game_type: str) -> None:
@@ -108,6 +114,41 @@ def _load_game_models(game_type: str) -> None:
             print(f"  ✗ [{game_type}/{bot_level}] Failed to load: {e}")
 
 
+def _load_cfr_policies(game_type: str) -> None:
+    """Load serialized CFR policy files for imperfect-info games."""
+    registry_path = MODELS_DIR / game_type / "models_registry.json"
+    if not registry_path.exists():
+        print(f"  No registry found for {game_type}, skipping.")
+        return
+
+    with open(registry_path) as f:
+        registry = json.load(f)
+
+    cfr_policies[game_type] = {}
+    models_base = MODELS_DIR / game_type
+
+    for bot_level, entry in registry.items():
+        checkpoint = entry.get("checkpoint")
+        if not checkpoint:
+            print(f"  [{game_type}/{bot_level}] No checkpoint yet — skipping.")
+            continue
+
+        ckpt_path = models_base / checkpoint
+        if not ckpt_path.exists():
+            print(f"  [{game_type}/{bot_level}] Checkpoint not found: {ckpt_path} — skipping.")
+            continue
+
+        try:
+            policy = CFRPolicy.load(ckpt_path)
+            cfr_policies[game_type][bot_level] = policy
+            elo = entry.get("elo", "?")
+            info_sets = len(policy.regret_sum)
+            print(f"  ✓ [{game_type}/{bot_level}] Loaded {checkpoint} "
+                  f"(ELO ~{elo}, {policy.iterations} iters, {info_sets:,} info-sets)")
+        except Exception as e:
+            print(f"  ✗ [{game_type}/{bot_level}] Failed to load: {e}")
+
+
 @app.on_event("startup")
 async def startup_event() -> None:
     print(f"\nRL Sidecar starting up — device: {device}")
@@ -115,7 +156,10 @@ async def startup_event() -> None:
     _load_game_models("connect_four")
     _load_game_models("mill")
     _load_game_models("reversi")
-    print(f"\nLoaded {sum(len(v) for v in loaded_models.values())} models total.\n")
+    _load_cfr_policies("grail_quest")
+    total_nn = sum(len(v) for v in loaded_models.values())
+    total_cfr = sum(len(v) for v in cfr_policies.values())
+    print(f"\nLoaded {total_nn} NN models + {total_cfr} CFR policies.\n")
 
 
 # ─── Request / Response models ────────────────────────────────────────────────
@@ -181,6 +225,8 @@ def predict(req: PredictRequest) -> PredictResponse:
         action, sims_used = _predict_mill(net, req.state, num_sims)
     elif game_type == "reversi":
         action, sims_used = _predict_reversi(net, req.state, num_sims)
+    elif game_type == "grail_quest":
+        return _predict_grail_quest(req)
     else:
         raise HTTPException(status_code=501, detail=f"Game '{game_type}' not yet implemented")
 
@@ -194,12 +240,16 @@ def predict(req: PredictRequest) -> PredictResponse:
 
 @app.post("/reload")
 async def reload_models() -> dict:
-    """Reload all models from disk — useful after training completes a new checkpoint."""
+    """Reload all models from disk — useful after training completes a new checkpoint without restarting the sidecar."""
     loaded_models.clear()
+    cfr_policies.clear()
     _load_game_models("connect_four")
     _load_game_models("mill")
     _load_game_models("reversi")
-    return {"reloaded": sum(len(v) for v in loaded_models.values())}
+    _load_cfr_policies("grail_quest")
+    total_nn = sum(len(v) for v in loaded_models.values())
+    total_cfr = sum(len(v) for v in cfr_policies.values())
+    return {"reloaded_nn": total_nn, "reloaded_cfr": total_cfr}
 
 
 # ─── Game-specific prediction logic ──────────────────────────────────────────
@@ -272,3 +322,58 @@ def _predict_reversi(net: ReversiNet, state: dict, num_sims: int) -> tuple[dict,
     action_idx = mcts.best_action(env, num_sims)
 
     return {"action": "place", "position": action_idx}, num_sims
+
+
+def _predict_grail_quest(req: PredictRequest) -> PredictResponse:
+    """CFR-based prediction for Grail Quest (imperfect information game)."""
+    game_type = "grail_quest"
+    bot_level = req.bot_level
+
+    if game_type not in cfr_policies:
+        raise HTTPException(
+            status_code=503,
+            detail=f"No CFR policies loaded for grail_quest. "
+                   f"Run: python -m rl.games.grail_quest.train_cfr"
+        )
+
+    game_bots = cfr_policies[game_type]
+    if bot_level not in game_bots:
+        raise HTTPException(
+            status_code=404,
+            detail=f"CFR bot '{bot_level}' not loaded for grail_quest. "
+                   f"Available: {list(game_bots.keys())}"
+        )
+
+    policy = game_bots[bot_level]
+
+    # Determine which player is making the request
+    # The state's 'turn' field tells us whose perspective to use
+    raw_state = req.state
+    turn_str = raw_state.get("turn", "X")
+    player_perspective = PLAYER_X if turn_str == "X" else PLAYER_O
+
+    try:
+        state = GrailQuestState.from_state_dict(raw_state, player_perspective)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Invalid grail_quest state: {e}")
+
+    if state.is_terminal():
+        raise HTTPException(status_code=400, detail="Game is already terminal")
+
+    legal = state.legal_actions()
+    if not legal:
+        raise HTTPException(status_code=400, detail="No legal actions available")
+
+    # Query CFR policy using the player's information state (enforces hidden info)
+    info_state = state.information_state_string(player_perspective)
+    best_action_int = policy.best_action(info_state, legal)
+
+    # Convert internal int action → TypeScript-compatible dict
+    ts_action = state.action_to_ts_format(best_action_int)
+
+    return PredictResponse(
+        action=ts_action,
+        bot_level=bot_level,
+        num_simulations=0,  # CFR doesn't use simulations
+        device="cpu",
+    )
