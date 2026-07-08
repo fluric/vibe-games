@@ -21,12 +21,12 @@
   },
   "rl_master": {
     "checkpoint": "champion.pt",
-    "num_simulations": 50,
+    "num_simulations": 5,
     "elo": 7184
   },
   "rl_challenger": {
     "checkpoint": "latest_challenger.pt",
-    "num_simulations": 100,
+    "num_simulations": 10,
     "elo": 7500
   }
 }
