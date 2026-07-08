@@ -275,7 +275,7 @@
       "name": "Das Heiligtum der Sphinx",
       "description": "Eine massive Steinkammer voller Sand. Eine monolithische Statue mit Menschenkopf und Löwenkörper starrt dich an.",
       "atmosphere": "Sand rieselt unter deinen Füßen. Zwei leuchtende Augen wachen aus der Dunkelheit.",
-      "riddleText": "Ich hüte ein Geheimnis,\ndoch habe keine Stimme.\nDreh mich nach rechts,\nund ich zeige dir deine Wahl.",
+      "riddleText": "Ich hüte ein Geheimnis,\ndoch habe keine Stimme.\nDreh mich nach links,\nund ich zeige dir deine Wahl.",
       "solution": "SCHLÜSSEL",
       "clue1": "Es passt in ein Schloss."
     },

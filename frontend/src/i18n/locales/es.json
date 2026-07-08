@@ -275,7 +275,7 @@
       "name": "El Santuario de la Esfinge",
       "description": "Una enorme cámara de piedra llena de arena. Una estatua monolítica con cabeza humana y cuerpo de león te observa.",
       "atmosphere": "La arena cruje bajo tus pies. Dos ojos brillantes te miran desde la oscuridad.",
-      "riddleText": "Guardo un secreto,\npero no tengo voz.\nGírame a la derecha,\ny revelo tu elección.",
+      "riddleText": "Guardo un secreto,\npero no tengo voz.\nGírame a la izquierda,\ny revelo tu elección.",
       "solution": "LLAVE",
       "clue1": "Encaja en una cerradura."
     },

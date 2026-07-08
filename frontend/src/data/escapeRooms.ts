@@ -154,7 +154,7 @@ export function useEscapeRooms(): EscapeRoom[] {
       atmosphere: t('room4.atmosphere', { defaultValue: 'Sand shifts beneath your feet. Two glowing eyes watch from the dark.' }),
       config: {
         puzzleType: 'riddle',
-        riddleText: t('room4.riddleText', { defaultValue: 'I guard a secret,\nyet have no voice.\nTurn me right,\nand I reveal your choice.' }),
+        riddleText: t('room4.riddleText', { defaultValue: 'I guard a secret,\nyet have no voice.\nTurn me left,\nand I reveal your choice.' }),
         solution: t('room4.solution', { defaultValue: 'KEY' }), // Accepts KEY
         clues: [
           t('room4.clue1', { defaultValue: 'It fits in a lock.' })

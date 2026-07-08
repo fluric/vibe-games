@@ -161,7 +161,7 @@
       "name": "The Sphinx's Sanctum",
       "description": "A massive stone chamber filled with sand. A monolithic statue with human head and lion body stares at you.",
       "atmosphere": "Sand shifts beneath your feet. Two glowing eyes watch from the dark.",
-      "riddleText": "I guard a secret,\nyet have no voice.\nTurn me right,\nand I reveal your choice.",
+      "riddleText": "I guard a secret,\nyet have no voice.\nTurn me left,\nand I reveal your choice.",
       "solution": "KEY",
       "clue1": "It fits in a lock."
     },

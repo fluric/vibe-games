@@ -275,7 +275,7 @@
       "name": "Le Sanctuaire du Sphinx",
       "description": "Une immense chambre de pierre remplie de sable. Une statue monolithique avec une tête humaine et un corps de lion vous dévisage.",
       "atmosphere": "Le sable crisse sous vos pieds. Deux yeux luisants observent depuis l'obscurité.",
-      "riddleText": "Je garde un secret,\npourtant je n'ai pas de voix.\nTourne-moi à droite,\net je révèle ton choix.",
+      "riddleText": "Je garde un secret,\npourtant je n'ai pas de voix.\nTourne-moi à gauche,\net je révèle ton choix.",
       "solution": "CLE",
       "clue1": "Ça rentre dans une serrure."
     },
