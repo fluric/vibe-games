@@ -349,7 +349,7 @@
     "medium_aggressive": {
       "id": "00000000-0000-0000-0000-000000000031",
       "username": "Aggressive Archie (Medium)",
-      "elo": 217,
+      "elo": 133,
       "type": "minimax",
       "depth": 3,
       "timeLimitMs": 500
@@ -357,7 +357,7 @@
     "hard_tactical": {
       "id": "00000000-0000-0000-0000-000000000032",
       "username": "Tactical Toby (Hard)",
-      "elo": 196,
+      "elo": 184,
       "type": "minimax",
       "depth": 4,
       "timeLimitMs": 4000
@@ -365,7 +365,7 @@
     "expert_smart": {
       "id": "00000000-0000-0000-0000-000000000033",
       "username": "Smart Sophia (Expert)",
-      "elo": 185,
+      "elo": 174,
       "type": "smart",
       "depth": 1,
       "timeLimitMs": 4000
@@ -373,7 +373,7 @@
     "cfr_novice": {
       "id": "00000000-0000-0000-0000-000000000070",
       "username": "CFR Apprentice (RL)",
-      "elo": 163,
+      "elo": 151,
       "type": "rl",
       "botLevel": "cfr_novice",
       "enabled": false
@@ -381,7 +381,7 @@
     "cfr_master": {
       "id": "00000000-0000-0000-0000-000000000071",
       "username": "CFR Master (RL)",
-      "elo": 277,
+      "elo": 150,
       "type": "rl",
       "botLevel": "cfr_master",
       "enabled": false

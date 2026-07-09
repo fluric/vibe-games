@@ -60,3 +60,5 @@ rl/service/models/**/*.pkl
 .venv/
 __pycache__/
 *.pyc
+# RL model checkpoints
+rl/service/models/**/*.zip
