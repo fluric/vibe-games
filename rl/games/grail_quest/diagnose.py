@@ -8,7 +8,7 @@ Usage:
 """
 import argparse
 import numpy as np
-from stable_baselines3 import PPO
+from sb3_contrib import MaskablePPO
 from rl.games.grail_quest.env_pz import env as make_env
 
 SIGNAL_KEYS = ["s1_survival", "s2_grail", "s3_territory", "s4_pressure", "s5_facecard"]
@@ -28,7 +28,7 @@ def run_game(pz_env, model, model_is_p0: bool):
 
     for agent in pz_env.agent_iter():
         step_count += 1
-        if step_count > 900:           # safety cap
+        if step_count > 10000:           # safety cap
             break
 
         obs, reward, terminated, truncated, info = pz_env.last()
@@ -41,11 +41,11 @@ def run_game(pz_env, model, model_is_p0: bool):
                        (agent == "player_1" and not model_is_p0)
 
             if is_model:
-                action, _ = model.predict(obs, deterministic=True)
-                if action_mask[action] == 0:
-                    legal = np.where(action_mask == 1)[0]
-                    action = int(np.random.choice(legal)) if len(legal) > 0 else 0
-                    illegal += 1
+                action, _ = model.predict(
+                    obs,
+                    action_masks=action_mask.astype(bool),
+                    deterministic=True
+                )
             else:
                 # Pure random legal action
                 legal = np.where(action_mask == 1)[0]
@@ -68,7 +68,7 @@ def main():
     parser.add_argument("--games", type=int, default=20)
     args = parser.parse_args()
 
-    model = PPO.load(args.model, device="cpu")
+    model = MaskablePPO.load(args.model, device="cpu")
     pz_env = make_env()
 
     print(f"\nLoaded: {args.model}")

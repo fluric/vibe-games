@@ -14,9 +14,10 @@ if str(PROJECT_ROOT) not in sys.path:
 from rl.games.grail_quest.env_pz import env
 
 import gymnasium as gym
-from stable_baselines3 import PPO
 from stable_baselines3.common.vec_env import DummyVecEnv
 from stable_baselines3.common.callbacks import BaseCallback
+from sb3_contrib import MaskablePPO
+
 
 # Suppress the verbose PettingZoo illegal move warnings
 from pettingzoo.utils.env_logger import EnvLogger
@@ -171,11 +172,11 @@ class ChampionChallengeCallback(BaseCallback):
                     action_mask = obs["action_mask"]
                     is_current = (agent == "player_0" and current_is_p0) or (agent == "player_1" and not current_is_p0)
                     active_model = self.model if is_current else champion_model
-                    action, _ = active_model.predict(obs, deterministic=True)
-                    # Prevent instant-loss from illegal moves during evaluation
-                    if action_mask[action] == 0:
-                        legal_actions = np.where(action_mask == 1)[0]
-                        action = int(np.random.choice(legal_actions)) if len(legal_actions) > 0 else 0
+                    action, _ = active_model.predict(
+                        obs,
+                        action_masks=action_mask.astype(bool),
+                        deterministic=True
+                    )
                 
                 self.eval_env.step(action)
             
@@ -234,12 +235,16 @@ class SingleAgentGrailQuestEnv(gym.Env):
         self.last_mtime = 0
         self.training_player = None
 
+    def action_masks(self) -> np.ndarray:
+        obs, _, _, _, _ = self.pz_env.last()
+        return obs["action_mask"] == 1
+
     def _reload_opponent_model(self):
         if self.opponent_model_path and os.path.exists(self.opponent_model_path):
             mtime = os.path.getmtime(self.opponent_model_path)
             if self.opponent_model is None or mtime > self.last_mtime:
                 try:
-                    self.opponent_model = PPO.load(self.opponent_model_path, device="cpu")
+                    self.opponent_model = MaskablePPO.load(self.opponent_model_path, device="cpu")
                     self.last_mtime = mtime
                 except Exception:
                     pass  # Retry on next reset if file is locked
@@ -258,10 +263,11 @@ class SingleAgentGrailQuestEnv(gym.Env):
             else:
                 action_mask = obs["action_mask"]
                 if self.opponent_model is not None:
-                    action, _ = self.opponent_model.predict(obs, deterministic=True)
-                    if action_mask[action] == 0:
-                        legal_actions = np.where(action_mask == 1)[0]
-                        action = int(np.random.choice(legal_actions)) if len(legal_actions) > 0 else 0
+                    action, _ = self.opponent_model.predict(
+                        obs,
+                        action_masks=action_mask.astype(bool),
+                        deterministic=True
+                    )
                 else:
                     legal_actions = np.where(action_mask == 1)[0]
                     action = int(np.random.choice(legal_actions)) if len(legal_actions) > 0 else 0
@@ -269,6 +275,7 @@ class SingleAgentGrailQuestEnv(gym.Env):
             self.pz_env.step(action)
             accumulated_reward += self.pz_env.rewards[self.training_player]
         return accumulated_reward
+
 
     def reset(self, seed=None, options=None):
         self._reload_opponent_model()
@@ -345,30 +352,31 @@ def main():
         if checkpoints:
             latest_checkpoint = max(checkpoints, key=os.path.getmtime)
             print(f"Resuming training from {latest_checkpoint}...")
-            model = PPO.load(latest_checkpoint, env=vec_env, device=args.device)
+            model = MaskablePPO.load(latest_checkpoint, env=vec_env, device=args.device)
         else:
             print("No existing model found to resume from. Starting from scratch...")
-            model = PPO(
+            model = MaskablePPO(
                 "MultiInputPolicy",
                 vec_env,
                 verbose=0,
                 device=args.device,
                 batch_size=512,
                 n_steps=2048,
-                ent_coef=0.05,
+                ent_coef=0.015,
                 learning_rate=3e-4,
             )
     else:
-        model = PPO(
+        model = MaskablePPO(
             "MultiInputPolicy",
             vec_env,
             verbose=0,
             device=args.device,
             batch_size=512,
             n_steps=2048,
-            ent_coef=0.05,
+            ent_coef=0.015,
             learning_rate=3e-4,
         )
+
     
     # Attach our custom tabular logger
     custom_logger = Logger(folder=None, output_formats=[TableOutputFormat()])
