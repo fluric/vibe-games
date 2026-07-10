@@ -252,12 +252,11 @@ class GrailQuestPZEnv(AECEnv):
             opp_press = sum(1 for n in my_nbrs  if self.game.board[n].owner == opp_idx)
             s4 = (my_press - opp_press) * _PRESSURE_SCALE
 
-            # Signal 5: Face card kill differential (J/Q/K = value >= 11)
+            # Signal 5: Face card kill reward (J/Q/K = value >= 11)
             opp_face_after = _count_face(opp_idx)
-            own_face_after = _count_face(player_idx)
             opp_killed = max(0, opp_face_before - opp_face_after)
-            own_killed = max(0, own_face_before - own_face_after)
-            s5 = (opp_killed - own_killed) * _FACE_CARD_SCALE
+            s5 = opp_killed * _FACE_CARD_SCALE
+
 
             total_shaping = s1 + s2 + s3 + s4 + s5
             self.rewards = {a: 0.0 for a in self.agents}
