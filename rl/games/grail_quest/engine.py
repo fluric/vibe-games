@@ -601,6 +601,15 @@ class GrailQuestState:
             self.pending_combats.remove(pc)
             self.moves_this_turn = [m for m in self.moves_this_turn
                                     if m.to_key != pc.cell_key]
+            
+            self._check_game_end()
+            remaining = [c for c in self.pending_combats if c.defender == player]
+            if not remaining:
+                self.phase = PHASE_DEPLOY
+                if not self.drawn_this_turn:
+                    drawn = self._run_deploy_draw(player)
+                    self.hands[player].extend(drawn)
+                    self.drawn_this_turn = True
             return
 
         # Resolve combat outcome

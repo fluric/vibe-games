@@ -335,7 +335,8 @@ def main():
     def make_env():
         return SingleAgentGrailQuestEnv(opponent_model_path=str(champion_path))
 
-    vec_env = SubprocVecEnv([make_env for _ in range(args.num_envs)])
+    # Create vectorized environment with spawn to avoid macOS fork deadlock
+    vec_env = SubprocVecEnv([make_env for _ in range(args.num_envs)], start_method="spawn")
 
 
     # Checkpoint callback (save_freq is divided by num_envs because it's called every env step)
