@@ -56,7 +56,7 @@ class TableOutputFormat(KVWriter):
         pass
 
 class IllegalMoveLoggerCallback(BaseCallback):
-    """Counts episodes that ended immediately (proxy for illegal terminations)."""
+    """Counts episodes that ended immediately due to illegal moves."""
     def __init__(self, verbose=0):
         super().__init__(verbose)
         self.illegal_moves = 0
@@ -65,12 +65,12 @@ class IllegalMoveLoggerCallback(BaseCallback):
         self.illegal_moves = 0
 
     def _on_step(self) -> bool:
-        # With SuperSuit, illegal moves aren't in info; count via reward signal
-        for r, d in zip(self.locals.get("rewards", []), self.locals.get("dones", [])):
-            if d and r <= -0.9:
+        for info in self.locals.get("infos", []):
+            if info.get("illegal_move"):
                 self.illegal_moves += 1
         self.logger.record("custom/total_illegal_moves", self.illegal_moves)
         return True
+
 
 class RewardSignalCallback(BaseCallback):
     """Accumulates shaped reward signals per rollout and prints a breakdown
@@ -302,8 +302,10 @@ class SingleAgentGrailQuestEnv(gym.Env):
             inner = inner.env
         info = dict(getattr(inner, "_last_signals", {}))
 
-        if reward <= -0.9:
+        is_natural = inner.game.is_terminal()
+        if reward <= -0.9 and not is_natural:
             info["illegal_move"] = True
+
 
         return obs, reward, terminated, truncated, info
 
