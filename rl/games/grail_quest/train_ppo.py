@@ -1,7 +1,9 @@
 import argparse
 from pathlib import Path
 import os
+import numpy as np
 import supersuit as ss
+from pettingzoo.utils.conversions import aec_to_parallel
 from stable_baselines3.common.callbacks import CheckpointCallback
 
 import sys
@@ -13,7 +15,7 @@ from rl.games.grail_quest.env_pz import env
 
 import gymnasium as gym
 from stable_baselines3 import PPO
-from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv
+from stable_baselines3.common.vec_env import DummyVecEnv
 from stable_baselines3.common.callbacks import BaseCallback
 
 # Suppress the verbose PettingZoo illegal move warnings
@@ -53,20 +55,19 @@ class TableOutputFormat(KVWriter):
         pass
 
 class IllegalMoveLoggerCallback(BaseCallback):
+    """Counts episodes that ended immediately (proxy for illegal terminations)."""
     def __init__(self, verbose=0):
         super().__init__(verbose)
         self.illegal_moves = 0
-        
+
     def _on_rollout_start(self) -> None:
-        # Reset at the beginning of each data collection phase
-        # so the table shows illegal moves per rollout, not lifetime total.
         self.illegal_moves = 0
-        
+
     def _on_step(self) -> bool:
-        for info in self.locals.get("infos", []):
-            if info.get("illegal_move", False):
+        # With SuperSuit, illegal moves aren't in info; count via reward signal
+        for r, d in zip(self.locals.get("rewards", []), self.locals.get("dones", [])):
+            if d and r <= -0.9:
                 self.illegal_moves += 1
-        
         self.logger.record("custom/total_illegal_moves", self.illegal_moves)
         return True
 
@@ -150,7 +151,17 @@ class ChampionChallengeCallback(BaseCallback):
             self.eval_env.reset()
             current_is_p0 = (g % 2 == 0)
             
+            # Hard cap: MAX_TURNS(400) × 2 players + buffer = 850 AEC steps.
+            # If a game exceeds this it is counted as a draw.
+            step_count = 0
+            timed_out = False
+            
             for agent in self.eval_env.agent_iter():
+                step_count += 1
+                if step_count > 850:
+                    timed_out = True
+                    break
+                    
                 obs, reward, terminated, truncated, info = self.eval_env.last()
                     
                 if terminated or truncated:
@@ -167,6 +178,10 @@ class ChampionChallengeCallback(BaseCallback):
                 
                 self.eval_env.step(action)
             
+            if timed_out:
+                current_draws += 1
+                continue
+            
             # Read outcome directly from the engine — not from accumulated rewards,
             # which are now polluted by per-step shaping signals and are never equal
             # even in true draws.
@@ -181,13 +196,16 @@ class ChampionChallengeCallback(BaseCallback):
                 current_wins += 1
             elif outcome_current == outcome_opponent:
                 current_draws += 1
+
                 
         wr = current_wins / self.eval_games
         dr = current_draws / self.eval_games
-        self.champion_wr = wr
+        # Score = win×1 + draw×0.5 (standard chess-style metric for draw-heavy games)
+        score = (current_wins + 0.5 * current_draws) / self.eval_games
+        self.champion_wr = score
         
-        print(f"Challenge Results: Win Rate: {wr:.2%} | Draw Rate: {dr:.2%} (Threshold: {self.threshold:.2%})")
-        if wr >= self.threshold:
+        print(f"Challenge Results: Win Rate: {wr:.2%} | Draw Rate: {dr:.2%} | Score: {score:.2%} (Threshold: {self.threshold:.2%})")
+        if score >= self.threshold:
             print(">>> NEW CHAMPION CROWNED! <<<")
             self.model.save(self.champion_path)
         else:
@@ -197,43 +215,90 @@ class ChampionChallengeCallback(BaseCallback):
         # We also need to print the header again because the challenge text interrupted the table
         self.model.logger.output_formats[0].header_printed = False
 
-class AECGymWrapper(gym.Env):
-    def __init__(self, pz_env):
+class SingleAgentGrailQuestEnv(gym.Env):
+    """
+    Exposes a standard single-agent Gymnasium interface for Grail Quest.
+    When the training player steps, the opponent's turns are played automatically
+    using the current champion model (or random actions if no champion exists).
+    This completely avoids the turn-alternating value function sign-inversion bug
+    and allows seamless training using standard single-agent PPO.
+    """
+    def __init__(self, opponent_model_path=None):
         super().__init__()
-        self.pz_env = pz_env
-        self.observation_space = pz_env.observation_space("player_0")
-        self.action_space = pz_env.action_space("player_0")
+        self.pz_env = env()
+        self.observation_space = self.pz_env.observation_space("player_0")
+        self.action_space = self.pz_env.action_space("player_0")
+        self.opponent_model_path = opponent_model_path
+        self.opponent_model = None
+        self.last_mtime = 0
+        self.training_player = None
+
+    def _reload_opponent_model(self):
+        if self.opponent_model_path and os.path.exists(self.opponent_model_path):
+            mtime = os.path.getmtime(self.opponent_model_path)
+            if self.opponent_model is None or mtime > self.last_mtime:
+                try:
+                    self.opponent_model = PPO.load(self.opponent_model_path, device="cpu")
+                    self.last_mtime = mtime
+                except Exception:
+                    pass  # Retry on next reset if file is locked
+
+    def _play_opponent_turns(self):
+        accumulated_reward = 0.0
+        while not self.pz_env.game.is_terminal():
+            current_agent = self.pz_env.agent_selection
+            if current_agent == self.training_player:
+                break
+
+            obs, reward, terminated, truncated, info = self.pz_env.last()
+            
+            if terminated or truncated:
+                action = None
+            else:
+                action_mask = obs["action_mask"]
+                if self.opponent_model is not None:
+                    action, _ = self.opponent_model.predict(obs, deterministic=True)
+                    if action_mask[action] == 0:
+                        legal_actions = np.where(action_mask == 1)[0]
+                        action = int(np.random.choice(legal_actions)) if len(legal_actions) > 0 else 0
+                else:
+                    legal_actions = np.where(action_mask == 1)[0]
+                    action = int(np.random.choice(legal_actions)) if len(legal_actions) > 0 else 0
+
+            self.pz_env.step(action)
+            accumulated_reward += self.pz_env.rewards[self.training_player]
+        return accumulated_reward
 
     def reset(self, seed=None, options=None):
+        self._reload_opponent_model()
         self.pz_env.reset(seed=seed)
+        self.training_player = np.random.choice(["player_0", "player_1"])
+        self._play_opponent_turns()
         obs, _, _, _, _ = self.pz_env.last()
         return obs, {}
 
     def step(self, action):
-        agent = self.pz_env.agent_selection
+        self.pz_env._clear_rewards()
         self.pz_env.step(action)
+        reward = self.pz_env.rewards[self.training_player]
 
-        # We need the reward that the agent *just received* for their action
-        reward = self.pz_env.rewards[agent]
-
-        # The next agent to act
-        next_agent = self.pz_env.agent_selection
-        terminated = self.pz_env.terminations[next_agent]
-        truncated = self.pz_env.truncations[next_agent]
+        opp_reward = self._play_opponent_turns()
+        reward += opp_reward
 
         obs, _, _, _, _ = self.pz_env.last()
+        terminated = self.pz_env.terminations[self.training_player]
+        truncated = self.pz_env.truncations[self.training_player]
 
-        # Thread reward signal breakdown from inner env through the info dict
         inner = self.pz_env
         while hasattr(inner, "env"):
             inner = inner.env
         info = dict(getattr(inner, "_last_signals", {}))
 
-        if reward == -1.0:
+        if reward <= -0.9:
             info["illegal_move"] = True
 
-        done = terminated or truncated
         return obs, reward, terminated, truncated, info
+
 
 def main():
     parser = argparse.ArgumentParser()
@@ -255,10 +320,13 @@ def main():
     print(f"Total timesteps: {args.timesteps}")
     print(f"Parallel envs: {args.num_envs}")
     
+    from stable_baselines3.common.vec_env import SubprocVecEnv
+
     def make_env():
-        return AECGymWrapper(env())
-        
+        return SingleAgentGrailQuestEnv(opponent_model_path=str(champion_path))
+
     vec_env = SubprocVecEnv([make_env for _ in range(args.num_envs)])
+
 
     # Checkpoint callback (save_freq is divided by num_envs because it's called every env step)
     # 5,000,000 total steps = ~10 minutes

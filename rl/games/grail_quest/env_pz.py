@@ -270,6 +270,9 @@ class GrailQuestPZEnv(AECEnv):
                 "s4_pressure":  s4,
                 "s5_facecard":  s5,
             }
+            # Forward signals through PettingZoo's info dict so SuperSuit
+            # and SB3 callbacks can read them via self.locals["infos"]
+            self.infos[agent] = dict(self._last_signals)
 
         self._cumulative_rewards[agent] = 0
 
