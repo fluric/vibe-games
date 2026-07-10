@@ -151,16 +151,17 @@ class ChampionChallengeCallback(BaseCallback):
             self.eval_env.reset()
             current_is_p0 = (g % 2 == 0)
             
-            # Hard cap: MAX_TURNS(400) × 2 players + buffer = 850 AEC steps.
-            # If a game exceeds this it is counted as a draw.
+            # Hard cap: allow up to 10,000 AEC steps to let a full 400-turn game play out naturally.
+            # If it exceeds this, it is counted as a draw (to prevent hangs).
             step_count = 0
             timed_out = False
             
             for agent in self.eval_env.agent_iter():
                 step_count += 1
-                if step_count > 850:
+                if step_count > 10000:
                     timed_out = True
                     break
+
                     
                 obs, reward, terminated, truncated, info = self.eval_env.last()
                     

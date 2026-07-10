@@ -509,8 +509,36 @@ class GrailQuestState:
         a_stack = pc.attacker_stack
         d_stack = cell.soldiers
 
-        if not a_stack or not d_stack:
+        if not d_stack:
+            cell.owner = pc.attacker
+            cell.soldiers = list(a_stack)
+            self.pending_combats.remove(pc)
+            self._check_game_end()
+            # Transition phase if no more combats
+            remaining = [c for c in self.pending_combats if c.defender == player]
+            if not remaining:
+                self.phase = PHASE_DEPLOY
+                if not self.drawn_this_turn:
+                    drawn = self._run_deploy_draw(player)
+                    self.hands[player].extend(drawn)
+                    self.drawn_this_turn = True
             return
+
+        if not a_stack:
+            self.pending_combats.remove(pc)
+            if not d_stack and cell.cell_type not in (HOME_BASE, URBAN):
+                cell.owner = None
+            self._check_game_end()
+            # Transition phase if no more combats
+            remaining = [c for c in self.pending_combats if c.defender == player]
+            if not remaining:
+                self.phase = PHASE_DEPLOY
+                if not self.drawn_this_turn:
+                    drawn = self._run_deploy_draw(player)
+                    self.hands[player].extend(drawn)
+                    self.drawn_this_turn = True
+            return
+
 
         a_card = a_stack[0]
         d_card = d_stack[0]
