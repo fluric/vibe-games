@@ -41,6 +41,7 @@ from rl.games.reversi.net import ReversiNet
 from rl.games.reversi.net import load_checkpoint as load_reversi_checkpoint
 from rl.games.grail_quest.engine import GrailQuestState, PLAYER_X, PLAYER_O
 from rl.games.grail_quest.train_cfr import CFRPolicy
+from sb3_contrib import MaskablePPO
 from rl.core.mcts import MCTS
 
 # ─── App ──────────────────────────────────────────────────────────────────────
@@ -103,6 +104,8 @@ def _load_game_models(game_type: str) -> None:
                 net = load_mill_checkpoint(str(ckpt_path), device)
             elif game_type == "reversi":
                 net = load_reversi_checkpoint(str(ckpt_path), device)
+            elif game_type == "grail_quest":
+                net = MaskablePPO.load(str(ckpt_path), device=device, custom_objects={"env": None})
             else:
                 print(f"  [{game_type}/{bot_level}] Unknown game type — skipping.")
                 continue
@@ -156,6 +159,7 @@ async def startup_event() -> None:
     _load_game_models("connect_four")
     _load_game_models("mill")
     _load_game_models("reversi")
+    _load_game_models("grail_quest")
     _load_cfr_policies("grail_quest")
     total_nn = sum(len(v) for v in loaded_models.values())
     total_cfr = sum(len(v) for v in cfr_policies.values())
@@ -199,7 +203,7 @@ async def health() -> HealthResponse:
 
 
 @app.post("/predict", response_model=PredictResponse)
-def predict(req: PredictRequest) -> PredictResponse:
+async def predict(req: PredictRequest) -> PredictResponse:
     game_type = req.game_type
     bot_level = req.bot_level
 
@@ -246,6 +250,7 @@ async def reload_models() -> dict:
     _load_game_models("connect_four")
     _load_game_models("mill")
     _load_game_models("reversi")
+    _load_game_models("grail_quest")
     _load_cfr_policies("grail_quest")
     total_nn = sum(len(v) for v in loaded_models.values())
     total_cfr = sum(len(v) for v in cfr_policies.values())
@@ -325,26 +330,9 @@ def _predict_reversi(net: ReversiNet, state: dict, num_sims: int) -> tuple[dict,
 
 
 def _predict_grail_quest(req: PredictRequest) -> PredictResponse:
-    """CFR-based prediction for Grail Quest (imperfect information game)."""
+    """CFR-based and PPO-based prediction for Grail Quest."""
     game_type = "grail_quest"
     bot_level = req.bot_level
-
-    if game_type not in cfr_policies:
-        raise HTTPException(
-            status_code=503,
-            detail=f"No CFR policies loaded for grail_quest. "
-                   f"Run: python -m rl.games.grail_quest.train_cfr"
-        )
-
-    game_bots = cfr_policies[game_type]
-    if bot_level not in game_bots:
-        raise HTTPException(
-            status_code=404,
-            detail=f"CFR bot '{bot_level}' not loaded for grail_quest. "
-                   f"Available: {list(game_bots.keys())}"
-        )
-
-    policy = game_bots[bot_level]
 
     # Determine which player is making the request
     # The state's 'turn' field tells us whose perspective to use
@@ -364,9 +352,52 @@ def _predict_grail_quest(req: PredictRequest) -> PredictResponse:
     if not legal:
         raise HTTPException(status_code=400, detail="No legal actions available")
 
-    # Query CFR policy using the player's information state (enforces hidden info)
-    info_state = state.information_state_string(player_perspective)
-    best_action_int = policy.best_action(info_state, legal)
+    best_action_int = None
+
+    if bot_level.startswith("cfr_"):
+        if game_type not in cfr_policies:
+            raise HTTPException(
+                status_code=503,
+                detail=f"No CFR policies loaded for grail_quest."
+            )
+        game_bots = cfr_policies[game_type]
+        if bot_level not in game_bots:
+            raise HTTPException(
+                status_code=404,
+                detail=f"CFR bot '{bot_level}' not loaded for grail_quest. "
+                       f"Available: {list(game_bots.keys())}"
+            )
+        policy = game_bots[bot_level]
+        # Query CFR policy using the player's information state (enforces hidden info)
+        info_state = state.information_state_string(player_perspective)
+        best_action_int = policy.best_action(info_state, legal)
+    elif bot_level.startswith("rl_"):
+        if game_type not in loaded_models:
+            raise HTTPException(
+                status_code=503,
+                detail=f"No PPO policies loaded for grail_quest."
+            )
+        game_bots = loaded_models[game_type]
+        if bot_level not in game_bots:
+            raise HTTPException(
+                status_code=404,
+                detail=f"PPO bot '{bot_level}' not loaded for grail_quest. "
+                       f"Available: {list(game_bots.keys())}"
+            )
+        net, _ = game_bots[bot_level]
+        # Use PZ Env directly to get the observation and mask
+        from rl.games.grail_quest.env_pz import GrailQuestPZEnv
+        env = GrailQuestPZEnv()
+        env.game = state
+        agent_id = "player_0" if player_perspective == PLAYER_X else "player_1"
+        obs_dict = env.observe(agent_id)
+        
+        # SB3 predict auto-vectorizes single observations (including Dict spaces)
+        action, _ = net.predict(obs_dict, action_masks=obs_dict["action_mask"], deterministic=True)
+        # action is usually a scalar numpy array or int here
+        best_action_int = int(action.item() if hasattr(action, 'item') else action)
+    else:
+        raise HTTPException(status_code=400, detail=f"Unknown bot level format: {bot_level}")
 
     # Convert internal int action → TypeScript-compatible dict
     ts_action = state.action_to_ts_format(best_action_int)

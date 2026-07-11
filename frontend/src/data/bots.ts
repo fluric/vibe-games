@@ -39,7 +39,8 @@ export const BOT_DESCRIPTIONS: Record<string, Record<string, string>> = {
     easy_random: "Random Play",
     medium_aggressive: "Positional & Combat",
     hard_tactical: "Tactical Search",
-    expert_smart: "Lookahead 1-ply Simulation"
+    expert_smart: "Lookahead 1-ply Simulation",
+    rl_champion: "Neural Network (PPO)"
   }
 };
 
@@ -84,7 +85,8 @@ export const BOT_EMOJIS: Record<string, Record<string, string>> = {
     easy_random: "🟢",
     medium_aggressive: "🟡",
     hard_tactical: "🔴",
-    expert_smart: "🌌"
+    expert_smart: "🌌",
+    rl_champion: "⚡"
   }
 };
 
@@ -129,6 +131,7 @@ export const BOT_HELP_TEXT: Record<string, Record<string, string>> = {
     easy_random: "Randy HG plays completely random moves.",
     medium_aggressive: "Archie HG plays a positional game targeting farms and bases.",
     hard_tactical: "Toby HG calculates moves and combat sequences.",
-    expert_smart: "Sophia simulates all possible next moves and evaluates positions using detailed combat, farm, base, and Grail heuristics."
+    expert_smart: "Sophia simulates all possible next moves and evaluates positions using detailed combat, farm, base, and Grail heuristics.",
+    rl_champion: "⚡ The Neural Champion is a deep reinforcement learning agent trained over 10 million games via self-play."
   }
 };

@@ -22,6 +22,15 @@ const TOTAL_ROUNDS = roundsArgIdx !== -1 ? parseInt(process.argv[roundsArgIdx + 
 const gameArgIdx = process.argv.indexOf('--game');
 const TARGET_GAME = gameArgIdx !== -1 ? process.argv[gameArgIdx + 1] : null;
 
+const verboseArgIdx = process.argv.indexOf('--verbose');
+const VERBOSE = verboseArgIdx !== -1;
+
+const bot1ArgIdx = process.argv.indexOf('--bot1');
+const BOT_1 = bot1ArgIdx !== -1 ? process.argv[bot1ArgIdx + 1] : null;
+
+const bot2ArgIdx = process.argv.indexOf('--bot2');
+const BOT_2 = bot2ArgIdx !== -1 ? process.argv[bot2ArgIdx + 1] : null;
+
 // Game loop runner that both master and workers can run
 async function runGame(
   gameType: GameType,
@@ -62,6 +71,9 @@ async function runGame(
         action = await engine.getAiActionAsync(state, botType, botDepth, botWeights, botTimeLimit);
       } else {
         action = engine.getAiAction(state, botType, botDepth, botWeights, botTimeLimit);
+      }
+      if (VERBOSE) {
+        console.log(`[Move ${moveCount + 1}] ${state.turn} (${currentBot}) plays:`, JSON.stringify(action));
       }
       state = engine.handleMove(state, action, state.turn);
     } catch (err: any) {
@@ -179,10 +191,24 @@ if (!isMainThread) {
       for (let i = 0; i < group.bots.length; i++) {
         for (let j = 0; j < group.bots.length; j++) {
           if (i !== j) {
+            const botX = group.bots[i];
+            const botO = group.bots[j];
+            
+            // If bot1 and bot2 are specified, only run matches between them
+            if (BOT_1 && BOT_2) {
+              if (!((botX === BOT_1 && botO === BOT_2) || (botX === BOT_2 && botO === BOT_1))) {
+                continue;
+              }
+            } else if (BOT_1) {
+              if (botX !== BOT_1 && botO !== BOT_1) {
+                continue;
+              }
+            }
+
             tasks.push({
               gameType: group.gameType,
-              botX: group.bots[i],
-              botO: group.bots[j],
+              botX,
+              botO,
               bots: group.bots,
               baselineKey: group.baselineKey
             });
@@ -196,7 +222,10 @@ if (!isMainThread) {
   let nextTaskIndex = 0;
   let completedTasks = 0;
 
-  const numWorkers = Math.max(1, os.cpus().length - 1);
+  let numWorkers = Math.max(1, os.cpus().length - 1);
+  if (VERBOSE) {
+    numWorkers = 1; // Force single thread for clean logging
+  }
   console.log(`🚀 Spawning ${numWorkers} worker threads for parallel execution of ${totalTasks} matches...`);
 
   // Start worker threads

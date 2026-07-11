@@ -18,7 +18,7 @@ from rl.games.grail_quest.engine import (
 
 # ── Reward shaping constants ──────────────────────────────────────────────────
 _SURVIVAL_PENALTY = -0.001   # per turn — breaks passive draw trap
-_GRAIL_SCALE      =  0.005   # proportional closeness of Grail to own base
+_GRAIL_SCALE      =  0.050   # proportional closeness of Grail to own base (10x increase to offset radiation trap)
 _TERRITORY_SCALE  =  0.002   # per net FARM/HILL/URBAN tile held vs opponent
 _PRESSURE_SCALE   =  0.003   # per net hex adjacent to enemy base owned
 _FACE_CARD_SCALE  =  0.015   # per net J/Q/K (value>=11) eliminated vs lost

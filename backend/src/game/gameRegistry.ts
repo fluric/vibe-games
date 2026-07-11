@@ -86,11 +86,21 @@ export const ReversiEngineWithRL: IGameEngine = {
   },
 };
 
+export const GrailQuestEngineWithRL: IGameEngine = {
+  ...GrailQuestEngine,
+  getAiActionAsync(state: any, botType: string, _depth: number, _weights: any, _timeLimitMs: number): Promise<any> | null {
+    if (botType.startsWith('rl_') || botType.startsWith('cfr_')) {
+      return getRLAction('grail_quest', state, botType);
+    }
+    return null;
+  },
+};
+
 export const ENGINES: Record<GameType, IGameEngine> = {
   mill: MillEngine,
   connect_four: ConnectFourEngineWithRL,
   reversi: ReversiEngineWithRL,
   tic_tac_toe: null as any, // Placeholder for future games
-  grail_quest: GrailQuestEngine,
+  grail_quest: GrailQuestEngineWithRL,
   escape: null as any, // Single player puzzle
 };
