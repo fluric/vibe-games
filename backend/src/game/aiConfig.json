@@ -9,7 +9,7 @@
     "easy_cowardly": {
       "id": "00000000-0000-0000-0000-000000000017",
       "username": "Cowardly Connie (Easy)",
-      "elo": 147,
+      "elo": 160,
       "type": "minimax",
       "depth": 1,
       "timeLimitMs": 100,
@@ -23,7 +23,7 @@
     "easy_greedy": {
       "id": "00000000-0000-0000-0000-000000000018",
       "username": "Greedy Gordon (Easy)",
-      "elo": 152,
+      "elo": 188,
       "type": "minimax",
       "depth": 1,
       "timeLimitMs": 100,
@@ -37,7 +37,7 @@
     "easy_aggressive": {
       "id": "00000000-0000-0000-0000-000000000019",
       "username": "Arthur the Aggressive (Easy)",
-      "elo": 181,
+      "elo": 213,
       "type": "minimax",
       "depth": 1,
       "timeLimitMs": 100,
@@ -51,7 +51,7 @@
     "medium_aggressive": {
       "id": "00000000-0000-0000-0000-000000000002",
       "username": "Aggressive Archie (Hard)",
-      "elo": 290,
+      "elo": 314,
       "type": "minimax",
       "depth": 3,
       "timeLimitMs": 500,
@@ -65,7 +65,7 @@
     "medium_defensive": {
       "id": "00000000-0000-0000-0000-000000000003",
       "username": "Defensive Debbie (Hard)",
-      "elo": 269,
+      "elo": 295,
       "type": "minimax",
       "depth": 3,
       "timeLimitMs": 500,
@@ -79,7 +79,7 @@
     "medium_mobile": {
       "id": "00000000-0000-0000-0000-000000000004",
       "username": "Mobile Monty (Hard)",
-      "elo": 275,
+      "elo": 301,
       "type": "minimax",
       "depth": 3,
       "timeLimitMs": 500,
@@ -93,7 +93,7 @@
     "hard_tactical": {
       "id": "00000000-0000-0000-0000-000000000005",
       "username": "Tactical Toby (Medium)",
-      "elo": 298,
+      "elo": 330,
       "type": "minimax",
       "depth": 3,
       "timeLimitMs": 4000,
@@ -107,7 +107,7 @@
     "expert_garry": {
       "id": "00000000-0000-0000-0000-000000000006",
       "username": "Grandmaster Garry (Expert)",
-      "elo": 333,
+      "elo": 362,
       "type": "minimax",
       "depth": 4,
       "timeLimitMs": 4000,
@@ -121,7 +121,7 @@
     "legendary_magnus": {
       "id": "00000000-0000-0000-0000-000000000007",
       "username": "Champion Magnus (Legendary)",
-      "elo": 371,
+      "elo": 412,
       "type": "minimax",
       "depth": 5,
       "timeLimitMs": 4000,
@@ -135,7 +135,7 @@
     "perfect_oracle": {
       "id": "00000000-0000-0000-0000-000000000008",
       "username": "Perfect Oracle (Grandmaster)",
-      "elo": 522,
+      "elo": 538,
       "type": "minimax",
       "depth": 7,
       "timeLimitMs": 4000,
@@ -192,7 +192,7 @@
     "easy_cowardly": {
       "id": "00000000-0000-0000-0000-000000000017",
       "username": "Cowardly Connie (Easy)",
-      "elo": 241,
+      "elo": 214,
       "type": "minimax",
       "depth": 1,
       "timeLimitMs": 100,
@@ -207,7 +207,7 @@
     "easy_greedy": {
       "id": "00000000-0000-0000-0000-000000000018",
       "username": "Greedy Gordon (Easy)",
-      "elo": 125,
+      "elo": 95,
       "type": "minimax",
       "depth": 1,
       "timeLimitMs": 100,
@@ -222,7 +222,7 @@
     "easy_aggressive": {
       "id": "00000000-0000-0000-0000-000000000019",
       "username": "Arthur the Aggressive (Easy)",
-      "elo": 128,
+      "elo": 83,
       "type": "minimax",
       "depth": 1,
       "timeLimitMs": 100,
@@ -237,7 +237,7 @@
     "medium_aggressive": {
       "id": "00000000-0000-0000-0000-000000000002",
       "username": "Aggressive Archie (Hard)",
-      "elo": 395,
+      "elo": 371,
       "type": "minimax",
       "depth": 3,
       "timeLimitMs": 500
@@ -245,7 +245,7 @@
     "medium_defensive": {
       "id": "00000000-0000-0000-0000-000000000003",
       "username": "Defensive Debbie (Hard)",
-      "elo": 406,
+      "elo": 378,
       "type": "minimax",
       "depth": 3,
       "timeLimitMs": 500
@@ -253,7 +253,7 @@
     "medium_mobile": {
       "id": "00000000-0000-0000-0000-000000000004",
       "username": "Mobile Monty (Hard)",
-      "elo": 416,
+      "elo": 386,
       "type": "minimax",
       "depth": 3,
       "timeLimitMs": 500
@@ -261,7 +261,7 @@
     "hard_tactical": {
       "id": "00000000-0000-0000-0000-000000000005",
       "username": "Tactical Toby (Medium)",
-      "elo": 738,
+      "elo": 707,
       "type": "minimax",
       "depth": 4,
       "timeLimitMs": 4000
@@ -269,7 +269,7 @@
     "expert_garry": {
       "id": "00000000-0000-0000-0000-000000000006",
       "username": "Grandmaster Garry (Expert)",
-      "elo": 536,
+      "elo": 516,
       "type": "minimax",
       "depth": 5,
       "timeLimitMs": 4000
@@ -277,7 +277,7 @@
     "legendary_magnus": {
       "id": "00000000-0000-0000-0000-000000000007",
       "username": "Champion Magnus (Legendary)",
-      "elo": 736,
+      "elo": 708,
       "type": "minimax",
       "depth": 6,
       "timeLimitMs": 4000
@@ -285,7 +285,7 @@
     "perfect_oracle": {
       "id": "00000000-0000-0000-0000-000000000008",
       "username": "Perfect Oracle (Grandmaster)",
-      "elo": 657,
+      "elo": 634,
       "type": "minimax",
       "depth": 7,
       "timeLimitMs": 4000
@@ -389,7 +389,7 @@
     "medium_aggressive": {
       "id": "00000000-0000-0000-0000-000000000002",
       "username": "Aggressive Archie (Hard)",
-      "elo": 235,
+      "elo": 450,
       "type": "minimax",
       "depth": 3,
       "timeLimitMs": 500,
@@ -403,7 +403,7 @@
     "medium_defensive": {
       "id": "00000000-0000-0000-0000-000000000003",
       "username": "Defensive Debbie (Hard)",
-      "elo": 217,
+      "elo": 400,
       "type": "minimax",
       "depth": 3,
       "timeLimitMs": 500
@@ -411,7 +411,7 @@
     "medium_mobile": {
       "id": "00000000-0000-0000-0000-000000000004",
       "username": "Mobile Monty (Hard)",
-      "elo": 299,
+      "elo": 600,
       "type": "minimax",
       "depth": 3,
       "timeLimitMs": 500,
@@ -425,7 +425,7 @@
     "hard_tactical": {
       "id": "00000000-0000-0000-0000-000000000005",
       "username": "Tactical Toby (Medium)",
-      "elo": 341,
+      "elo": 650,
       "type": "minimax",
       "depth": 4,
       "timeLimitMs": 4000
@@ -433,7 +433,7 @@
     "expert_garry": {
       "id": "00000000-0000-0000-0000-000000000006",
       "username": "Grandmaster Garry (Expert)",
-      "elo": 332,
+      "elo": 800,
       "type": "minimax",
       "depth": 5,
       "timeLimitMs": 4000
@@ -441,7 +441,7 @@
     "legendary_magnus": {
       "id": "00000000-0000-0000-0000-000000000007",
       "username": "Champion Magnus (Legendary)",
-      "elo": 529,
+      "elo": 1350,
       "type": "minimax",
       "depth": 6,
       "timeLimitMs": 4000
@@ -449,7 +449,7 @@
     "perfect_oracle": {
       "id": "00000000-0000-0000-0000-000000000008",
       "username": "Perfect Oracle (Grandmaster)",
-      "elo": 559,
+      "elo": 1150,
       "type": "minimax",
       "depth": 7,
       "timeLimitMs": 4000
