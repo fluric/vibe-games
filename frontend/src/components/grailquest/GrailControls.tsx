@@ -1,7 +1,7 @@
 import { formatCardValue } from './utils';
 import { useTranslation } from 'react-i18next';
 import type { GrailQuestCell } from '@vibe-games/shared';
-
+import { parseCombatText, parseRetreatText } from './historyUtils';
  
 type Combat = any;
  
@@ -77,40 +77,7 @@ export const GrailControls: React.FC<GrailControlsProps> = ({
   const disabled = isBoardLocked;
 
   // Helpers copied directly from GrailQuestBoard because they are tightly coupled to the modal log UI
-  const parseCombatText = (rawLog: string) => {
-    // Example: "X ⚔️ O: 4 vs 5 ➡️ Defender (O) wins!"
-    const match = rawLog.match(/([XO])\s*⚔️\s*([XO]):\s*(.+?)\s+vs\s+(.+?)\s*➡️\s*(.+)/);
-    if (match) {
-      const winnerFull = match[5];
-      let winnerText = 'Draw';
-      let degradedVal: number | null = null;
-      if (winnerFull.includes('Attacker')) winnerText = 'Attacker';
-      else if (winnerFull.includes('Defender')) winnerText = 'Defender';
-      
-      const degradeMatch = winnerFull.match(/degrades to ([KQJ0-9]+)/i);
-      if (degradeMatch) {
-        degradedVal = degradeMatch[1] as unknown as number; // simplified
-      }
-      return {
-        attackerPiece: match[1],
-        defenderPiece: match[2],
-        attackerCard: match[3],
-        defenderCard: match[4],
-        winnerText,
-        degradedVal
-      };
-    }
-    return { attackerPiece: '?', defenderPiece: '?', attackerCard: '?', defenderCard: '?', winnerText: '?' };
-  };
 
-  const parseRetreatText = (rawLog: string) => {
-    // Example: "O 🏃 retreat to 1,-1"
-    const match = rawLog.match(/([XO])\s*🏃\s*retreat to\s*([0-9,-]+)/);
-    if (match) {
-      return { defenderPiece: match[1], retreatTo: match[2] };
-    }
-    return { defenderPiece: '?', retreatTo: '?' };
-  };
 
   return (
     <div className="w-full xl:w-80 flex flex-col gap-4">

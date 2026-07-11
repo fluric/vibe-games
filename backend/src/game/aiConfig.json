@@ -349,7 +349,7 @@
     "medium_aggressive": {
       "id": "00000000-0000-0000-0000-000000000031",
       "username": "Aggressive Archie (Medium)",
-      "elo": 229,
+      "elo": 188,
       "type": "minimax",
       "depth": 3,
       "timeLimitMs": 500
@@ -357,7 +357,7 @@
     "hard_tactical": {
       "id": "00000000-0000-0000-0000-000000000032",
       "username": "Tactical Toby (Hard)",
-      "elo": 43,
+      "elo": 137,
       "type": "minimax",
       "depth": 4,
       "timeLimitMs": 4000
@@ -365,7 +365,7 @@
     "expert_smart": {
       "id": "00000000-0000-0000-0000-000000000033",
       "username": "Smart Sophia (Expert)",
-      "elo": 125,
+      "elo": 153,
       "type": "smart",
       "depth": 1,
       "timeLimitMs": 4000
@@ -373,7 +373,7 @@
     "rl_champion": {
       "id": "00000000-0000-0000-0000-000000000072",
       "username": "Neural Champion (RL)",
-      "elo": 213,
+      "elo": 147,
       "type": "rl",
       "botLevel": "rl_champion",
       "enabled": true
