@@ -5,7 +5,7 @@ import aiConfig from '../../../../backend/src/game/aiConfig.json';
 import { BOT_DESCRIPTIONS, BOT_EMOJIS, BOT_HELP_TEXT } from '../../data/bots';
 
 const typedConfig = aiConfig as unknown as Record<'mill' | 'connect_four' | 'grail_quest' | 'reversi', Record<string, { id: string; username: string; elo: number; type: string }>>;
-type BotLevel = 'easy' | 'medium' | 'hard' | 'easy_random' | 'easy_cowardly' | 'easy_greedy' | 'easy_aggressive' | 'medium_aggressive' | 'medium_defensive' | 'medium_mobile' | 'hard_tactical' | 'expert_garry' | 'legendary_magnus' | 'perfect_oracle' | 'expert_smart' | 'rl_novice' | 'rl_intermediate' | 'rl_strong' | 'rl_master';
+type BotLevel = 'easy' | 'medium' | 'hard' | 'easy_random' | 'easy_cowardly' | 'easy_greedy' | 'easy_aggressive' | 'medium_aggressive' | 'medium_defensive' | 'medium_mobile' | 'hard_tactical' | 'expert_garry' | 'legendary_magnus' | 'perfect_oracle' | 'expert_smart' | 'rl_novice' | 'rl_intermediate' | 'rl_strong' | 'rl_master' | 'rl_champion';
 
 interface CreateGamePanelProps {
   activeGameTab: 'mill' | 'connect_four' | 'grail_quest' | 'escape' | 'reversi';
