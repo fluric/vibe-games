@@ -83,7 +83,7 @@ class RewardSignalCallback(BaseCallback):
 
     def _reset(self):
         self._s = {k: 0.0 for k in ("s1", "s2", "s3", "s4", "s5")}
-        self._n = 0
+        self._episodes = 0
 
     def _on_rollout_start(self) -> None:
         # Print the breakdown line for the rollout that just finished
@@ -91,7 +91,7 @@ class RewardSignalCallback(BaseCallback):
             p = self._pending
             ent = self.ent_coef * abs(p["ent_loss"])
             print(
-                f"  Signals │ "
+                f"  Signals (per game) │ "
                 f"Surv:{p['s1']:+.5f} │ "
                 f"Grail:{p['s2']:+.5f} │ "
                 f"Territ:{p['s3']:+.5f} │ "
@@ -105,11 +105,14 @@ class RewardSignalCallback(BaseCallback):
         for info in self.locals.get("infos", []):
             for i, k in enumerate(("s1_survival", "s2_grail", "s3_territory", "s4_pressure", "s5_facecard"), 1):
                 self._s[f"s{i}"] += info.get(k, 0.0)
-            self._n += 1
+        
+        # Count completed episodes in this step across the vec env
+        dones = self.locals.get("dones", [])
+        self._episodes += sum(dones)
         return True
 
     def _on_rollout_end(self) -> None:
-        n = max(self._n, 1)
+        n = max(self._episodes, 1)
         ent_loss = self.model.logger.name_to_value.get("train/entropy_loss", 0.0)
         self._pending = {
             **{f"s{i}": self._s[f"s{i}"] / n for i in range(1, 6)},
@@ -208,7 +211,13 @@ class ChampionChallengeCallback(BaseCallback):
         
         print(f"Challenge Results: Win Rate: {wr:.2%} | Draw Rate: {dr:.2%} | Score: {score:.2%} (Threshold: {self.threshold:.2%})")
         if score >= self.threshold:
-            print(">>> NEW CHAMPION CROWNED! <<<")
+            print(f">>> NEW CHAMPION CROWNED AT TIMESTEP {self.num_timesteps}! <<<")
+            
+            # Save a historical copy of the new champion
+            history_path = self.champion_path.replace(".zip", f"_ts{self.num_timesteps}.zip")
+            self.model.save(history_path)
+            
+            # Overwrite the active champion
             self.model.save(self.champion_path)
         else:
             print("Champion defends title.")
