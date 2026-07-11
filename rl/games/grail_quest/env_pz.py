@@ -234,9 +234,10 @@ class GrailQuestPZEnv(AECEnv):
             # Signal 1: Survival penalty (breaks passive-draw equilibrium)
             s1 = _SURVIVAL_PENALTY
 
-            # Signal 2: Grail proximity — how close the Grail is to my base
+            # Signal 2: Grail proximity (zero-sum relative distance)
             dist_to_mine = _hex_dist(self.game.grail_key, my_base)
-            s2 = ((_MAX_GRAIL_DIST - dist_to_mine) / _MAX_GRAIL_DIST) * _GRAIL_SCALE
+            dist_to_opp  = _hex_dist(self.game.grail_key, opp_base)
+            s2 = ((dist_to_opp - dist_to_mine) / _MAX_GRAIL_DIST) * _GRAIL_SCALE
 
             # Signal 3: Territory differential (FARM / HILL / URBAN)
             my_terr  = sum(1 for c in self.game.board.values()
