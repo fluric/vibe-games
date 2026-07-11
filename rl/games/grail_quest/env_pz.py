@@ -111,6 +111,7 @@ class GrailQuestPZEnv(AECEnv):
         self.terminations = {agent: False for agent in self.agents}
         self.truncations = {agent: False for agent in self.agents}
         self.infos = {agent: {} for agent in self.agents}
+        self._potentials = {agent: {"s2": 0.0, "s3": 0.0, "s4": 0.0} for agent in self.agents}
         
         self._agent_selector = agent_selector(self.agents)
         # Setup first agent
@@ -258,21 +259,30 @@ class GrailQuestPZEnv(AECEnv):
             opp_press = sum(1 for n in my_nbrs  if self.game.board[n].owner == opp_idx)
             s4 = (my_press - opp_press) * _PRESSURE_SCALE
 
-            # Signal 5: Face card kill reward (J/Q/K = value >= 11)
+            # Signal 5: Face card kill reward (J/Q/K = value >= 11) (Event reward, NOT potential)
             opp_face_after = _count_face(opp_idx)
             opp_killed = max(0, opp_face_before - opp_face_after)
             s5 = opp_killed * _FACE_CARD_SCALE
 
+            # Only s2, s3, and s4 are state potentials
+            current_potentials = {"s2": s2, "s3": s3, "s4": s4}
+            prev_potentials = self._potentials.get(agent, {"s2": 0.0, "s3": 0.0, "s4": 0.0})
+            
+            delta_s2 = current_potentials["s2"] - prev_potentials["s2"]
+            delta_s3 = current_potentials["s3"] - prev_potentials["s3"]
+            delta_s4 = current_potentials["s4"] - prev_potentials["s4"]
+            
+            self._potentials[agent] = current_potentials
 
-            total_shaping = s1 + s2 + s3 + s4 + s5
             self.rewards = {a: 0.0 for a in self.agents}
-            self.rewards[agent] = total_shaping
+            self.rewards[agent] = s1 + s5 + delta_s2 + delta_s3 + delta_s4
 
+            # Log the deltas for potentials, and raw values for events
             self._last_signals = {
                 "s1_survival":  s1,
-                "s2_grail":     s2,
-                "s3_territory": s3,
-                "s4_pressure":  s4,
+                "s2_grail":     delta_s2,
+                "s3_territory": delta_s3,
+                "s4_pressure":  delta_s4,
                 "s5_facecard":  s5,
             }
             # Forward signals through PettingZoo's info dict so SuperSuit

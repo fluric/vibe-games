@@ -141,43 +141,34 @@ class RewardSignalCallback(BaseCallback):
 
 import os
 
-class ChampionChallengeCallback(BaseCallback):
-    def __init__(self, eval_env, eval_freq=50000, eval_games=50, threshold=0.55, champion_path="champion.zip", device="auto", verbose=0):
+class ChampionPoolCallback(BaseCallback):
+    def __init__(self, eval_env, eval_freq=50000, eval_games_per_pair=20, pool_size=5, pool_dir="pool", champion_path=None, device="auto", verbose=0):
         super().__init__(verbose)
         self.eval_env = eval_env
         self.eval_freq = eval_freq
-        self.eval_games = eval_games
-        self.threshold = threshold
+        self.eval_games_per_pair = eval_games_per_pair
+        self.pool_size = pool_size
+        self.pool_dir = pool_dir
         self.champion_path = champion_path
         self.device = device
         self.last_eval_step = 0
         self.champion_wr = 0.0
 
     def _on_step(self) -> bool:
-        # PPO runs multiple envs, so self.num_timesteps advances by num_envs each step.
         if self.num_timesteps - self.last_eval_step >= self.eval_freq:
             self.last_eval_step = self.num_timesteps
-            self._run_evaluation()
+            self._run_pool_tournament()
             
         self.logger.record("custom/champion_winrate", self.champion_wr)
         return True
 
-    def _run_evaluation(self):
-        if not os.path.exists(self.champion_path):
-            self.model.save(self.champion_path)
-            self.champion_wr = 1.0
-            return
+    def _play_match(self, model1, model2):
         current_wins = 0
         current_draws = 0
-        
-        champion_model = self.model.__class__.load(self.champion_path, device=self.device)
-        
-        for g in range(self.eval_games):
+        for g in range(self.eval_games_per_pair):
             self.eval_env.reset()
-            current_is_p0 = (g % 2 == 0)
+            m1_is_p0 = (g % 2 == 0)
             
-            # Hard cap: allow up to 10,000 AEC steps to let a full 400-turn game play out naturally.
-            # If it exceeds this, it is counted as a draw (to prevent hangs).
             step_count = 0
             timed_out = False
             
@@ -187,64 +178,97 @@ class ChampionChallengeCallback(BaseCallback):
                     timed_out = True
                     break
 
-                    
                 obs, reward, terminated, truncated, info = self.eval_env.last()
-                    
                 if terminated or truncated:
                     action = None
                 else:
                     action_mask = obs["action_mask"]
-                    is_current = (agent == "player_0" and current_is_p0) or (agent == "player_1" and not current_is_p0)
-                    active_model = self.model if is_current else champion_model
+                    is_m1 = (agent == "player_0" and m1_is_p0) or (agent == "player_1" and not m1_is_p0)
+                    active_model = model1 if is_m1 else model2
                     action, _ = active_model.predict(
                         obs,
                         action_masks=action_mask.astype(bool),
                         deterministic=True
                     )
-                
                 self.eval_env.step(action)
             
             if timed_out:
                 current_draws += 1
                 continue
             
-            # Read outcome directly from the engine — not from accumulated rewards,
-            # which are now polluted by per-step shaping signals and are never equal
-            # even in true draws.
             inner = self.eval_env
             while hasattr(inner, "env"):
                 inner = inner.env
-            current_player_idx = 0 if current_is_p0 else 1
-            outcome_current  = inner.game.outcome(current_player_idx)
-            outcome_opponent = inner.game.outcome(1 - current_player_idx)
+            m1_player_idx = 0 if m1_is_p0 else 1
+            outcome_m1 = inner.game.outcome(m1_player_idx)
+            outcome_m2 = inner.game.outcome(1 - m1_player_idx)
             
-            if outcome_current > outcome_opponent:
+            if outcome_m1 > outcome_m2:
                 current_wins += 1
-            elif outcome_current == outcome_opponent:
+            elif outcome_m1 == outcome_m2:
                 current_draws += 1
-
                 
-        wr = current_wins / self.eval_games
-        dr = current_draws / self.eval_games
-        # Score = win×1 + draw×0.5 (standard chess-style metric for draw-heavy games)
-        score = (current_wins + 0.5 * current_draws) / self.eval_games
-        self.champion_wr = score
+        return current_wins + 0.5 * current_draws
+
+    def _run_pool_tournament(self):
+        import glob
+        import shutil
+        candidate_path = os.path.join(self.pool_dir, f"candidate_ts{self.num_timesteps}.zip")
+        self.model.save(candidate_path)
         
-        print(f"Challenge Results: Win Rate: {wr:.2%} | Draw Rate: {dr:.2%} | Score: {score:.2%} (Threshold: {self.threshold:.2%})")
-        if score >= self.threshold:
-            print(f">>> NEW CHAMPION CROWNED AT TIMESTEP {self.num_timesteps}! <<<")
+        models = glob.glob(os.path.join(self.pool_dir, "*.zip"))
+        
+        if len(models) <= self.pool_size:
+            print(f">>> ADDED CANDIDATE TO POOL (Size: {len(models)}/{self.pool_size}) <<<")
+            self.champion_wr = 1.0
+            if self.champion_path:
+                shutil.copy2(candidate_path, self.champion_path)
+            return
             
-            # Save a historical copy of the new champion
-            history_path = self.champion_path.replace(".zip", f"_ts{self.num_timesteps}.zip")
-            self.model.save(history_path)
+        print(f"--- Running Round-Robin Tournament (Pool Size: {len(models)}) ---")
+        loaded_models = {}
+        for p in models:
+            if p == candidate_path:
+                loaded_models[p] = self.model
+            else:
+                loaded_models[p] = self.model.__class__.load(p, device=self.device)
+                
+        scores = {p: 0.0 for p in models}
+        
+        for i, p1 in enumerate(models):
+            for j, p2 in enumerate(models):
+                if i < j:
+                    s1 = self._play_match(loaded_models[p1], loaded_models[p2])
+                    s2 = self.eval_games_per_pair - s1
+                    scores[p1] += s1
+                    scores[p2] += s2
+                    
+        print("Tournament Results:")
+        best_path = None
+        best_score = -1
+        for p in sorted(models, key=lambda x: scores[x], reverse=True):
+            print(f"  {os.path.basename(p)}: {scores[p]:.1f} pts")
+            if scores[p] > best_score:
+                best_score = scores[p]
+                best_path = p
+                
+        if self.champion_path and best_path:
+            shutil.copy2(best_path, self.champion_path)
             
-            # Overwrite the active champion
-            self.model.save(self.champion_path)
+        worst_path = min(models, key=lambda x: scores[x])
+        print(f">>> EVICTING WORST MODEL: {os.path.basename(worst_path)} (Moving to archive) <<<")
+        
+        archive_dir = os.path.join(os.path.dirname(self.pool_dir), "archive")
+        os.makedirs(archive_dir, exist_ok=True)
+        shutil.move(worst_path, os.path.join(archive_dir, os.path.basename(worst_path)))
+        
+        if candidate_path != worst_path:
+            total_games = self.eval_games_per_pair * (len(models) - 1)
+            self.champion_wr = scores[candidate_path] / max(total_games, 1)
         else:
-            print("Champion defends title.")
-            
+            self.champion_wr = 0.0
+
         print("-" * 135)
-        # We also need to print the header again because the challenge text interrupted the table
         self.model.logger.output_formats[0].header_printed = False
 
 class SingleAgentGrailQuestEnv(gym.Env):
@@ -255,14 +279,14 @@ class SingleAgentGrailQuestEnv(gym.Env):
     This completely avoids the turn-alternating value function sign-inversion bug
     and allows seamless training using standard single-agent PPO.
     """
-    def __init__(self, opponent_model_path=None):
+    def __init__(self, opponent_pool_dir=None):
         super().__init__()
         self.pz_env = env()
         self.observation_space = self.pz_env.observation_space("player_0")
         self.action_space = self.pz_env.action_space("player_0")
-        self.opponent_model_path = opponent_model_path
+        self.opponent_pool_dir = opponent_pool_dir
+        self.loaded_models = {}
         self.opponent_model = None
-        self.last_mtime = 0
         self.training_player = None
 
     def action_masks(self) -> np.ndarray:
@@ -270,14 +294,33 @@ class SingleAgentGrailQuestEnv(gym.Env):
         return obs["action_mask"] == 1
 
     def _reload_opponent_model(self):
-        if self.opponent_model_path and os.path.exists(self.opponent_model_path):
-            mtime = os.path.getmtime(self.opponent_model_path)
-            if self.opponent_model is None or mtime > self.last_mtime:
+        import glob
+        import random
+        if self.opponent_pool_dir and os.path.exists(self.opponent_pool_dir):
+            models = glob.glob(os.path.join(self.opponent_pool_dir, "*.zip"))
+            if not models:
+                return
+            
+            chosen_path = random.choice(models)
+            mtime = os.path.getmtime(chosen_path)
+            cached = self.loaded_models.get(chosen_path)
+            
+            if not cached or cached["mtime"] < mtime:
                 try:
-                    self.opponent_model = MaskablePPO.load(self.opponent_model_path, device="cpu")
-                    self.last_mtime = mtime
+                    model = MaskablePPO.load(chosen_path, device="cpu")
+                    self.loaded_models[chosen_path] = {"model": model, "mtime": mtime}
+                    self.opponent_model = model
                 except Exception:
-                    pass  # Retry on next reset if file is locked
+                    if cached:
+                        self.opponent_model = cached["model"]
+            else:
+                self.opponent_model = cached["model"]
+                
+            # Clean up old deleted models from memory
+            active_paths = set(models)
+            for p in list(self.loaded_models.keys()):
+                if p not in active_paths:
+                    del self.loaded_models[p]
 
     def _play_opponent_turns(self):
         accumulated_reward = 0.0
@@ -359,14 +402,16 @@ def main():
     parser.add_argument("--num-envs", type=int, default=4)
     parser.add_argument("--eval-freq", type=int, default=5_000_000, help="Timesteps between champion evaluations")
     parser.add_argument("--eval-games", type=int, default=100, help="Number of evaluation games")
-    parser.add_argument("--promotion-threshold", type=float, default=0.55, help="Win rate needed to become champion")
+    parser.add_argument("--pool-size", type=int, default=5, help="Number of champions to keep in the pool")
     parser.add_argument("--resume", action="store_true", help="Resume from the final model if it exists")
     args = parser.parse_args()
 
     output_dir = Path("rl/service/models/grail_quest/ppo")
     output_dir.mkdir(parents=True, exist_ok=True)
     final_path = output_dir / "grail_quest_ppo_final.zip"
-    champion_path = output_dir / "grail_quest_ppo_champion.zip"
+    
+    champion_pool_dir = output_dir / "pool"
+    champion_pool_dir.mkdir(parents=True, exist_ok=True)
 
     print(f"Initializing Grail Quest PPO Training...")
     print(f"Total timesteps: {args.timesteps}")
@@ -375,7 +420,7 @@ def main():
     from stable_baselines3.common.vec_env import SubprocVecEnv
 
     def make_env():
-        return SingleAgentGrailQuestEnv(opponent_model_path=str(champion_path))
+        return SingleAgentGrailQuestEnv(opponent_pool_dir=str(champion_pool_dir))
 
     # Create vectorized environment with spawn to avoid macOS fork deadlock
     vec_env = SubprocVecEnv([make_env for _ in range(args.num_envs)], start_method="spawn")
@@ -428,18 +473,19 @@ def main():
     model.set_logger(custom_logger)
 
     # Setup Champion Challenge
-    champion_callback = ChampionChallengeCallback(
+    champion_callback = ChampionPoolCallback(
         eval_env=env(), 
         eval_freq=args.eval_freq, 
-        eval_games=args.eval_games, 
-        threshold=args.promotion_threshold,
-        champion_path=str(champion_path),
+        eval_games_per_pair=args.eval_games // args.pool_size if args.pool_size > 0 else 20, 
+        pool_size=args.pool_size,
+        pool_dir=str(champion_pool_dir),
+        champion_path=str(output_dir / "grail_quest_ppo_champion.zip"),
         device=args.device
     )
 
     # 5. Train
     from stable_baselines3.common.callbacks import CallbackList
-    callbacks = CallbackList([checkpoint_callback, IllegalMoveLoggerCallback(), RewardSignalCallback(ent_coef=0.05), champion_callback])
+    callbacks = CallbackList([checkpoint_callback, IllegalMoveLoggerCallback(), RewardSignalCallback(ent_coef=0.015), champion_callback])
 
     model.learn(total_timesteps=args.timesteps, callback=callbacks, reset_num_timesteps=not args.resume)
 
