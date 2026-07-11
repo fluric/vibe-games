@@ -85,6 +85,9 @@ def _load_game_models(game_type: str) -> None:
     models_base = MODELS_DIR / game_type
 
     for bot_level, entry in registry.items():
+        if not bot_level.startswith("rl_"):
+            continue
+            
         checkpoint = entry.get("checkpoint")
         num_sims = entry.get("num_simulations", 0)
 
@@ -131,11 +134,14 @@ def _load_cfr_policies(game_type: str) -> None:
     models_base = MODELS_DIR / game_type
 
     for bot_level, entry in registry.items():
+        if not bot_level.startswith("cfr_"):
+            continue
+            
         checkpoint = entry.get("checkpoint")
         if not checkpoint:
             print(f"  [{game_type}/{bot_level}] No checkpoint yet — skipping.")
             continue
-
+            
         ckpt_path = models_base / checkpoint
         if not ckpt_path.exists():
             print(f"  [{game_type}/{bot_level}] Checkpoint not found: {ckpt_path} — skipping.")

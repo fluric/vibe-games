@@ -84,12 +84,21 @@ class RewardSignalCallback(BaseCallback):
     def _reset(self):
         self._s = {k: 0.0 for k in ("s1", "s2", "s3", "s4", "s5")}
         self._episodes = 0
+        self._active_wins = 0
+        self._champ_wins = 0
+        self._draws = 0
 
     def _on_rollout_start(self) -> None:
         # Print the breakdown line for the rollout that just finished
         if self._pending is not None:
             p = self._pending
             ent = self.ent_coef * abs(p["ent_loss"])
+            
+            n = max(self._episodes, 1)
+            act_wr = self._active_wins / n
+            chmp_wr = self._champ_wins / n
+            draw_r = self._draws / n
+            
             print(
                 f"  Signals (per game) │ "
                 f"Surv:{p['s1']:+.5f} │ "
@@ -97,14 +106,25 @@ class RewardSignalCallback(BaseCallback):
                 f"Territ:{p['s3']:+.5f} │ "
                 f"Press:{p['s4']:+.5f} │ "
                 f"FaceK:{p['s5']:+.5f} │ "
-                f"Ent:{ent:+.5f}"
+                f"Ent:{ent:+.5f} │ "
+                f"Train-WinRate (Act:{act_wr:.0%} Chmp:{chmp_wr:.0%} D:{draw_r:.0%})"
             )
         self._reset()
 
     def _on_step(self) -> bool:
-        for info in self.locals.get("infos", []):
+        infos = self.locals.get("infos", [])
+        for info in infos:
             for i, k in enumerate(("s1_survival", "s2_grail", "s3_territory", "s4_pressure", "s5_facecard"), 1):
                 self._s[f"s{i}"] += info.get(k, 0.0)
+            
+            if "active_won" in info:
+                res = info["active_won"]
+                if res == 1:
+                    self._active_wins += 1
+                elif res == 0:
+                    self._champ_wins += 1
+                else:
+                    self._draws += 1
         
         # Count completed episodes in this step across the vec env
         dones = self.locals.get("dones", [])
@@ -138,7 +158,8 @@ class ChampionChallengeCallback(BaseCallback):
         if self.num_timesteps - self.last_eval_step >= self.eval_freq:
             self.last_eval_step = self.num_timesteps
             self._run_evaluation()
-            self.logger.record("custom/champion_winrate", self.champion_wr)
+            
+        self.logger.record("custom/champion_winrate", self.champion_wr)
         return True
 
     def _run_evaluation(self):
@@ -312,9 +333,21 @@ class SingleAgentGrailQuestEnv(gym.Env):
         info = dict(getattr(inner, "_last_signals", {}))
 
         is_natural = inner.game.is_terminal()
+        if is_natural:
+            u0 = inner.game.outcome(0)
+            u1 = inner.game.outcome(1)
+            winner_idx = 0 if u0 > u1 else (1 if u1 > u0 else -1)
+            
+            if winner_idx == -1:
+                info["active_won"] = -1
+            else:
+                active_idx = 0 if self.training_player == "player_0" else 1
+                info["active_won"] = 1 if winner_idx == active_idx else 0
+                
+            info["winner"] = winner_idx
+            
         if reward <= -0.9 and not is_natural:
             info["illegal_move"] = True
-
 
         return obs, reward, terminated, truncated, info
 

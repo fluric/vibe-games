@@ -226,6 +226,11 @@ class GrailQuestPZEnv(AECEnv):
             self.rewards[self.agents[PLAYER_O]] = u1
             self.terminations = {a: True for a in self.agents}
             self._last_signals = {}
+            
+            # Record winner in info
+            winner_idx = 0 if u0 > u1 else (1 if u1 > u0 else -1)
+            for a in self.agents:
+                self.infos[a]["winner"] = winner_idx
         else:
             # ── Reward shaping ────────────────────────────────────────────────
             my_base  = _P0_BASE if player_idx == 0 else _P1_BASE
