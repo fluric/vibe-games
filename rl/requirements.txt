@@ -9,3 +9,4 @@ stable-baselines3[extra]>=2.2.1
 pettingzoo>=1.24.3
 supersuit>=3.9.2
 gymnasium>=0.29.1
+sb3-contrib>=2.2.1
