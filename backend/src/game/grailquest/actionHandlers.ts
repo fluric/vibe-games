@@ -22,6 +22,7 @@ export function handleReactAction(state: GrailQuestGameState, action: any, playe
   if (action.reactType === 'fight') {
     if (attackerStack.length === 0 || defenderStack.length === 0) {
       state.pendingCombats.splice(combatIdx, 1);
+      state.movesThisTurn = (state.movesThisTurn || []).filter(m => m.to !== combat.cellKey);
       const remainingDefenses = state.pendingCombats.some(c => c.defender === player);
       if (!remainingDefenses) {
         state.phase = 'deploy';
@@ -212,11 +213,13 @@ export function handleReactAction(state: GrailQuestGameState, action: any, playe
       if (defenderStack.length === 0 && cell.cellType !== 'home_base' && cell.cellType !== 'urban') {
         cell.owner = null;
       }
+      state.movesThisTurn = (state.movesThisTurn || []).filter(m => m.to !== combat.cellKey);
     } else if (defenderStack.length === 0) {
       // Attacker wins and captures cell
       cell.owner = combat.attacker;
       cell.soldiers = attackerStack;
       state.pendingCombats.splice(combatIdx, 1);
+      state.movesThisTurn = (state.movesThisTurn || []).filter(m => m.to !== combat.cellKey);
     }
 
   } else if (action.reactType === 'retreat') {
@@ -244,6 +247,7 @@ export function handleReactAction(state: GrailQuestGameState, action: any, playe
 
     // Resolve combat
     state.pendingCombats.splice(combatIdx, 1);
+    state.movesThisTurn = (state.movesThisTurn || []).filter(m => m.to !== combat.cellKey);
   }
 
   // Check if more reactions are needed, otherwise transition to deploy

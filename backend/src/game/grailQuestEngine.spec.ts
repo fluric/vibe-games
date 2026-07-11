@@ -600,7 +600,37 @@ async function runTests() {
   assert.strictEqual(combatMerge.carriesGrail, true);
 
   // 12. Neutral Soldiers / Empty-Refill Cell Owner Retention Bug Test
+
   console.log('👉 Testing: Empty-Refill Cell Owner Retention (preventing neutral soldiers)');
+  // ── Regression Test: Duplication bug when Defender wins combat ──
+  console.log('👉 Testing: Resolved Combats do not trigger move application at End Turn');
+  let sRegress = createInitialState();
+  // X attacks O at 0,1
+  sRegress.board['0,1'].owner = 'O';
+  sRegress.board['0,1'].soldiers = [{ value: 11, revealed: false }]; // O has Jack
+  sRegress.board['1,0'].owner = 'X';
+  sRegress.board['1,0'].soldiers = [{ value: 11, revealed: false }]; // X has Jack
+  sRegress.turn = 'X';
+  sRegress.phase = 'move';
+  sRegress = GrailQuestEngine.handleMove(sRegress, { type: 'move', from: '1,0', to: '0,1', count: 1 }, 'X');
+  assert.strictEqual(sRegress.pendingCombats.length, 1);
+  assert.strictEqual(sRegress.movesThisTurn!.length, 1);
+  
+  // Resolve combat (Draw -> Both destroyed)
+  sRegress.phase = 'react';
+  sRegress.turn = 'X'; // React doesn't check turn, but let's keep it clean
+  sRegress = GrailQuestEngine.handleMove(sRegress, { type: 'react', reactType: 'fight', cellKey: '0,1' }, 'O');
+  
+  // Both cards destroyed. Pending combat should be removed, and movesThisTurn should be cleared!
+  assert.strictEqual(sRegress.pendingCombats.length, 0);
+  assert.strictEqual(sRegress.movesThisTurn!.length, 0);
+  
+  // End turn for X
+  sRegress = GrailQuestEngine.handleMove(sRegress, { type: 'end_turn' }, 'X');
+  
+  // O's cell should NOT be captured by X, and NO cards should be duplicated!
+  assert.strictEqual(sRegress.board['0,1'].owner, null); // Both died, cell becomes neutral
+  assert.strictEqual(sRegress.board['0,1'].soldiers.length, 0);
   let sEmptyRefill = GrailQuestEngine.createInitialState();
   sEmptyRefill.board['0,-3'].soldiers = [{ value: 10, revealed: false }, { value: 9, revealed: false }];
   sEmptyRefill.board['0,-2'].soldiers = [{ value: 8, revealed: false }, { value: 7, revealed: false }];

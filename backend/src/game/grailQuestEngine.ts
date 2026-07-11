@@ -70,7 +70,9 @@ export const GrailQuestEngine = {
       throw new Error('Game is already finished');
     }
     if (state.turn !== player) {
-      throw new Error(`It is not ${player}'s turn`);
+      if (!(state.phase === 'react' && state.pendingCombats.some(c => c.defender === player))) {
+        throw new Error(`It is not ${player}'s turn`);
+      }
     }
 
     const type = action.action || action.type;
