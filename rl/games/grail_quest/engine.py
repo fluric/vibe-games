@@ -719,8 +719,8 @@ class GrailQuestState:
             MoveRecord(from_key, to_key, list(moving_stack), is_grail)
         )
 
-        # Check enemy occupation
-        is_enemy = to_cell.owner is not None and to_cell.owner != player
+        # Check enemy occupation and if there are soldiers to fight
+        is_enemy = to_cell.owner is not None and to_cell.owner != player and len(to_cell.soldiers) > 0
         has_existing_combat = any(c.cell_key == to_key for c in self.pending_combats)
 
         if is_enemy or has_existing_combat:

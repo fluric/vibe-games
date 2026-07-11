@@ -404,8 +404,8 @@ export function handleMoveAction(state: GrailQuestGameState, action: any, player
     carriesGrail: isGrailMove
   }];
 
-  // Check destination ownership
-  const isOccupiedByEnemy = toCell.owner !== null && toCell.owner !== player;
+  // Check destination ownership and if there are soldiers to fight
+  const isOccupiedByEnemy = toCell.owner !== null && toCell.owner !== player && toCell.soldiers.length > 0;
   const hasPendingCombat = state.pendingCombats.some(c => c.cellKey === toKey);
 
   if (isOccupiedByEnemy || hasPendingCombat) {
